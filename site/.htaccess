@@ -39,6 +39,24 @@ ServerSignature Off
     Header always set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Fonctionnalites navigateur non utilisees par le site : desactivees.
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+
+    # HTTPS force (2 ans, sous-domaines inclus). Le site est servi en HTTPS
+    # (IONOS + Cloudflare). Pas de "preload" : engagement difficilement reversible.
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
+
+    # Content-Security-Policy : liste blanche stricte des seuls domaines
+    # externes reellement charges — Stripe (paiement) et Holfuy (widget meteo
+    # en iframe sur /aerodrome). 'unsafe-inline' reste necessaire tant que le
+    # site PHP utilise des styles et quelques scripts en ligne (durcissable
+    # ensuite par nonces si besoin). OpenStreetMap n'est qu'un lien : hors CSP.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://widget.holfuy.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+
+    # Ne pas divulguer la version de PHP.
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
 </IfModule>
 
 # ---- 4. Encodage -------------------------------------------------

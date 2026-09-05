@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 
+// En-têtes de sécurité HTTP, émis avant toute sortie (voir securite.php).
+require_once __DIR__ . '/securite.php';
+
 /* ------------------------------------------------------------------
    Configuration generale du site Saumur Air Club
    ------------------------------------------------------------------ */
