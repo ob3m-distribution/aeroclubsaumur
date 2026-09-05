@@ -2,7 +2,13 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../inc/auth.php';
-exiger_droit('contenus.gerer');
+exiger_connexion();
+if (!est_superadmin()) {
+    http_response_code(403);
+    $_SESSION['message_erreur'] = 'Documentation réservée aux super-administrateurs.';
+    header('Location: /admin/', true, 302);
+    exit;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Tables (auto-création)                                             */

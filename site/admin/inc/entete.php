@@ -18,7 +18,7 @@ $menu = [
     ['cle' => 'biblio',   'url' => '/admin/bibliotheque.php','libelle' => 'Bibliothèque adhérents','droit' => 'contenus.gerer'],
     ['cle' => 'mailing',  'url' => '/admin/mailing.php', 'libelle' => 'Newsletters', 'droit' => 'mailing.gerer'],
     ['cle' => 'support',  'url' => '/admin/support.php', 'libelle' => 'Support', 'droit' => null],
-    ['cle' => 'documentation', 'url' => '/admin/documentation.php', 'libelle' => 'Documentation site', 'droit' => 'contenus.gerer'],
+    ['cle' => 'documentation', 'url' => '/admin/documentation.php', 'libelle' => 'Documentation site', 'droit' => null, 'super' => true],
 ];
 
 $msgSucces = $_SESSION['message_succes'] ?? null;
@@ -51,6 +51,7 @@ unset($_SESSION['message_succes'], $_SESSION['message_erreur']);
     <nav aria-label="Menu du back-office">
       <ul>
         <?php foreach ($menu as $item): ?>
+          <?php if (!empty($item['super']) && !est_superadmin()) continue; ?>
           <?php if ($item['droit'] !== null && !peut($item['droit'])) continue; ?>
           <li>
             <a href="<?= e($item['url']) ?>"<?= $actif === $item['cle'] ? ' aria-current="page"' : '' ?>>
