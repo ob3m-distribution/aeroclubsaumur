@@ -77,7 +77,9 @@ require __DIR__ . '/inc/hero.php';
           <li><strong>Assurer votre sécurité en vol</strong> (personne à prévenir,
             informations médicales de validité) : intérêt légitime et obligation légale.</li>
           <li><strong>Vous tenir informé de la vie du club</strong> : intérêt légitime d’une
-            association envers ses adhérents ; vous pouvez vous y opposer à tout moment.</li>
+            association envers ses adhérents ; vous pouvez vous y opposer à tout moment en
+            écrivant à
+            <a href="mailto:<?= e(CLUB['email']) ?>"><?= e(CLUB['email']) ?></a>.</li>
           <li><strong>Gérer les prêts de la bibliothèque</strong> : exécution du service
             rendu aux adhérents.</li>
         </ul>
@@ -120,9 +122,10 @@ require __DIR__ . '/inc/hero.php';
             de Stripe.</li>
         </ul>
         <p style="margin-top:.75rem">
-          Certains de ces prestataires peuvent traiter des données en dehors de l’Union
-          européenne (Stripe, notamment, aux États-Unis) ; ces transferts sont encadrés par
-          les clauses contractuelles types de la Commission européenne.
+          Stripe peut traiter certaines données aux États-Unis. Ces transferts sont encadrés
+          par le cadre de protection des données UE–États-Unis (Data Privacy Framework),
+          complété à titre de garantie supplémentaire par les clauses contractuelles types
+          de la Commission européenne.
         </p>
       </div>
     </div>
@@ -136,8 +139,8 @@ require __DIR__ . '/inc/hero.php';
         <ul class="liste-check" style="margin-top:0">
           <li><strong>Bon cadeau</strong> : le temps de sa durée de validité, puis la durée
             légale de conservation des pièces comptables.</li>
-          <li><strong>Dossier d’adhérent</strong> : la durée de votre adhésion, puis la
-            durée légale de conservation comptable et réglementaire applicable au club.</li>
+          <li><strong>Dossier d’adhérent</strong> : la durée de votre adhésion, puis
+            3 ans après la fin de votre adhésion.</li>
           <li><strong>Pré-inscription non finalisée</strong> : le temps nécessaire au
             traitement de votre demande.</li>
           <li><strong>Lettre d’information</strong> : jusqu’à votre opposition ou la fin de
