@@ -26,6 +26,13 @@ sauvegarde-wordpress/
 *.db
 *.sqlite
 
+# Fichiers de données membres / imports (données personnelles) — jamais versionner
+site/membres.json
+membres.json
+*.xls
+*.xlsx
+*.csv
+
 # ------------------------------------------------------------------
 #  Divers
 # ------------------------------------------------------------------

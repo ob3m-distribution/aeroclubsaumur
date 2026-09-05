@@ -22,22 +22,30 @@ const CLUB = [
 
     // Donnees legales, reprises de saumur-airclub.aero/mentions_legales_SAC.php
     'forme'        => 'Association Loi 1901',
-    'siret'        => '302864913',
+    'siren'        => '302864913',
     'directeur'    => 'Jonathan Robert',
     'email_admin'  => 'admin@saumur-airclub.aero',
     'tel_admin'    => '06 27 36 04 46',
 ];
 
-/**
- * Hebergeur du site — mention legale OBLIGATOIRE.
- * L'ancien site declarait NETIM ; le nouveau est chez IONOS. A verifier
- * sur le contrat avant la mise en production.
- */
+/** Hebergeur du site — mention legale OBLIGATOIRE. */
 const HEBERGEUR = [
     'nom'     => 'IONOS SARL',
     'adresse' => '7 place de la Gare, BP 70109, 57200 Sarreguemines Cedex, France',
     'tel'     => '0970 808 911',
     'site'    => 'https://www.ionos.fr',
+];
+
+/** Realisation technique du site — mention legale. */
+const REALISATION = [
+    'raison_sociale' => 'OB3M Distribution (OB3MDIS)',
+    'forme'          => 'SAS – Société par actions simplifiée',
+    'capital'        => '300 €',
+    'adresse'        => '2 impasse des Vendangeurs, 17610 Chaniers, France',
+    'tel'            => '+33 7 81 07 09 94',
+    'email'          => 'ob3m.distribution@gmail.com',
+    'rcs'            => '103 916 656 – RCS Saintes',
+    'tva'            => 'FR 31 103 916 656',
 ];
 
 /**

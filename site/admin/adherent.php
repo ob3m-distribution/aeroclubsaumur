@@ -22,6 +22,7 @@ const DOSSIER_CHAMPS = [
     'tel_perso', 'tel_pro', 'tel_mobile', 'courriel', 'urgence',
     'lapl_num', 'lapl_date', 'ppl_num', 'ppl_date', 'validite_licence', 'validite_sep',
     'autres_qualifs', 'validite_visite_medicale', 'num_ffa', 'pere_nom', 'mere_nom',
+    'profil',
 ];
 const DOSSIER_DATES = ['date_naissance', 'lapl_date', 'ppl_date', 'validite_licence', 'validite_sep', 'validite_visite_medicale'];
 
@@ -232,6 +233,14 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
 
   <div class="detail">
     <div>
+      <div class="bloc">
+        <h2>Profil</h2>
+        <div class="champ">
+          <label for="profil">Profil <span class="muet">(qualité, fonction, mention — issu de la liste du club)</span></label>
+          <textarea id="profil" name="profil" rows="2" maxlength="255"><?= $val('profil') ?></textarea>
+        </div>
+      </div>
+
       <div class="bloc">
         <div class="bloc__titre">
           <h2>État civil</h2>

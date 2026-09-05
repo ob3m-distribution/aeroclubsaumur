@@ -29,7 +29,7 @@ require __DIR__ . '/inc/hero.php';
           Route de Marson, 49400 Saint-Hilaire-Saint-Florent, France
         </p>
         <p>
-          SIRET : <?= e(CLUB['siret']) ?><br>
+          SIREN : <?= e(CLUB['siren']) ?><br>
           Téléphone : <a href="tel:<?= e(tel_lien(CLUB['tel_mobile'])) ?>"><?= e(CLUB['tel_mobile']) ?></a><br>
           Courriel : <a href="mailto:<?= e(CLUB['email']) ?>"><?= e(CLUB['email']) ?></a>
         </p>
@@ -46,6 +46,28 @@ require __DIR__ . '/inc/hero.php';
           <strong><?= e(CLUB['directeur']) ?></strong><br>
           Téléphone : <a href="tel:<?= e(tel_lien(CLUB['tel_admin'])) ?>"><?= e(CLUB['tel_admin']) ?></a><br>
           Courriel : <a href="mailto:<?= e(CLUB['email_admin']) ?>"><?= e(CLUB['email_admin']) ?></a>
+        </p>
+      </div>
+    </div>
+
+    <div class="entete-section">
+      <div>
+        <p class="surtitre">Réalisation</p>
+        <h2 class="titre-filet">Réalisation technique</h2>
+      </div>
+      <div>
+        <p>
+          <strong><?= e(REALISATION['raison_sociale']) ?></strong> — <?= e(REALISATION['forme']) ?><br>
+          Capital social : <?= e(REALISATION['capital']) ?><br>
+          <?= e(REALISATION['adresse']) ?>
+        </p>
+        <p>
+          Téléphone : <a href="tel:<?= e(tel_lien(REALISATION['tel'])) ?>"><?= e(REALISATION['tel']) ?></a><br>
+          E-mail : <a href="mailto:<?= e(REALISATION['email']) ?>"><?= e(REALISATION['email']) ?></a>
+        </p>
+        <p>
+          N° d’immatriculation : <?= e(REALISATION['rcs']) ?><br>
+          N° de TVA intracommunautaire : <?= e(REALISATION['tva']) ?>
         </p>
       </div>
     </div>
@@ -109,32 +131,6 @@ require __DIR__ . '/inc/hero.php';
           <a href="/confidentialite">politique de confidentialité</a>.
         </p>
       </div>
-    </div>
-
-    <div class="a-completer">
-      <p>
-        <strong>À vérifier avant la mise en production.</strong>
-      </p>
-      <ul class="liste-check" style="margin-top:.75rem;margin-bottom:0">
-        <li>
-          <strong>L’hébergeur a changé.</strong> L’ancien site déclarait NETIM ;
-          le nouveau est chez IONOS. Les coordonnées ci-dessus sont celles d’IONOS France —
-          à confirmer sur le contrat, c’est une mention obligatoire.
-        </li>
-        <li>
-          <strong>Le numéro SIRET semble incomplet.</strong> Celui de l’ancien site
-          (<?= e(CLUB['siret']) ?>) compte 9 chiffres : c’est un SIREN. Un SIRET en
-          comporte 14. Il manque probablement les 5 chiffres du NIC.
-        </li>
-        <li>
-          <strong>Les adresses en <code>@saumur-airclub.aero</code></strong> resteront-elles
-          valides après la bascule, ou faut-il les remplacer ?
-        </li>
-        <li>
-          <strong>Numéro RNA</strong> (répertoire national des associations, format W suivi
-          de 9 chiffres) : absent de l’ancien site, à ajouter si le club le connaît.
-        </li>
-      </ul>
     </div>
 
   </div>
