@@ -18,6 +18,7 @@ $menu = [
     ['cle' => 'biblio',   'url' => '/admin/bibliotheque.php','libelle' => 'Bibliothèque adhérents','droit' => 'contenus.gerer'],
     ['cle' => 'mailing',  'url' => '/admin/mailing.php', 'libelle' => 'Newsletters', 'droit' => 'mailing.gerer'],
     ['cle' => 'support',  'url' => '/admin/support.php', 'libelle' => 'Support', 'droit' => null],
+    ['cle' => 'documentation', 'url' => '/admin/documentation.php', 'libelle' => 'Documentation site', 'droit' => 'contenus.gerer'],
 ];
 
 $msgSucces = $_SESSION['message_succes'] ?? null;
