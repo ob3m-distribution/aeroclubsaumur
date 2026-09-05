@@ -1,0 +1,154 @@
+# ==================================================================
+# Saumur Air Club
+# ATTENTION : les blocs 1 et 2 sont propres a l'espace de DEV.
+# Ils devront etre retires le jour de la bascule en production.
+# ==================================================================
+
+# ---- 1. DEV : mot de passe obligatoire ---------------------------
+AuthType Basic
+AuthName "Saumur Air Club - Espace de developpement"
+AuthUserFile "/kunden/homepages/12/d168617917/htdocs/AEROCLUB/Aeroclub Saumur - Espace developpement/.htpasswd"
+Require valid-user
+
+# Le webhook Stripe doit rester joignable SANS mot de passe : Stripe ne
+# peut pas s'authentifier. Sa securite vient de la signature HMAC verifiee
+# dans webhook-stripe.php, pas de l'authentification HTTP.
+# Le webhook Stripe vit dans /webhook/, qui a son propre .htaccess levant
+# l'authentification : Stripe ne peut pas s'authentifier en HTTP Basic.
+# Sa securite vient de la signature HMAC verifiee dans webhook/stripe.php.
+
+# ---- 2. DEV : interdiction formelle d'indexer --------------------
+<IfModule mod_headers.c>
+    Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+</IfModule>
+
+# ---- 3. Securite -------------------------------------------------
+<FilesMatch "^\.(htaccess|htpasswd)$">
+    Require all denied
+</FilesMatch>
+
+# Les fichiers de configuration et d'inclusion ne sont jamais servis
+<FilesMatch "\.(sql|md|log|ini)$">
+    Require all denied
+</FilesMatch>
+
+Options -Indexes
+ServerSignature Off
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ---- 4. Encodage -------------------------------------------------
+AddDefaultCharset UTF-8
+
+# ---- 5. URLs propres : /aerodrome -> aerodrome.php ---------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Le dossier inc/ n'est jamais accessible directement
+    RewriteRule ^inc/ - [F,L]
+
+    # Le back-office et le webhook gardent leurs URLs telles quelles :
+    # pas d'URLs propres, donc pas de redirection superflue.
+    RewriteRule ^(admin|webhook|taches)/ - [L]
+
+    # robots.txt et sitemap.xml sont generes par PHP : ils s'adaptent
+    # tout seuls entre l'espace de dev et la production.
+    RewriteRule ^robots\.txt$  /robots.php  [L]
+    RewriteRule ^sitemap\.xml$ /sitemap.php [L]
+
+    # Retirer le .php visible : /aerodrome.php -> /aerodrome (301)
+    RewriteCond %{THE_REQUEST} \s/+([^\s?]+)\.php[\s?] [NC]
+    RewriteRule ^ /%1 [R=301,L]
+
+    # Servir le .php correspondant si le fichier existe
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteRule ^(.+?)/?$ $1.php [L]
+</IfModule>
+
+# ---- 6. WebP automatique ----------------------------------------
+# Si le navigateur accepte le WebP et qu'un .webp existe a cote du
+# .jpg/.png demande, Apache sert le .webp. Aucune balise a changer.
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP_ACCEPT} image/webp
+    RewriteCond %{REQUEST_FILENAME} (.+)\.(jpe?g|png)$
+    RewriteCond %1\.webp -f
+    # Substitution ABSOLUE (/$1) et non relative : le chemin du dossier
+    # contient des espaces, ce qui casse la recombinaison relative.
+    RewriteRule (.+)\.(jpe?g|png)$ /$1.webp [T=image/webp,L]
+</IfModule>
+<IfModule mod_headers.c>
+    # Les caches doivent distinguer les reponses selon Accept
+    <FilesMatch "\.(jpe?g|png|webp)$">
+        Header append Vary Accept
+    </FilesMatch>
+</IfModule>
+<IfModule mod_mime.c>
+    AddType image/webp .webp
+</IfModule>
+
+# ---- 7. Page d'erreur -------------------------------------------
+ErrorDocument 404 /404.php
+
+# ---- 8. Compression -----------------------------------------------
+# Le CSS et le JS partaient bruts : 31 Ko au lieu de 6.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+    AddOutputFilterByType DEFLATE text/javascript application/javascript application/x-javascript
+    AddOutputFilterByType DEFLATE application/json application/xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+    # Deja compresses : les recompresser ne ferait que consommer du CPU.
+    SetEnvIfNoCase Request_URI \.(?:woff2?|jpe?g|png|webp|gif|ico|zip|gz|pdf)$ no-gzip dont-vary
+</IfModule>
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css
+    AddOutputFilterByType BROTLI_COMPRESS text/javascript application/javascript
+    AddOutputFilterByType BROTLI_COMPRESS application/json image/svg+xml
+</IfModule>
+
+# ---- 9. Cache des ressources statiques ----------------------------
+# Attention aux types REELLEMENT envoyes : Apache sert le JS en
+# text/javascript, et la negociation WebP renvoie image/webp. Viser
+# application/javascript ou image/jpeg seuls laissait tout sans cache.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault                       "access plus 1 hour"
+
+    ExpiresByType text/css               "access plus 7 days"
+    ExpiresByType text/javascript        "access plus 7 days"
+    ExpiresByType application/javascript "access plus 7 days"
+
+    ExpiresByType image/jpeg             "access plus 6 months"
+    ExpiresByType image/png              "access plus 6 months"
+    ExpiresByType image/webp             "access plus 6 months"
+    ExpiresByType image/svg+xml          "access plus 6 months"
+    ExpiresByType image/x-icon           "access plus 6 months"
+
+    ExpiresByType font/woff2             "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+
+    # Les pages restent fraiches : elles changent a chaque modification.
+    ExpiresByType text/html              "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Les polices ne changent jamais : le navigateur peut les garder sans revalider.
+    <FilesMatch "\.woff2$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    # CSS et JS sont versionnes par ?v=N : un cache long est sans risque.
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "public, max-age=604800"
+    </FilesMatch>
+    <FilesMatch "\.(jpe?g|png|webp|svg|ico)$">
+        Header set Cache-Control "public, max-age=15552000"
+    </FilesMatch>
+    # Les pages ne doivent jamais etre servies depuis un cache perime.
+    <FilesMatch "\.php$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+</IfModule>

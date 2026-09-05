@@ -1,0 +1,247 @@
+/* ==================================================================
+   Mode édition — visible uniquement par le super administrateur.
+   Objectif : voir d'un coup d'œil ce qui est modifiable, et le
+   modifier en un clic. Aucune notion technique à l'écran.
+   ================================================================== */
+
+/* ---------- Zones modifiables ----------------------------------- */
+
+.zone-editable,
+.zone-image {
+  position: relative;
+  display: inline;
+  border-radius: 3px;
+  outline: 2px dashed rgba(176, 141, 44, .45);
+  outline-offset: 3px;
+  cursor: pointer;
+  transition: outline-color 140ms ease, background 140ms ease;
+}
+.zone-image { display: inline-block; }
+
+.zone-editable:hover,
+.zone-editable:focus-visible,
+.zone-image:hover,
+.zone-image:focus-visible {
+  outline: 2px solid #B08D2C;
+  background: rgba(176, 141, 44, .06);
+}
+
+.zone-editable__crayon {
+  display: inline-block;
+  margin-left: .3em;
+  font-size: .75em;
+  color: #B08D2C;
+  opacity: .65;
+  vertical-align: super;
+}
+.zone-editable:hover .zone-editable__crayon { opacity: 1; }
+
+.zone-image__action {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(20, 41, 77, .88);
+  color: #fff;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: .875rem;
+  font-weight: 500;
+  padding: .5rem .9rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 140ms ease;
+  pointer-events: none;
+}
+.zone-image:hover .zone-image__action,
+.zone-image:focus-visible .zone-image__action { opacity: 1; }
+
+/* Sur un fond sombre (hero), le pointillé rouge se voit mal */
+.hero .zone-editable { outline-color: rgba(255, 255, 255, .7); }
+.hero .zone-editable__crayon { color: #D8BC6A; }
+
+/* ---------- Fenêtre de modification ------------------------------ */
+
+.modale-fond {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 17, 18, .55);
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  z-index: 1000;
+}
+
+.modale {
+  background: #fff;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 40rem;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.modale__entete {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #E1E4E5;
+}
+.modale__entete h2 { margin: 0; font-size: 1.125rem; font-weight: 500; color: #14294D; }
+.modale__entete p { margin: .25rem 0 0; font-size: .8125rem; color: #83888A; }
+
+.modale__corps { padding: 1.5rem; }
+
+.modale__corps label {
+  display: block;
+  font-size: .8125rem;
+  font-weight: 500;
+  color: #55595B;
+  margin-bottom: .35rem;
+}
+
+.modale__corps input[type="text"],
+.modale__corps textarea {
+  width: 100%;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #0E1112;
+  border: 1px solid #C6CACB;
+  border-radius: 4px;
+  padding: .7rem .9rem;
+  box-sizing: border-box;
+}
+.modale__corps textarea { min-height: 9rem; resize: vertical; }
+.modale__corps input:focus,
+.modale__corps textarea:focus {
+  outline: none;
+  border-color: #B08D2C;
+  box-shadow: 0 0 0 3px rgba(176, 141, 44, .12);
+}
+
+.modale__pied {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #E1E4E5;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+  background: #F8F9F9;
+  border-radius: 0 0 6px 6px;
+}
+.modale__pied .espace { flex: 1; }
+
+.b {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: .9375rem;
+  font-weight: 500;
+  padding: .6rem 1.2rem;
+  border-radius: 4px;
+  border: 1px solid #B08D2C;
+  background: #B08D2C;
+  color: #fff;
+  cursor: pointer;
+}
+.b:hover { background: #8C6E1F; border-color: #8C6E1F; }
+.b--sobre { background: #fff; color: #0E1112; border-color: #C6CACB; }
+.b--sobre:hover { background: #F2F4F4; color: #0E1112; }
+.b--discret { background: transparent; border-color: transparent; color: #83888A; }
+.b--discret:hover { background: transparent; color: #B08D2C; text-decoration: underline; }
+.b[disabled] { opacity: .55; cursor: default; }
+
+/* Zone de dépôt d'image */
+.depot {
+  border: 2px dashed #C6CACB;
+  border-radius: 6px;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  color: #55595B;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.depot:hover, .depot.survol { border-color: #B08D2C; background: rgba(176, 141, 44, .04); }
+.depot strong { display: block; color: #0E1112; margin-bottom: .25rem; }
+.depot small { color: #83888A; }
+
+.apercu { margin-top: 1rem; text-align: center; }
+.apercu img { max-width: 100%; max-height: 260px; border-radius: 4px; }
+
+.modale__erreur {
+  background: #FDF2F2;
+  border-left: 3px solid #B08D2C;
+  color: #8C6E1F;
+  padding: .75rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: .875rem;
+}
+
+/* ---------- Barre flottante --------------------------------------- */
+
+.barre-edition {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: #14294D;
+  color: #E3E7E8;
+  padding: .6rem .9rem;
+  border-radius: 999px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .3);
+  font-family: Inter, system-ui, sans-serif;
+  font-size: .875rem;
+  max-width: calc(100vw - 2rem);
+}
+.barre-edition--active { background: #B08D2C; color: #fff; }
+
+.barre-edition__etat { font-weight: 500; white-space: nowrap; }
+.barre-edition__aide { font-size: .8125rem; opacity: .85; }
+.barre-edition--active .barre-edition__aide { color: rgba(255,255,255,.9); }
+
+.barre-edition__bouton {
+  font-family: inherit; font-size: .875rem; font-weight: 500;
+  padding: .4rem .95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.35);
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.barre-edition__bouton:hover { background: #fff; color: #14294D; border-color: #fff; }
+.barre-edition--active .barre-edition__bouton:hover { color: #B08D2C; }
+
+.barre-edition__lien { color: inherit; opacity: .8; text-decoration: none; font-size: .8125rem; white-space: nowrap; }
+.barre-edition__lien:hover { opacity: 1; color: inherit; text-decoration: underline; }
+
+@media (max-width: 640px) {
+  .barre-edition__aide { display: none; }
+}
+
+/* Petit message de confirmation */
+.bulle {
+  position: fixed;
+  left: 50%; bottom: 5.5rem;
+  transform: translateX(-50%);
+  background: #1B7F4B;
+  color: #fff;
+  padding: .65rem 1.1rem;
+  border-radius: 999px;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: .875rem;
+  z-index: 950;
+  box-shadow: 0 6px 24px rgba(0,0,0,.25);
+  animation: bulle-entree 200ms ease;
+}
+.bulle--erreur { background: #B08D2C; }
+@keyframes bulle-entree {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .bulle { animation: none; } }

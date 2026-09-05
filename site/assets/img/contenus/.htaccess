@@ -1,0 +1,13 @@
+# Dossier des photos televersees depuis le site.
+# Ceinture et bretelles : meme si un fichier malveillant parvenait a
+# s'y glisser, il ne sera jamais execute — uniquement servi comme image.
+
+php_flag engine off
+
+<FilesMatch "\.(php|phtml|php[0-9]|phar|cgi|pl|py|sh|htaccess)$">
+    Require all denied
+</FilesMatch>
+
+Options -Indexes -ExecCGI
+RemoveHandler .php .phtml .php5 .php7 .php8
+AddType text/plain .php .phtml

@@ -1,0 +1,1441 @@
+/* ==================================================================
+   Saumur Air Club — feuille de style
+   Langage visuel repris d'airbus.com : sobriété éditoriale.
+     · Inter seule, titres en graisse 400, minuscules
+     · court tiret d'accent sous les titres de section (leur signature)
+     · intro en deux colonnes : titre à gauche, texte à droite
+     · tuiles pleine largeur à dégradé, cartes à étiquette et chevron
+     · rythme vertical de 48 px, arrondi 3 px, ombres larges et douces
+   Palette imposée : rouge #B08D2C, noir #1B3A5E.
+   ================================================================== */
+
+/* ---------- Police -------------------------------------------------
+   La declaration @font-face et la variable --police sont injectees par
+   inc/polices.php : la police du site se choisit depuis le back-office.
+   La valeur ci-dessous n'est qu'un filet de securite.
+   ------------------------------------------------------------------ */
+
+/* ---------- Variables ---------------------------------------------- */
+
+:root {
+  /* ---- Palette « Ciel & Or » ------------------------------------------
+     Élégance aviation, alignée sur le bon cadeau du club :
+     bleu marine profond, or en accent, bleu ciel en touches.
+     Ni rouge ni noir. --------------------------------------------------- */
+  --or:            #B08D2C;   /* accent : sur-titres, filets, flèches */
+  --or-fonce:      #8C6E1F;   /* survol de l'accent */
+  --or-clair:      #D8BC6A;   /* accent sur fond sombre */
+  --bleu-nuit:     #14294D;   /* fonds sombres : hero, pied, panneaux, boutons */
+  --bleu-nuit-fonce: #0D1B38;
+  --bleu-encre:    #1B3A5E;   /* titres, texte fort */
+  --ciel:          #5B9BD5;   /* bleu ciel : dégradés, touches */
+  --ciel-clair:    #AED0EC;
+  --lien:          #1C5A8C;   /* liens texte : un bleu franc et lisible */
+
+  /* Alias : tout le CSS existant bascule sans être réécrit.
+     « rouge » = or, « noir » = bleu marine. */
+  --rouge:        var(--or);
+  --rouge-fonce:  var(--or-fonce);
+  --rouge-clair:  var(--or-clair);
+  --noir-panneau: var(--bleu-nuit);
+  --noir:         var(--bleu-encre);
+
+  --encre:    #16263F;        /* corps de texte : bleu très foncé, lisible */
+  --gris-700: #4C596B;
+  --gris-500: #78859A;
+  --gris-300: #BFC8D4;
+  --gris-200: #DCE3EC;
+  --gris-100: #EFF4F9;        /* sections claires : bleu très pâle */
+  --creme:    #F8F4EA;        /* variante chaleureuse, esprit bon cadeau */
+  --sur-noir: #E4EAF2;
+  --blanc:    #FFFFFF;
+
+  --police: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --largeur: 1270px;
+  --gouttiere: clamp(1.25rem, 4vw, 2.5rem);
+  --hauteur-entete: 70px;
+
+  --rayon: 3px;
+  --ombre: 0 0 48px -3.2px rgba(20, 41, 77, .15);
+  --ombre-carte: 0 1px 3px rgba(20, 41, 77, .08), 0 8px 24px -8px rgba(20, 41, 77, .12);
+
+  --pas: 3rem;               /* 48px : leur rythme vertical */
+  --transition: 160ms ease;
+}
+
+/* ---------- Base ---------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; overflow-x: clip; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+body {
+  margin: 0;
+  font-family: var(--police);
+  font-size: 1rem;
+  line-height: 1.5;
+  letter-spacing: normal;
+  color: var(--encre);
+  background: var(--blanc);
+  -webkit-font-smoothing: antialiased;
+  /* clip et non hidden : hidden ferait du body un conteneur de defilement,
+     ce qui bloque window.scrollY et casse l'en-tete translucide. */
+  overflow-x: clip;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--police);
+  font-weight: 400;
+  color: var(--noir);
+  letter-spacing: normal;
+  text-transform: none;
+  margin: 0 0 .6em;
+}
+h1 { font-size: clamp(2rem, 3.8vw, 3rem);      line-height: 1.1; }
+h2 { font-size: clamp(1.5rem, 2.6vw, 2.25rem); line-height: 1.2; }
+h3 { font-size: 1.375rem; line-height: 1.25; }
+h4 { font-size: 1.0625rem; line-height: 1.4; font-weight: 500; }
+
+p { margin: 0 0 1rem; max-width: 68ch; }
+.texte-petit { font-size: .875rem; line-height: 1.5; color: var(--gris-500); }
+
+img { max-width: 100%; height: auto; display: block; }
+
+a { color: var(--lien); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--bleu-encre); }
+
+:focus-visible { outline: 2px solid var(--rouge); outline-offset: 3px; border-radius: var(--rayon); }
+
+.visuellement-cache {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.lien-evitement {
+  position: absolute; left: -9999px;
+  background: var(--noir-panneau); color: var(--blanc);
+  padding: .75rem 1.25rem; z-index: 300; border-radius: var(--rayon);
+}
+.lien-evitement:focus { left: 1rem; top: 1rem; }
+
+/* ---------- Conteneurs ---------------------------------------------- */
+
+.conteneur {
+  width: 100%;
+  max-width: var(--largeur);
+  margin-inline: auto;
+  padding-inline: var(--gouttiere);
+}
+
+.section { padding-block: var(--pas); }
+.section--gris { background: var(--gris-100); }
+.section--noir { background: var(--noir-panneau); color: var(--sur-noir); }
+.section--noir h1, .section--noir h2, .section--noir h3 { color: var(--blanc); }
+.section--noir p { color: var(--gris-300); }
+.section--serre { padding-block: 2rem; }
+
+/* Sur-titre : petit, MAJUSCULES, interlettré, doré — la touche « or ». */
+.surtitre {
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--or);
+  margin: 0 0 .85rem;
+}
+.section--noir .surtitre { color: var(--or-clair); }
+.hero .surtitre { color: var(--or-clair); }
+
+/* LE tiret d'accent : court, épais, sous le titre. Leur signature. */
+.titre-filet { margin-bottom: 1.75rem; }
+.titre-filet::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 3px;
+  background: var(--rouge);
+  margin-top: 1.25rem;
+}
+.section--noir .titre-filet::after { background: var(--rouge-clair); }
+
+/* En-tête de section : titre à gauche, texte à droite. Très caractéristique. */
+.entete-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: clamp(1.5rem, 5vw, 4rem);
+  align-items: start;
+  margin-bottom: 2.5rem;
+}
+.entete-section > :first-child { margin-bottom: 0; }
+.entete-section p { margin-bottom: 0; font-size: .9375rem; color: var(--gris-700); }
+.section--noir .entete-section p { color: var(--gris-300); }
+@media (max-width: 860px) {
+  .entete-section { grid-template-columns: 1fr; gap: 1rem; }
+}
+
+/* ---------- Actions -------------------------------------------------- */
+
+.bouton {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  font-family: var(--police);
+  font-size: .9375rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: normal;
+  text-transform: none;
+  text-decoration: none;
+  padding: .8rem 1.5rem;
+  border: 1px solid var(--bleu-nuit);
+  border-radius: var(--rayon);
+  background: var(--bleu-nuit);
+  color: var(--blanc);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+.bouton:hover { background: var(--bleu-nuit-fonce); border-color: var(--bleu-nuit-fonce); color: var(--blanc); }
+
+/* Variante « or » : CTA premium, texte bleu nuit sur or (contraste sûr). */
+.bouton--or { background: var(--or); border-color: var(--or); color: var(--bleu-nuit-fonce); }
+.bouton--or:hover { background: var(--or-fonce); border-color: var(--or-fonce); color: var(--blanc); }
+
+.bouton--sombre { background: var(--bleu-nuit); color: var(--blanc); border-color: var(--bleu-nuit); }
+.bouton--sombre:hover { background: var(--bleu-nuit-fonce); border-color: var(--bleu-nuit-fonce); color: var(--blanc); }
+
+.bouton--contour { background: transparent; color: var(--noir); border-color: var(--gris-300); }
+.bouton--contour:hover { background: var(--noir); border-color: var(--noir); color: var(--blanc); }
+
+.bouton--fantome { background: transparent; color: var(--blanc); border-color: rgba(255,255,255,.55); }
+.bouton--fantome:hover { background: var(--blanc); border-color: var(--blanc); color: var(--noir); }
+
+.bouton--blanc { background: var(--blanc); color: var(--noir-panneau); border-color: var(--blanc); }
+.bouton--blanc:hover { background: var(--gris-100); border-color: var(--gris-100); color: var(--noir-panneau); }
+
+/* Lien fléché. padding-block porte la cible tactile à 44px. */
+.lien-fleche {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--noir);
+  padding-block: .625rem;
+  transition: color var(--transition), gap var(--transition);
+}
+.lien-fleche::after { content: '→'; color: var(--rouge); transition: transform var(--transition); }
+.lien-fleche:hover { color: var(--rouge); }
+.lien-fleche:hover::after { transform: translateX(4px); }
+.section--noir .lien-fleche, .hero .lien-fleche { color: var(--blanc); }
+.section--noir .lien-fleche::after, .hero .lien-fleche::after { color: var(--rouge-clair); }
+.section--noir .lien-fleche:hover, .hero .lien-fleche:hover { color: var(--rouge-clair); }
+
+/* ---------- En-tête -------------------------------------------------- */
+
+/* En-tête STICKY sur toutes les pages : fixe en haut, transparent, sans fond ni
+   logo — seulement les 3 barres à droite (dans une pastille qui les garde
+   lisibles sur le hero sombre comme sur le contenu clair au défilement). */
+.entete {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: transparent;
+  border-bottom: 0;
+  /* L'en-tête transparent surplombe le contenu : sans ceci, sa boîte
+     intercepterait les clics (fil d'Ariane, etc.). Seul le burger reçoit. */
+  pointer-events: none;
+}
+.entete .burger,
+.entete .nav { pointer-events: auto; }
+
+/* L'état « défilé » (ajouté par le JS) : rien à peindre, la pastille du burger
+   suffit à le rendre lisible partout. */
+.entete--defile,
+.entete--defile:has(.nav.est-ouvert),
+.entete--defile.entete--opaque {
+  background: transparent;
+  border-bottom-color: transparent;
+}
+
+.entete__inner {
+  max-width: var(--largeur);
+  margin-inline: auto;
+  padding-inline: var(--gouttiere);
+  min-height: var(--hauteur-entete);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Le logo migre en tête du tiroir : la marque reste présente à l'ouverture. */
+.nav__logo {
+  display: block;
+  padding: 1.35rem 1.5rem;
+  border-bottom: 1px solid var(--gris-200);
+}
+.nav__logo img { height: 34px; width: auto; }
+
+.nav ul {
+  display: flex; align-items: center;
+  gap: clamp(.75rem, 1.6vw, 1.5rem);
+  list-style: none; margin: 0; padding: 0;
+}
+.nav a {
+  display: block;
+  font-size: .9375rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-decoration: none;
+  color: var(--noir);
+  padding: .35rem 0;
+  border-bottom: 1px solid transparent;
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition);
+}
+.nav a:hover { color: var(--rouge); }
+.nav a[aria-current="page"] { color: var(--rouge); border-bottom-color: var(--rouge); }
+
+/* Menu en tiroir sur TOUS les écrans : les 3 barres dans une pastille discrète
+   (fond translucide + flou) pour rester lisibles sur n'importe quel fond. */
+.burger {
+  display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
+  width: 46px; height: 46px; padding: 0; border: 0; cursor: pointer;
+  background: rgba(20, 41, 77, .42);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  border-radius: 999px;
+  transition: background var(--transition);
+}
+.burger:hover { background: rgba(20, 41, 77, .62); }
+.burger span {
+  display: block; height: 2px; width: 24px; background: var(--blanc); border-radius: 2px;
+  filter: drop-shadow(0 1px 1px rgba(13, 27, 56, .35));
+  transition: transform var(--transition), opacity var(--transition);
+}
+.burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Le tiroir glisse depuis la droite, panneau élégant. */
+.nav {
+  position: fixed;
+  top: var(--hauteur-entete);
+  right: 0;
+  width: min(340px, 100%);
+  max-height: calc(100dvh - var(--hauteur-entete));
+  overflow-y: auto;
+  background: var(--blanc);
+  box-shadow: -8px 0 40px rgba(20, 41, 77, .16);
+  border-left: 3px solid var(--or);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 240ms ease, visibility 240ms;
+  z-index: 90;
+}
+.nav.est-ouvert { transform: translateX(0); visibility: visible; }
+/* Sur mobile, le tiroir occupe toute la largeur de l'écran. */
+@media (max-width: 480px) { .nav { width: 100%; border-left: 0; } }
+.nav ul { flex-direction: column; align-items: stretch; gap: 0; padding: .5rem 0; }
+.nav li + li { border-top: 1px solid var(--gris-200); }
+.nav a {
+  font-size: 1.0625rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 0;
+  border-left: 3px solid transparent;
+}
+.nav a:hover { background: var(--gris-100); color: var(--bleu-encre); }
+.nav a[aria-current="page"] { color: var(--or); border-left-color: var(--or); }
+
+/* Voile sombre derrière le tiroir ouvert. */
+.nav-voile {
+  position: fixed; inset: var(--hauteur-entete) 0 0 0;
+  background: rgba(13, 27, 56, .38);
+  opacity: 0; visibility: hidden;
+  transition: opacity 240ms, visibility 240ms;
+  z-index: 80;
+}
+.nav-voile.est-ouvert { opacity: 1; visibility: visible; }
+@media (prefers-reduced-motion: reduce) {
+  .nav, .nav-voile { transition: none; }
+}
+
+/* ---------- Fil d'Ariane ---------------------------------------------- */
+
+.fil {
+  position: relative;
+  z-index: 2;
+  font-size: .8125rem;
+  padding-top: 1.25rem;
+}
+.fil ol { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; list-style: none; margin: 0; padding: 0; }
+.fil li { display: flex; align-items: center; gap: .5rem; color: rgba(255,255,255,.65); }
+.fil li:not(:last-child)::after { content: '›'; color: rgba(255,255,255,.45); }
+.fil a { color: rgba(255,255,255,.8); text-decoration: none; }
+.fil a:hover { color: var(--blanc); text-decoration: underline; }
+.fil [aria-current] { color: var(--blanc); }
+
+/* ---------- Hero ------------------------------------------------------ */
+
+.hero {
+  position: relative;
+  min-height: clamp(420px, 64vh, 640px);
+  display: flex;
+  flex-direction: column;
+  color: var(--blanc);
+  background: var(--bleu-nuit);
+  overflow: hidden;
+}
+.hero__cadre { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+.hero__image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+/* Accueil : grand hero plein cadre.
+   AU CHARGEMENT — l'image s'agrandit : le cadre s'ouvre depuis un rectangle
+   réduit au centre (coins arrondis) et se déploie en plein écran, pendant que
+   l'image fait un léger zoom avant. Effet inspiré de mogutable, mais inversé
+   (chez eux l'image se rétracte ; ici elle grandit).
+   PUIS — le décollage lent prend le relais (l'avion « s'élève »). */
+/* Plein écran à l'arrivée : l'image (et son bleu foncé du bas) va jusqu'au
+   bord inférieur, le footer reste sous la ligne de flottaison. 100svh =
+   hauteur réellement visible (tient compte de la barre d'adresse mobile). */
+.hero--accueil { min-height: 100vh; min-height: 100svh; }
+
+/* Accueil animé en 3 calques (dans .hero__cadre) : fond fixe, nuages qui
+   dérivent lentement de gauche à droite, avion qui arrive de loin puis se fige. */
+.hero--accueil .hero__fond,
+.hero--accueil .hero__avion {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+}
+.hero--accueil .hero__fond { z-index: 0; }
+.hero--accueil .hero__nuages {
+  position: absolute; top: 0; left: 0; height: 100%; width: 200%;
+  display: flex; z-index: 1; pointer-events: none;
+  will-change: transform; animation: nuages-derive 300s linear infinite;
+}
+.hero--accueil .hero__nuages img { width: 50%; height: 100%; object-fit: cover; object-position: center top; }
+.hero--accueil .hero__avion {
+  z-index: 2; transform-origin: 50% 52%; will-change: transform;
+  animation: avion-approche 24000ms cubic-bezier(.2, .8, .25, 1) both;
+}
+@keyframes avion-approche {
+  from { transform: scale(.24) translateY(-6%); }
+  to   { transform: scale(1.04) translateY(0); }
+}
+@keyframes nuages-derive {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+
+/* Apparition en fondu enchaîné, en cascade : la photo se pose (0 s),
+   puis le titre entre en fondu (décalé d'1 s), puis les boutons (2 s). */
+@keyframes apparition-fondu {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero--accueil h1 {
+  will-change: opacity, transform;
+  animation: apparition-fondu 2600ms ease-out 1000ms both;
+}
+/* Les boutons entrent en fondu enchaîné, l'un après l'autre,
+   de la gauche vers la droite (le conteneur ne s'anime plus). */
+.hero--accueil .hero__actions .bouton {
+  will-change: opacity, transform;
+  animation: apparition-fondu 1800ms ease-out both;
+}
+.hero--accueil .hero__actions .bouton:nth-child(1) { animation-delay: 2000ms; }
+.hero--accueil .hero__actions .bouton:nth-child(2) { animation-delay: 2550ms; }
+.hero--accueil .hero__actions .bouton:nth-child(3) { animation-delay: 3100ms; }
+
+/* Le logo, en grand, placé en HAUT du hero, apparaît EN DERNIER (1 s après
+   les boutons), en fondu. Centré via left/right (pas de translateX, pour ne
+   pas gêner le translateY de l'animation). */
+.hero--accueil .hero__logo {
+  position: absolute;
+  top: clamp(3.5rem, 12vh, 9rem);
+  left: 0; right: 0;
+  z-index: 2;
+  width: clamp(210px, 34vw, 470px);
+  height: auto;
+  margin-inline: auto;
+  will-change: opacity, transform;
+  animation: apparition-fondu 2200ms ease-out 4100ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero--accueil .hero__nuages,
+  .hero--accueil h1,
+  .hero--accueil .hero__actions .bouton,
+  .hero--accueil .hero__logo { animation: none; transform: none; }
+  .hero--accueil .hero__avion { animation: none; transform: scale(1.04); }
+}
+
+/* Titre d'accueil : sur une seule ligne, pleine largeur, plus imposant.
+   Sur écran étroit, on repasse en plusieurs lignes pour ne pas déborder. */
+.hero--accueil .hero__contenu { width: 100%; max-width: 100%; }
+.hero--accueil h1 {
+  white-space: nowrap;
+  max-width: 100%;
+  font-size: clamp(1.5rem, 3.35vw, 3.4rem);
+  margin-bottom: .5em;
+  font-style: italic;
+}
+/* Guillemets ajoutés en décoration : le texte réel (SEO, données
+   structurées) reste sans guillemets. */
+.hero--accueil h1::before { content: '\201C'; }
+.hero--accueil h1::after  { content: '\201D'; }
+@media (max-width: 920px) {
+  .hero--accueil h1 { white-space: normal; font-size: clamp(1.7rem, 5.8vw, 2.6rem); }
+}
+/* Accueil : titre et boutons centrés dans la page, boutons nettement agrandis. */
+.hero--accueil .hero__contenu { text-align: center; }
+.hero--accueil .hero__actions {
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.9rem;
+}
+.hero--accueil .hero__actions .bouton {
+  font-size: 1.3rem;
+  font-weight: 600;
+  padding: 1.5rem 3.4rem;
+}
+@media (max-width: 560px) {
+  .hero--accueil .hero__actions { flex-direction: column; align-items: stretch; }
+  .hero--accueil .hero__actions .bouton { width: 100%; justify-content: center; }
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(to top, rgba(13,27,56,.85) 0%, rgba(13,27,56,.34) 48%, rgba(13,27,56,.08) 100%),
+    linear-gradient(to right, rgba(13,27,56,.52) 0%, rgba(13,27,56,0) 62%);
+}
+.hero__haut {
+  position: relative; z-index: 2;
+  width: 100%; max-width: var(--largeur);
+  margin-inline: auto; padding-inline: var(--gouttiere);
+}
+.hero__bas {
+  position: relative; z-index: 2;
+  margin-top: auto;
+  width: 100%; max-width: var(--largeur);
+  margin-inline: auto;
+  padding: 0 var(--gouttiere) clamp(2rem, 4vw, 3rem);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.hero__contenu { width: min(700px, 100%); }
+.hero h1 { color: var(--blanc); margin-bottom: .4em; }
+.hero__accroche {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: rgba(255,255,255,.82);
+  margin-bottom: 1.5rem;
+  max-width: 54ch;
+}
+.hero__actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+
+/* Carte flottante en bas à droite du hero, comme leur encart "Airshow". */
+.hero__encart {
+  background: rgba(20,41,77,.86);
+  backdrop-filter: blur(6px);
+  border-radius: var(--rayon);
+  padding: 1.25rem 1.5rem;
+  width: min(320px, 100%);
+  border-left: 3px solid var(--rouge);
+}
+.hero__encart .surtitre { color: rgba(255,255,255,.7); margin-bottom: .4rem; }
+.hero__encart p { color: var(--blanc); font-size: 1.0625rem; margin-bottom: .5rem; max-width: none; }
+.hero__encart .lien-fleche { padding-block: .25rem; font-size: .875rem; }
+
+.hero--page { min-height: clamp(280px, 40vh, 400px); }
+.hero--page .hero__bas { padding-bottom: clamp(1.75rem, 3vw, 2.5rem); }
+.hero--page h1 { margin-bottom: .25em; }
+.hero--page .hero__accroche { margin-bottom: 0; }
+
+/* Pages intérieures : hauteur du header réduite progressivement
+   (uniquement la hauteur ; l'image reste en couverture). Du plus large
+   au plus étroit, pour que le plus petit écran l'emporte dans la cascade. */
+@media (max-width: 1280px) { .hero.hero--page { min-height: 300px; } }
+@media (max-width: 1024px) { .hero.hero--page { min-height: 260px; } }
+@media (max-width: 768px)  { .hero.hero--page { min-height: 210px; } }
+@media (max-width: 480px)  { .hero.hero--page { min-height: 175px; } }
+
+@media (max-width: 700px) {
+  .hero { min-height: 440px; }
+  .hero__bas { flex-direction: column; align-items: stretch; }
+  .hero__encart { width: 100%; }
+
+  /* Accueil : plein écran conservé, mais éléments réduits et espacés
+     pour que logo, titre et boutons ne se chevauchent plus. */
+  .hero--accueil { min-height: 100svh; }
+  .hero--accueil .hero__logo { width: 148px; top: 4.5rem; margin-bottom: 0; }
+  .hero--accueil h1 { font-size: clamp(1.45rem, 6.2vw, 2rem); margin-bottom: .35em; }
+  .hero--accueil .hero__actions { gap: .55rem; margin-top: 1rem; }
+  .hero--accueil .hero__actions .bouton { font-size: .9rem; font-weight: 600; padding: .6rem 1.1rem; }
+
+  /* Avion : sur écran étroit, « contain » pour ne pas rogner les ailes ;
+     échelle finale réduite pour laisser une marge autour. */
+  .hero--accueil .hero__avion { object-fit: contain; animation-name: avion-approche-mob; }
+
+  /* Nuages : « contain » sur mobile pour les afficher en entier (pas de bout
+     coupé sur les côtés). */
+  .hero--accueil .hero__nuages img { object-fit: contain; object-position: center top; }
+}
+@keyframes avion-approche-mob {
+  from { transform: scale(.28) translateY(-6%); }
+  to   { transform: scale(.9) translateY(0); }
+}
+/* Petits écrans (375/390) : titre et boutons encore réduits, nuages grossis. */
+@media (max-width: 480px) {
+  .hero--accueil h1 { font-size: clamp(1.15rem, 5vw, 1.5rem); }
+  .hero--accueil .hero__actions { gap: .5rem; }
+  .hero--accueil .hero__actions .bouton { font-size: .8rem; padding: .5rem .9rem; }
+  .hero--accueil .hero__nuages img { transform: scale(1.5); transform-origin: center top; }
+}
+/* Tablette et desktop (≥701) : on garde la taille du 1024 (validée) à tous les
+   grands écrans — titre et boutons compacts, sur UNE seule ligne. */
+@media (min-width: 701px) {
+  .hero--accueil h1 { white-space: nowrap; font-size: clamp(1.1rem, 2.66vw, 1.7rem); }
+  .hero--accueil .hero__actions { gap: .6rem; flex-wrap: nowrap; }
+  .hero--accueil .hero__actions .bouton { font-size: .88rem; padding: .62rem 1.1rem; white-space: nowrap; }
+}
+
+/* ---------- Grilles --------------------------------------------------- */
+
+.grille { display: grid; gap: 1.5rem; }
+.grille--2 { grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); }
+.grille--3 { grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
+.grille--4 { grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); }
+
+/* ---------- Cartes ---------------------------------------------------- */
+
+.carte {
+  position: relative;
+  background: var(--blanc);
+  border: 1px solid var(--gris-200);
+  border-radius: var(--rayon);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+.carte:hover { box-shadow: var(--ombre-carte); transform: translateY(-2px); }
+.carte__media { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--gris-200); }
+.carte__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 500ms ease; }
+.carte:hover .carte__media img { transform: scale(1.04); }
+
+/* Étiquettes en surimpression sur l'image, comme leurs badges "Web Story". */
+.etiquettes { position: absolute; left: .75rem; bottom: .75rem; display: flex; gap: .4rem; flex-wrap: wrap; }
+.etiquette {
+  background: rgba(255,255,255,.94);
+  color: var(--noir);
+  font-size: .6875rem;
+  font-weight: 500;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: .3rem .6rem;
+  border-radius: 2px;
+}
+.etiquette--rouge { background: var(--rouge); color: var(--blanc); }
+
+.carte__corps { padding: 1.25rem 1.25rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
+.carte__corps h3 { margin-bottom: .5rem; font-size: 1.25rem; }
+.carte__corps p { flex: 1; color: var(--gris-700); font-size: .9375rem; margin-bottom: 1rem; }
+.carte__meta { font-size: .8125rem; color: var(--gris-500); margin-bottom: 0; }
+
+/* Le lien couvre toute la carte : cible large, un seul lien pour les lecteurs d'écran. */
+.carte__lien {
+  font-size: .9375rem; font-weight: 500; text-decoration: none;
+  color: var(--noir); display: inline-flex; align-items: center; gap: .5rem;
+  transition: color var(--transition);
+}
+.carte__lien::after { content: '→'; color: var(--rouge); transition: transform var(--transition); }
+.carte__lien::before { content: ''; position: absolute; inset: 0; }
+.carte:hover .carte__lien { color: var(--rouge); }
+.carte:hover .carte__lien::after { transform: translateX(4px); }
+
+/* ---------- Logos de partenaires --------------------------------------- */
+/* Les logos fournis vont du 738x267 au 418x119 : hauteur fixe + contain,
+   sinon les proportions partent dans tous les sens. Fond blanc : ils sont
+   tous dessines pour ca. */
+
+.carte__logo {
+  height: 140px;
+  padding: 1.5rem;
+  background: var(--blanc);
+  border-bottom: 1px solid var(--gris-200);
+  overflow: hidden;          /* filet de securite : rien ne deborde sur le texte */
+}
+/* width/height a 100% + object-fit: contain — l'image remplit la boite et se
+   redimensionne DEDANS sans deformation. Un max-height en % ne contraint pas
+   de maniere fiable ici : c'etait la cause du debordement sur le texte. */
+.carte__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  transition: opacity var(--transition);
+}
+.carte:hover .carte__logo img { opacity: .75; }
+
+/* ---------- Tuiles pleine largeur ------------------------------------- */
+/* Bandeau de 4 images avec dégradé et texte en surimpression. */
+
+.tuiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+@media (max-width: 1000px) { .tuiles { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { .tuiles { grid-template-columns: 1fr; } }
+
+.tuile {
+  position: relative;
+  min-height: 300px;
+  display: flex;
+  align-items: flex-start;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--blanc);
+  background: var(--noir-panneau);
+}
+.tuile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 600ms ease; }
+.tuile::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(14,17,18,.72) 0%, rgba(14,17,18,.30) 55%, rgba(14,17,18,.55) 100%);
+  transition: background var(--transition);
+}
+.tuile:hover img { transform: scale(1.05); }
+.tuile:hover::after { background: linear-gradient(to bottom, rgba(14,17,18,.80) 0%, rgba(14,17,18,.42) 55%, rgba(14,17,18,.62) 100%); }
+.tuile__texte {
+  position: relative; z-index: 1;
+  padding: 1.75rem 1.5rem;
+  font-size: 1.0625rem;
+  line-height: 1.35;
+  color: var(--blanc);
+  max-width: 22ch;
+}
+/* Le « + » en haut à droite, comme chez eux */
+.tuile__plus {
+  position: absolute; top: 1.25rem; right: 1.25rem; z-index: 1;
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  color: var(--blanc);
+  font-size: 1.25rem; line-height: 1;
+  transition: transform var(--transition);
+}
+.tuile:hover .tuile__plus { transform: rotate(90deg); }
+
+/* ---------- Duo texte + image ----------------------------------------- */
+
+.duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+}
+.duo + .duo { margin-top: var(--pas); }
+.duo--inverse .duo__media { order: -1; }
+.duo__media img {
+  width: 100%;
+  /* Coins arrondis + même ombre portée que les vignettes météo des 2 stations. */
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(20,41,77,.06), 0 12px 30px -12px rgba(20,41,77,.18);
+}
+@media (max-width: 880px) {
+  .duo { grid-template-columns: 1fr; }
+  .duo--inverse .duo__media { order: 0; }
+}
+
+/* ---------- Panneau mixte image + texte sombre ------------------------ */
+/* Leur bloc « résultats financiers » : image à gauche, panneau sombre à droite. */
+
+.panneau {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-radius: var(--rayon);
+  overflow: hidden;
+  box-shadow: var(--ombre);
+}
+.panneau__media { position: relative; min-height: 340px; background: var(--gris-200); }
+.panneau__media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.panneau__texte {
+  background: var(--noir-panneau);
+  color: var(--sur-noir);
+  padding: clamp(1.75rem, 3.5vw, 3rem);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.panneau__texte h2 { color: var(--blanc); }
+.panneau__texte p { color: var(--gris-300); font-size: .9375rem; }
+.panneau__texte .surtitre { color: var(--gris-300); }
+@media (max-width: 880px) {
+  .panneau { grid-template-columns: 1fr; }
+  .panneau__media { min-height: 240px; }
+}
+
+/* ---------- Chiffres en encadrés -------------------------------------- */
+/* Sur fond sombre : encadrés à bordure fine, comme leurs stats "157,000". */
+
+.faits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+  gap: 1px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--gris-200);
+  border: 1px solid var(--gris-200);
+  border-radius: var(--rayon);
+  overflow: hidden;
+}
+.faits li { background: var(--blanc); padding: 1.5rem 1.25rem; }
+.section--noir .faits { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.14); }
+.section--noir .faits li { background: var(--noir-panneau); }
+.section--gris .faits li { background: var(--blanc); }
+
+.faits__valeur {
+  display: block;
+  font-size: 1.875rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  color: var(--noir);
+  line-height: 1.1;
+  margin-bottom: .35rem;
+}
+.section--noir .faits__valeur { color: var(--blanc); }
+.faits__libelle { display: block; font-size: .8125rem; color: var(--gris-500); }
+.section--noir .faits__libelle { color: var(--gris-300); }
+
+/* ---------- Listes ---------------------------------------------------- */
+
+.liste-check { list-style: none; margin: 0 0 1.5rem; padding: 0; max-width: 68ch; }
+.liste-check li {
+  position: relative;
+  padding: .75rem 0 .75rem 1.5rem;
+  border-bottom: 1px solid var(--gris-200);
+  color: var(--gris-700);
+  font-size: .9375rem;
+}
+.liste-check li::before {
+  content: ''; position: absolute; left: 0; top: 1.35em;
+  width: 6px; height: 1px; background: var(--rouge);
+}
+.section--noir .liste-check li { border-bottom-color: rgba(255,255,255,.16); color: var(--sur-noir); }
+
+/* ---------- Étapes numérotées ----------------------------------------- */
+
+.etapes { counter-reset: etape; display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); }
+.etape { counter-increment: etape; border-top: 3px solid var(--gris-200); padding-top: 1.25rem; }
+.etape::before {
+  content: '0' counter(etape);
+  display: block;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--rouge);
+  margin-bottom: .5rem;
+}
+.etape h3 { font-size: 1.125rem; margin-bottom: .4rem; }
+.etape p { font-size: .9375rem; color: var(--gris-700); margin-bottom: 0; }
+
+/* ---------- Bandeau d'appel -------------------------------------------- */
+
+.appel {
+  background: var(--noir-panneau);
+  color: var(--sur-noir);
+  border-radius: var(--rayon);
+  padding: clamp(1.75rem, 3.5vw, 2.75rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.appel h2 { color: var(--blanc); margin-bottom: .35rem; }
+.appel p { margin: 0; color: var(--gris-300); font-size: .9375rem; }
+.appel .surtitre { color: var(--gris-300); }
+.appel__texte { flex: 1 1 340px; }
+
+/* ---------- Encadrés ---------------------------------------------------- */
+
+.encadre {
+  border: 0;
+  border-left: 2px solid var(--rouge);
+  background: transparent;
+  padding: .25rem 0 .25rem 1.25rem;
+  color: var(--gris-700);
+  font-size: .9375rem;
+}
+.encadre p:last-child { margin-bottom: 0; }
+
+/* Bloc « contenu à fournir » — visible uniquement pendant le développement */
+.a-completer {
+  border: 1px dashed var(--rouge);
+  background: #FDF7F7;
+  border-radius: var(--rayon);
+  padding: 1.25rem 1.5rem;
+  color: var(--gris-700);
+  font-size: .9375rem;
+  max-width: 78ch;
+}
+.a-completer strong { color: var(--rouge); font-weight: 600; }
+.a-completer p:last-child, .a-completer ul:last-child { margin-bottom: 0; }
+
+/* ---------- Formulaire --------------------------------------------------- */
+
+.formulaire {
+  background: var(--blanc);
+  border: 1px solid var(--gris-200);
+  border-radius: var(--rayon);
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.champs { display: grid; gap: 1.25rem; }
+.champs--duo { grid-template-columns: 1fr 1fr; }
+@media (max-width: 600px) { .champs--duo { grid-template-columns: 1fr; } }
+
+/* Bon cadeau : type de vol + options */
+.bon-type { border: 0; padding: 0; margin: 0; }
+.bon-type legend { font-size: .9375rem; font-weight: 500; color: var(--noir); padding: 0; margin-bottom: .5rem; }
+.bon-choix { display: flex; gap: .75rem; flex-wrap: wrap; }
+.bon-radio { flex: 1 1 0; min-width: 160px; display: flex; align-items: center; gap: .65rem; cursor: pointer;
+  border: 1.5px solid var(--gris-300); border-radius: var(--rayon); padding: .85rem 1rem;
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition); }
+.bon-radio:hover { border-color: var(--or); }
+.bon-radio:has(input:checked) { border-color: var(--or); background: rgba(176,141,44,.06);
+  box-shadow: inset 0 0 0 1px var(--or); }
+/* Le radio ne doit pas hériter du width:100% / bordure des champs texte. */
+.bon-radio input[type="radio"] { flex: 0 0 auto; width: 1.15rem; height: 1.15rem; margin: 0;
+  padding: 0; border: 0; border-radius: 50%; background: none; box-shadow: none; accent-color: var(--or); }
+.bon-radio span { flex: 1; font-weight: 600; text-align: left; line-height: 1.3; }
+.bon-opt select { font-family: var(--police); font-size: 1rem; color: var(--encre); background: var(--blanc);
+  border: 1px solid var(--gris-300); border-radius: var(--rayon); padding: .7rem .9rem; width: 100%; }
+.bon-benef { display: flex; gap: .6rem; margin-bottom: .5rem; }
+.bon-benef input { flex: 1; min-width: 0; }
+@media (max-width: 480px) { .bon-benef { flex-direction: column; gap: .4rem; } }
+
+.champ { display: flex; flex-direction: column; gap: .4rem; }
+.champ label {
+  font-size: .9375rem;
+  font-weight: 500;
+  color: var(--noir);
+}
+.champ .obligatoire { color: var(--rouge); }
+.champ .aide { font-size: .8125rem; color: var(--gris-500); }
+
+.champ input,
+.champ textarea {
+  font-family: var(--police);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--encre);
+  background: var(--blanc);
+  border: 1px solid var(--gris-300);
+  border-radius: var(--rayon);
+  padding: .7rem .9rem;
+  width: 100%;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.champ textarea { resize: vertical; min-height: 6rem; }
+.champ input:hover, .champ textarea:hover { border-color: var(--gris-500); }
+.champ input:focus, .champ textarea:focus {
+  outline: none;
+  border-color: var(--rouge);
+  box-shadow: 0 0 0 3px rgba(176, 141, 44, .12);
+}
+
+/* Champ en erreur : bordure ET message, jamais la couleur seule. */
+.champ--erreur input,
+.champ--erreur textarea { border-color: var(--rouge); }
+.champ__erreur {
+  font-size: .8125rem;
+  color: var(--rouge);
+  display: flex;
+  align-items: flex-start;
+  gap: .35rem;
+}
+.champ__erreur::before { content: '⚠'; flex: 0 0 auto; }
+
+/* Case à cocher */
+.champ-case {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .75rem;
+  align-items: start;
+  font-size: .9375rem;
+  color: var(--gris-700);
+  cursor: pointer;
+}
+.champ-case input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: .18rem 0 0;
+  accent-color: var(--rouge);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+.champ-case--erreur { color: var(--rouge); }
+
+/* Piège à robots : invisible pour l'humain, tentant pour un script.
+   On évite display:none, que certains robots détectent. */
+.piege {
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+}
+
+/* Récapitulatif des erreurs, en tête de formulaire */
+.alerte {
+  border-radius: var(--rayon);
+  padding: 1rem 1.25rem;
+  font-size: .9375rem;
+  margin-bottom: 1.5rem;
+}
+.alerte--erreur {
+  background: #FDF2F2;
+  border: 1px solid rgba(176, 141, 44, .3);
+  border-left: 3px solid var(--rouge);
+  color: var(--gris-700);
+}
+.alerte--erreur strong { color: var(--rouge); }
+.alerte ul { margin: .5rem 0 0; padding-left: 1.25rem; }
+.alerte li { margin-bottom: .25rem; }
+.alerte a { color: var(--rouge); }
+
+.formulaire__pied {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--gris-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.formulaire__total { font-size: .9375rem; color: var(--gris-700); }
+.formulaire__total strong { font-size: 1.5rem; color: var(--noir); font-weight: 400; }
+
+/* Bouton désactivé pendant l'envoi : évite les doubles soumissions */
+.bouton[aria-disabled="true"] { opacity: .6; pointer-events: none; }
+
+/* ---------- Utilitaires ----------------------------------------------------- */
+
+/* Titre de page secondaire (merci, paiement, 404, adhérents) : un cran
+   sous le h1 des pages principales. */
+.titre-page { font-size: clamp(1.75rem, 3.4vw, 2.5rem); }
+
+/* Section centrée verticalement, pour les pages courtes. */
+.section--centree {
+  min-height: 52vh;
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.mt-1 { margin-top: .75rem; }
+.mt-2 { margin-top: 1.5rem; }
+.sans-marge-bas { margin-bottom: 0; }
+
+/* Colonne de contenu étroite, pour les formulaires et confirmations. */
+.colonne-etroite { max-width: 44rem; margin-inline: auto; }
+
+/* ---------- Connexion espace adhérents -------------------------------- */
+.connexion { width: 100%; max-width: 420px; margin-inline: auto; }
+.connexion__logo { width: 230px; height: auto; margin: 0 auto 1.75rem; }
+.connexion__carte { text-align: left; }
+.connexion__carte .surtitre { text-align: center; }
+.connexion__titre { text-align: center; font-size: 1.5rem; margin: 0 0 1.5rem; }
+.connexion__carte form { margin-bottom: 0; }
+.connexion__carte .bouton { width: 100%; justify-content: center; margin-top: .25rem; }
+.connexion__info {
+  background: var(--gris-100);
+  border-left: 3px solid var(--or);
+  padding: .85rem 1rem;
+  border-radius: var(--rayon);
+  font-size: .9rem;
+  color: var(--encre);
+  margin: 0 0 1.5rem;
+}
+.connexion__aide {
+  text-align: center;
+  font-size: .875rem;
+  color: var(--gris-500);
+  margin: 1.5rem 0 0;
+}
+.connexion__erreur {
+  background: #FCEDEC;
+  border-left: 3px solid #C0392B;
+  color: #7A241B;
+  padding: .8rem 1rem;
+  border-radius: var(--rayon);
+  font-size: .9rem;
+  margin: 0 0 1.5rem;
+}
+.connexion__role {
+  text-align: center;
+  font-size: .9rem;
+  color: var(--gris-700);
+  margin: 0 0 1.5rem;
+}
+.espace-liens {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  display: grid;
+  gap: .1rem;
+}
+.espace-liens li + li { border-top: 1px solid var(--gris-200); }
+.espace-liens a {
+  display: block;
+  padding: .85rem .25rem;
+  color: var(--bleu-encre);
+  text-decoration: none;
+  font-weight: 500;
+}
+.espace-liens a::after { content: ' →'; color: var(--or); }
+.espace-liens a:hover { color: var(--lien); }
+.connexion__carte .bouton--contour { width: 100%; justify-content: center; }
+
+/* ---------- Bibliothèque adhérents ------------------------------------ */
+.bib-hero { background: var(--bleu-nuit); color: var(--blanc); padding: 2.4rem 0; }
+.bib-hero__in { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
+.bib-hero .surtitre { color: var(--or-clair); }
+.bib-hero h1 { color: var(--blanc); margin: 0; font-size: clamp(1.6rem, 3.4vw, 2.3rem); }
+.bib-hero__actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+.bib-hero__actions .bouton { font-size: .875rem; padding: .6rem 1.1rem; }
+
+.bib-wrap { max-width: 900px; }
+.bib-intro { color: var(--gris-700); margin: 0 0 1.5rem; max-width: 62ch; }
+
+.bib-barre { position: sticky; top: 0; z-index: 20; background: var(--blanc);
+  padding: 1rem 0 .75rem; display: flex; gap: .9rem; align-items: center; flex-wrap: wrap;
+  border-bottom: 1px solid var(--gris-100); }
+.bib-rech { flex: 1; min-width: 220px; position: relative; display: flex; align-items: center; }
+.bib-rech svg { position: absolute; left: 14px; width: 18px; height: 18px; color: var(--gris-500); }
+.bib-rech input { width: 100%; font-family: var(--police); font-size: 1rem; color: var(--encre);
+  background: var(--gris-100); border: 1px solid var(--gris-200); border-radius: 999px;
+  padding: .7rem 1rem .7rem 2.6rem; outline: none; transition: border-color var(--transition), box-shadow var(--transition); }
+.bib-rech input:focus { border-color: var(--ciel); box-shadow: 0 0 0 3px rgba(91,155,213,.22); background: var(--blanc); }
+.bib-compte { font-size: .85rem; color: var(--gris-700); white-space: nowrap; }
+.bib-compte b { color: var(--encre); }
+
+.bib-sections { margin-top: 1.25rem; display: flex; flex-direction: column; gap: .75rem; }
+.bib-sec { background: var(--blanc); border: 1px solid var(--gris-200); border-radius: var(--rayon); overflow: hidden; }
+.bib-sec__tete { display: flex; align-items: center; gap: .9rem; width: 100%; text-align: left;
+  background: none; border: 0; cursor: pointer; padding: 1rem 1.1rem; font-family: var(--police); color: var(--encre); }
+.bib-sec__tete:hover { background: var(--gris-100); }
+.bib-sec__t { flex: 1; min-width: 0; }
+.bib-sec__t b { display: block; font-size: 1.05rem; font-weight: 700; }
+.bib-sec__t span { font-size: .82rem; color: var(--gris-500); }
+.bib-badge { flex: 0 0 auto; font-size: .78rem; font-weight: 700; color: var(--or-fonce);
+  background: rgba(176,141,44,.15); border-radius: 999px; padding: 3px 11px; }
+.bib-chev { flex: 0 0 auto; width: 20px; height: 20px; color: var(--gris-500); transition: transform .2s; }
+.bib-sec.ouvert .bib-chev { transform: rotate(180deg); }
+.bib-sec__corps { padding: .25rem 1.1rem 1rem; }
+
+.bib-grp__t { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700;
+  color: var(--gris-500); margin: .9rem 0 .35rem; }
+.bib-grp--av > .bib-grp__t { color: var(--ciel); }
+
+.bib-doc { display: flex; align-items: center; gap: .8rem; padding: .55rem .6rem; border-radius: 7px;
+  text-decoration: none; color: var(--encre); transition: background var(--transition); }
+.bib-doc:hover { background: var(--gris-100); }
+.bib-doc__pdf { flex: 0 0 auto; min-width: 32px; padding: 0 5px; height: 34px; border-radius: 5px;
+  background: #FBEBE9; color: #C0392B; display: grid; place-items: center; font-size: .54rem;
+  font-weight: 800; letter-spacing: .02em; border: 1px solid rgba(192,57,43,.22); }
+.bib-doc__n { flex: 1; min-width: 0; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bib-doc__go { flex: 0 0 auto; width: 17px; height: 17px; color: var(--gris-500); opacity: 0; transition: opacity var(--transition); }
+.bib-doc:hover .bib-doc__go { opacity: 1; }
+.bib-doc mark { background: rgba(176,141,44,.28); color: inherit; border-radius: 3px; padding: 0 1px; }
+.bib-vide { padding: 1.4rem .4rem; color: var(--gris-700); }
+.bib-aucun { margin-top: 1.25rem; padding: 1.25rem 1.4rem; background: var(--gris-100);
+  border-left: 3px solid var(--or); border-radius: var(--rayon); color: var(--gris-700); }
+
+.bib-partage { margin-top: 2rem; background: var(--gris-100); border: 1px solid var(--gris-200);
+  border-radius: var(--rayon); padding: 1.5rem; }
+.bib-partage h2 { margin: 0 0 .25rem; font-size: 1.2rem; }
+.bib-partage__sub { margin: 0 0 1.1rem; color: var(--gris-700); font-size: .92rem; }
+.bib-partage .champ { margin-bottom: 1rem; }
+.bib-partage textarea { min-height: 90px; }
+.bib-depot { display: block; border: 1.5px dashed var(--gris-300); border-radius: 10px; padding: 1.1rem;
+  text-align: center; color: var(--gris-700); cursor: pointer; transition: border-color var(--transition), background var(--transition); background: var(--blanc); }
+.bib-depot:hover { border-color: var(--ciel); background: var(--gris-100); }
+.bib-depot svg { width: 24px; height: 24px; color: var(--ciel); }
+.bib-depot b { display: block; color: var(--encre); margin-top: .2rem; }
+.bib-depot small { display: block; font-size: .78rem; margin-top: .15rem; color: var(--gris-500); }
+.bib-envoi { display: flex; justify-content: flex-end; margin-top: 1rem; }
+.bib-ok { background: #E7F3EC; border-left: 3px solid #1D9E75; color: #0F5C41;
+  padding: .8rem 1rem; border-radius: var(--rayon); font-size: .92rem; margin: 0 0 1.1rem; }
+@media (max-width: 560px) { .bib-hero__in { align-items: flex-start; } }
+/* Mobile/tablette : dégager le haut du bandeau adhérents pour ne pas passer
+   sous le burger fixe (coin haut-droit). Placé après la base .bib-hero pour
+   gagner la cascade. */
+@media (max-width: 700px) { .bib-hero { padding-top: 3.9rem; } }
+
+/* ---------- Page de confirmation ------------------------------------------ */
+
+.confirmation { text-align: center; max-width: 44rem; margin-inline: auto; }
+.confirmation__marque {
+  width: 64px; height: 64px;
+  margin: 0 auto 1.5rem;
+  border-radius: 50%;
+  background: var(--rouge);
+  color: var(--blanc);
+  display: grid; place-items: center;
+  font-size: 1.75rem;
+}
+.confirmation__reference {
+  display: inline-block;
+  margin: 1.5rem 0;
+  padding: 1rem 1.75rem;
+  background: var(--gris-100);
+  border: 1px solid var(--gris-200);
+  border-radius: var(--rayon);
+}
+.confirmation__reference span {
+  display: block;
+  font-size: .75rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--gris-500);
+  margin-bottom: .35rem;
+}
+.confirmation__reference strong {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--noir);
+  letter-spacing: .04em;
+}
+.confirmation p { margin-inline: auto; }
+
+/* ---------- Prix --------------------------------------------------------- */
+
+.prix { font-size: 3rem; font-weight: 400; color: var(--noir); line-height: 1.1; margin-bottom: .5rem; }
+.prix small { font-size: 1rem; color: var(--gris-500); }
+
+/* ---------- Tableau ------------------------------------------------------ */
+
+.tableau-enveloppe { overflow-x: auto; border: 1px solid var(--gris-200); border-radius: var(--rayon); background: var(--blanc); }
+table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
+th, td { text-align: left; padding: .9rem 1.25rem; border-bottom: 1px solid var(--gris-200); }
+tr:last-child td { border-bottom: 0; }
+th {
+  font-weight: 500; font-size: .8125rem;
+  letter-spacing: .04em; text-transform: uppercase;
+  color: var(--gris-500); background: var(--gris-100);
+}
+td { color: var(--gris-700); }
+
+/* ---------- Pied de page -------------------------------------------------- */
+
+.pied { background: var(--noir-panneau); color: var(--gris-300); font-size: .9375rem; }
+.pied__inner {
+  max-width: var(--largeur);
+  margin-inline: auto;
+  padding: var(--pas) var(--gouttiere);
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  gap: 2.5rem;
+}
+@media (max-width: 900px) { .pied__inner { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .pied__inner { grid-template-columns: 1fr; } }
+
+.pied h2 {
+  font-size: .75rem; font-weight: 500;
+  letter-spacing: .09em; text-transform: uppercase;
+  color: var(--gris-500); margin-bottom: 1rem;
+}
+.pied p { max-width: none; margin-bottom: .75rem; }
+.pied a { color: var(--gris-300); text-decoration: none; }
+.pied a:hover { color: var(--blanc); text-decoration: underline; }
+.pied address { font-style: normal; margin-bottom: .5rem; }
+.pied__coords { font-size: .8125rem; color: var(--gris-500); }
+.pied__liens { list-style: none; margin: 0; padding: 0; }
+.pied__liens li { margin-bottom: .5rem; }
+
+.marque { font-size: 1.25rem; font-weight: 500; margin: 0 0 .6rem; line-height: 1.2; }
+.marque__saumur { color: var(--rouge-clair); }
+.marque__club { color: var(--blanc); }
+.pied__baseline { color: var(--gris-500); font-size: .875rem; max-width: 32ch; }
+
+.pied__bas {
+  border-top: 1px solid rgba(255,255,255,.12);
+  max-width: var(--largeur);
+  margin-inline: auto;
+  padding: 1.25rem var(--gouttiere);
+  display: flex; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  font-size: .8125rem; color: var(--gris-500);
+}
+.pied__bas > p { margin: 0; }
+.pied__legal em { color: var(--rouge-clair); font-style: normal; }
+
+/* Accordéons du footer : dépliés sur desktop, repliables sur mobile (≤560px). */
+.pied-acc { border: 0; }
+.pied-acc > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.pied-acc > summary::-webkit-details-marker { display: none; }
+.pied-acc > summary h2 { margin: 0; }
+.pied-acc__chev { width: 18px; height: 18px; flex: 0 0 auto; color: var(--gris-500); transition: transform var(--transition); display: none; }
+.pied-acc__corps { padding-top: 1rem; }
+@media (min-width: 1280px) {
+  .pied-acc > summary { pointer-events: none; }   /* toujours ouvert, non cliquable */
+}
+@media (max-width: 1279px) {
+  .pied__inner { grid-template-columns: 1fr; gap: 0; }
+  .pied__bloc--marque { margin-bottom: 1rem; }
+  .pied-acc { border-top: 1px solid rgba(255, 255, 255, .10); }
+  .pied-acc > summary { cursor: pointer; padding: .95rem 0; }
+  .pied-acc__chev { display: block; }
+  .pied-acc[open] > summary .pied-acc__chev { transform: rotate(180deg); }
+  .pied-acc__corps { padding: 0 0 .95rem; }
+}
+
+/* ---------- Widgets météo (Holfuy) ----------------------------------------- */
+.meteo { margin-top: 2.5rem; }
+.meteo__intro { margin-bottom: 1.5rem; }
+.meteo__intro h3 { margin-bottom: .35rem; }
+.meteo__grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: 1.5rem;
+}
+.meteo__carte {
+  background: var(--blanc);
+  border: 1px solid var(--gris-200);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(20,41,77,.06), 0 12px 30px -12px rgba(20,41,77,.18);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.meteo__carte:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 1px 3px rgba(20,41,77,.08), 0 20px 40px -16px rgba(20,41,77,.28);
+}
+.meteo__entete {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .85rem 1.1rem;
+  background: linear-gradient(135deg, #16294B 0%, #1F3E63 100%);
+  color: #fff;
+}
+.meteo__icone {
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.10);
+  color: var(--or);
+}
+.meteo__nom {
+  flex: 1;
+  font-weight: 600;
+  font-size: .95rem;
+  letter-spacing: .01em;
+}
+.meteo__live {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .72rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #BFE3C7;
+}
+.meteo__point {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #4ED07A;
+  box-shadow: 0 0 0 0 rgba(78,208,122,.6);
+  animation: meteo-pulse 2s infinite;
+}
+@keyframes meteo-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(78,208,122,.55); }
+  70%  { box-shadow: 0 0 0 7px rgba(78,208,122,0); }
+  100% { box-shadow: 0 0 0 0 rgba(78,208,122,0); }
+}
+@media (prefers-reduced-motion: reduce) { .meteo__point { animation: none; } }
+.meteo__cadre {
+  padding: .35rem;
+  background: #F4F7FB;
+  display: flex; justify-content: center;
+}
+.meteo__cadre iframe {
+  border: 0;
+  width: 100%;
+  min-height: 250px;
+  border-radius: 8px;
+  display: block;
+}
+
+/* ---------- FAQ (accordéon) ------------------------------------------------ */
+.faq { border-top: 1px solid var(--gris-200); }
+.faq__item { border-bottom: 1px solid var(--gris-200); }
+.faq__q {
+  list-style: none;
+  cursor: pointer;
+  padding: 1.15rem 2.5rem 1.15rem 0;
+  position: relative;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--bleu-encre);
+}
+.faq__q::-webkit-details-marker { display: none; }
+.faq__q::after {
+  content: '+';
+  position: absolute;
+  right: .25rem; top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--or);
+  transition: transform var(--transition);
+}
+.faq__item[open] .faq__q::after { content: '−'; }
+.faq__q:hover { color: var(--or); }
+.faq__r { padding: 0 2.5rem 1.35rem 0; }
+.faq__r p { margin: 0; color: var(--gris-700); }
+
+/* ---------- Grille partenaires : une seule rangée en desktop --------------- */
+.grille--partenaires {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+@media (max-width: 900px) { .grille--partenaires { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .grille--partenaires { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   Réinscription en ligne
+   ============================================================ */
+.conteneur--etroit { max-width: 760px; }
+.chapo { font-size: 1.05rem; color: var(--gris-700); line-height: 1.6; margin: 0 0 1.5rem; }
+.alerte--info { background: rgba(20,41,77,.06); border: 1px solid rgba(20,41,77,.18); color: var(--encre); }
+.bouton--secondaire { background: var(--blanc); color: var(--encre); border: 1.5px solid var(--gris-300); }
+.bouton--secondaire:hover { border-color: var(--encre); background: var(--gris-050); }
+
+.bloc-form { border: 1px solid var(--gris-200); border-radius: var(--rayon); padding: 1.25rem 1.35rem; margin: 0 0 1.25rem; }
+.bloc-form > legend { font-weight: 600; font-size: 1.05rem; color: var(--encre); padding: 0 .5rem; }
+.bloc-form .champ { margin-bottom: .9rem; }
+.bloc-form .champ:last-child { margin-bottom: 0; }
+.cotis-options { display: grid; gap: .6rem; grid-template-columns: 1fr 1fr; margin-bottom: .5rem; }
+@media (max-width: 600px) { .cotis-options { grid-template-columns: 1fr; } }
+.cotis-options .bon-radio { min-width: 0; }
+
+.carte-recap, .carte-recu { border: 1px solid var(--gris-200); border-radius: var(--rayon);
+  padding: 1.25rem 1.4rem; margin-bottom: 1.25rem; background: var(--gris-050); }
+.carte-recap h2, .carte-recu h2 { margin: 0 0 .5rem; }
+.recap-total { font-size: 1.1rem; margin: .5rem 0 0; }
+.recap-total strong, .formulaire__total strong { color: var(--or); }
+
+.paiement-choix { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 600px) { .paiement-choix { grid-template-columns: 1fr; } }
+.paiement-option { border: 1.5px solid var(--gris-200); border-radius: var(--rayon); padding: 1.2rem; text-align: center; }
+.paiement-option h3 { margin: 0 0 .35rem; }
+.paiement-option .bouton { margin-top: .75rem; width: 100%; justify-content: center; }

@@ -1,0 +1,37 @@
+# ------------------------------------------------------------------
+#  Secrets — NE JAMAIS versionner
+# ------------------------------------------------------------------
+site/inc/config-local.php
+.htpasswd
+**/.htpasswd
+
+# ------------------------------------------------------------------
+#  Données personnelles des adhérents (licences, certificats médicaux,
+#  photos, documents) — hors de question de les publier sur GitHub.
+#  On garde uniquement la structure de dossier + son .htaccess.
+# ------------------------------------------------------------------
+site/docs-inscriptions/*
+!site/docs-inscriptions/.htaccess
+site/docs-adherents/*
+!site/docs-adherents/.htaccess
+site/uploads/
+
+# ------------------------------------------------------------------
+#  Sauvegarde de l'ancien site & dumps de données réelles
+#  (les schémas SQL, eux, restent versionnés)
+# ------------------------------------------------------------------
+sauvegarde-wordpress/
+*.dump
+*.sql.gz
+*.db
+*.sqlite
+
+# ------------------------------------------------------------------
+#  Divers
+# ------------------------------------------------------------------
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.log
+_probe_*.php

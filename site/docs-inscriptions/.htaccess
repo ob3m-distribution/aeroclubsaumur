@@ -1,0 +1,3 @@
+# Dossier privé : documents d'inscription (licences, certificats médicaux).
+# Aucun accès direct par le web — servis uniquement via un script authentifié.
+Require all denied
