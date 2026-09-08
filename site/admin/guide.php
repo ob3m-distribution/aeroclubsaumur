@@ -10,7 +10,7 @@ require __DIR__ . '/inc/entete.php';
 
 <style>
 /* Guide — aligné sur la charte du back-office (Inter, marine #14294D, or #B08D2C) */
-.guide{max-width:920px}
+.guide{max-width:none;width:100%}
 .guide .g-hero{background:var(--noir);color:#fff;border-radius:10px;padding:1.6rem 1.8rem;margin-bottom:1.25rem;position:relative;overflow:hidden}
 .guide .g-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--rouge)}
 .guide .g-eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--rouge-clair)}
