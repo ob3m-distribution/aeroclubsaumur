@@ -69,7 +69,7 @@ require __DIR__ . '/inc/hero.php';
     <div class="panneau">
       <div class="panneau__media">
         <?= image('avions.dr400.photo', '/assets/img/robin-dr400.jpg', [
-              'alt' => 'Le Robin DR 400 F-HACS du club en vol au-dessus de la Loire',
+              'alt' => 'Le Robin DR 400-180 F-HZAF du club sur l’aérodrome de Saumur',
               'loading' => 'lazy',
             ]) ?>
       </div>
