@@ -16,7 +16,7 @@ import paramiko
 HOST = "home168617917.1and1-data.host"
 PORT = 22
 USER = "acc2123289695"
-PWD = os.environ.get("SAC_SFTP_PWD") or "100%AeroclubSAUMURAIRCLUB@@%%$$$$$$£££££££zaercesaz"
+PWD = os.environ.get("SAC_SFTP_PWD")
 
 LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "site")
 REMOTE = "/Aeroclub Saumur - Espace developpement"
@@ -92,4 +92,6 @@ def deployer():
 if __name__ == "__main__":
     if not os.path.isdir(LOCAL):
         sys.exit(f"Dossier introuvable : {LOCAL}")
+    if not PWD:
+        sys.exit("Variable d'environnement SAC_SFTP_PWD manquante.")
     deployer()
