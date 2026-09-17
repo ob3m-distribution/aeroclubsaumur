@@ -18,6 +18,7 @@ ex. "Aeroclub Saumur - Espace developpement").
 import os
 import stat as stat_module
 import sys
+import tempfile
 
 import paramiko
 
@@ -25,6 +26,13 @@ LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "site")
 
 IGNORER_FICHIERS = {".DS_Store", "Thumbs.db", ".htpasswd"}
 IGNORER_DOSSIERS = {".git", "__pycache__", "node_modules", "_originaux"}
+
+# Fichiers/dossiers qui ne sont jamais dans git (secrets, donnees membres —
+# voir .gitignore) mais qui existent sur le serveur et doivent survivre a
+# chaque deploiement, sans quoi le site neuf n'a ni secrets ni donnees
+# reelles. A tenir synchronise avec .gitignore si la liste change la-bas.
+PERSISTANTS_FICHIERS = [".htpasswd", "inc/config-local.php"]
+PERSISTANTS_DOSSIERS = ["docs-inscriptions", "docs-adherents", "uploads"]
 
 
 def connecter():
@@ -61,6 +69,46 @@ def rendre_dossier(sftp, chemin):
             sftp.mkdir(courant)
 
 
+def copier_distant(sftp, source, dest):
+    """Copie un fichier distant vers un autre chemin distant, via un
+    buffer local temporaire — le SFTP n'a pas de copie serveur-a-serveur."""
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        chemin_tmp = tmp.name
+    try:
+        sftp.get(source, chemin_tmp)
+        sftp.put(chemin_tmp, dest)
+    finally:
+        os.remove(chemin_tmp)
+
+
+def copier_dossier_distant(sftp, source, dest):
+    rendre_dossier(sftp, dest)
+    for entree in sftp.listdir_attr(source):
+        s, d = f"{source}/{entree.filename}", f"{dest}/{entree.filename}"
+        if stat_module.S_ISDIR(entree.st_mode):
+            copier_dossier_distant(sftp, s, d)
+        else:
+            copier_distant(sftp, s, d)
+
+
+def reporter_persistants(sftp, chemin_live, staging):
+    """Reporte dans `staging` les fichiers/dossiers qui vivent uniquement
+    sur le serveur (secrets, donnees membres) avant la bascule."""
+    for f in PERSISTANTS_FICHIERS:
+        src = f"{chemin_live}/{f}"
+        if existe(sftp, src):
+            print(f"  fichier persistant reporte : {f}")
+            copier_distant(sftp, src, f"{staging}/{f}")
+        else:
+            print(f"  ATTENTION : {f} absent de la version en ligne actuelle, ignore")
+
+    for d in PERSISTANTS_DOSSIERS:
+        src = f"{chemin_live}/{d}"
+        if existe(sftp, src):
+            print(f"  dossier persistant reporte : {d}")
+            copier_dossier_distant(sftp, src, f"{staging}/{d}")
+
+
 def envoyer_contenu(sftp, cible):
     """Envoie tout le contenu de LOCAL vers le dossier `cible` (deja cree)."""
     envoyes = 0
@@ -95,6 +143,8 @@ def deployer():
         rendre_dossier(sftp, staging)
         envoyes = envoyer_contenu(sftp, staging)
         print(f"  {envoyes} fichier(s) envoye(s)")
+
+        reporter_persistants(sftp, chemin_live, staging)
 
         if existe(sftp, backup):
             print(f"  suppression de l'ancienne sauvegarde : {backup}")

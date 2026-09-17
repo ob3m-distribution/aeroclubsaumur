@@ -21,14 +21,27 @@ runner GitHub Actions.
 
 1. Upload de l'intégralité de `site/` dans un dossier temporaire
    (`<dossier live>_new`), sans toucher au site en ligne.
-2. Bascule par renommage : le dossier actuellement en ligne devient
+2. **Report des fichiers/dossiers persistants** depuis le site actuellement
+   en ligne vers ce dossier temporaire : `.htpasswd`, `inc/config-local.php`
+   (secrets DB/Stripe/mail), `docs-inscriptions/`, `docs-adherents/`,
+   `uploads/`. Ce sont des éléments qui ne sont **jamais dans git**
+   (`.gitignore`) — secrets ou données réelles d'adhérents — mais qui
+   existent sur le serveur et doivent survivre à chaque déploiement.
+3. Bascule par renommage : le dossier actuellement en ligne devient
    `<dossier live>_old`, le nouveau prend sa place. C'est quasi instantané
    côté visiteurs.
-3. Healthcheck : le workflow vérifie que `https://dev.aeroclub-saumur.fr/`
+4. Healthcheck : le workflow vérifie que `https://dev.aeroclub-saumur.fr/`
    répond bien (200 ou 302).
-4. **Si le healthcheck échoue**, rollback automatique : la version
+5. **Si le healthcheck échoue**, rollback automatique : la version
    précédente (`_old`) est remise en place, et la version défaillante est
    conservée dans `<dossier live>_failed` pour investigation.
+
+⚠️ **La liste de l'étape 2 doit rester synchronisée avec `.gitignore`.** Si
+un nouveau fichier ou dossier persistant (secret, données réelles) est
+ajouté au `.gitignore` du site, il faut l'ajouter aussi dans
+`PERSISTANTS_FICHIERS`/`PERSISTANTS_DOSSIERS` en tête de `deploy_ci.py`,
+sans quoi il sera silencieusement absent du site après le déploiement
+suivant.
 
 Un seul niveau de sauvegarde est conservé (le déploiement précédent) — pas
 un historique complet, ce n'est pas du versionnement.
