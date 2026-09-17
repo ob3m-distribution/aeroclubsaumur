@@ -77,6 +77,5 @@ require __DIR__ . '/barre-edition.php';
 })();
 </script>
 <script src="/assets/js/site.js?v=5" defer></script>
-<!-- test-pipeline-ci: 2026-09-17 -->
 </body>
 </html>
