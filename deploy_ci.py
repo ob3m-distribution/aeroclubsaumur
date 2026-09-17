@@ -16,6 +16,7 @@ DEPLOY_PASSWORD, DEPLOY_PATH (chemin du dossier actuellement en ligne,
 ex. "Aeroclub Saumur - Espace developpement").
 """
 import os
+import socket
 import stat as stat_module
 import sys
 import tempfile
@@ -36,9 +37,16 @@ PERSISTANTS_DOSSIERS = ["docs-inscriptions", "docs-adherents", "uploads"]
 
 
 def connecter():
-    t = paramiko.Transport((os.environ["DEPLOY_HOST"], 22))
+    # Timeout explicite : sans lui, une connexion qui se fige (coupure
+    # reseau cote IONOS) bloque le job indefiniment plutot que d'echouer.
+    sock = socket.create_connection((os.environ["DEPLOY_HOST"], 22), timeout=30)
+    t = paramiko.Transport(sock)
+    t.banner_timeout = 30
+    t.auth_timeout = 30
     t.connect(username=os.environ["DEPLOY_USER"], password=os.environ["DEPLOY_PASSWORD"])
-    return t, paramiko.SFTPClient.from_transport(t)
+    sftp = paramiko.SFTPClient.from_transport(t)
+    sftp.get_channel().settimeout(60)
+    return t, sftp
 
 
 def existe(sftp, chemin):
