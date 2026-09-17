@@ -1,0 +1,52 @@
+name: Déploiement dev
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        run: pip install paramiko
+
+      - name: Déployer sur le serveur (bascule par renommage)
+        id: deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: python deploy_ci.py deploy
+
+      - name: Vérifier que le site répond (healthcheck)
+        id: healthcheck
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -u "${{ secrets.DEV_BASICAUTH_USER }}:${{ secrets.DEV_BASICAUTH_PASSWORD }}" \
+            "https://dev.aeroclub-saumur.fr/")
+          echo "Code HTTP reçu : $code"
+          if [ "$code" != "200" ] && [ "$code" != "302" ]; then
+            echo "Healthcheck en échec (code $code)"
+            exit 1
+          fi
+
+      - name: Revenir en arrière si le healthcheck a échoué
+        if: failure() && steps.deploy.outcome == 'success'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: python deploy_ci.py rollback
