@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-/* Mediateur cite plus bas (Atlantique Mediation Consommation) : le club doit
-   avoir reellement adhere avant l'encaissement du premier paiement en ligne.
-   Cyrille doit confirmer l'adhesion — cf. email envoye au club le 05/09/2026. */
+/* Mediateur retire le 22/09/2026 : le club n'a pas encore confirme son
+   adhesion. A reintegrer (nom, adresse, lien) des que c'est fait — c'est
+   une obligation legale pour toute vente en ligne a des particuliers. */
 $page  = 'cgv';
 $titre = 'Conditions générales de vente';
 $description = 'Conditions générales de vente du Saumur Air Club : commande, paiement, livraison et utilisation du bon cadeau vol découverte.';
@@ -228,15 +228,6 @@ require __DIR__ . '/inc/hero.php';
           Pour toute réclamation, contactez d’abord le club à
           <a href="mailto:<?= e(CLUB['email']) ?>"><?= e(CLUB['email']) ?></a> ou au
           <a href="tel:<?= e(tel_lien(CLUB['tel_mobile'])) ?>"><?= e(CLUB['tel_mobile']) ?></a>.
-        </p>
-        <p>
-          À défaut de solution amiable dans un délai raisonnable, le consommateur peut
-          recourir gratuitement au médiateur de la consommation dont dépend le club :
-        </p>
-        <p>
-          <strong>Atlantique Médiation Consommation</strong><br>
-          5, mail du Front populaire, 44200 Nantes<br>
-          <a href="https://consommation.atlantique-mediation.org" target="_blank" rel="noopener">consommation.atlantique-mediation.org</a>
         </p>
         <p>
           Il peut également saisir la plateforme européenne de règlement en ligne des
