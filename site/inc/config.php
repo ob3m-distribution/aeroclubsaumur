@@ -25,7 +25,7 @@ const CLUB = [
 
     // Donnees legales, reprises de saumur-airclub.aero/mentions_legales_SAC.php
     'forme'        => 'Association Loi 1901',
-    'siren'        => '302864913',
+    'siret'        => '302 864 913 00025',
     'directeur'    => 'Jonathan Robert',
     'email_admin'  => 'admin@saumur-airclub.aero',
     'tel_admin'    => '06 27 36 04 46',

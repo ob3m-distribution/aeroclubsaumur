@@ -29,7 +29,7 @@ require __DIR__ . '/inc/hero.php';
           Route de Marson, 49400 Saint-Hilaire-Saint-Florent, France
         </p>
         <p>
-          SIREN : <?= e(CLUB['siren']) ?><br>
+          SIRET : <?= e(CLUB['siret']) ?><br>
           Téléphone : <a href="tel:<?= e(tel_lien(CLUB['tel_mobile'])) ?>"><?= e(CLUB['tel_mobile']) ?></a><br>
           Courriel : <a href="mailto:<?= e(CLUB['email']) ?>"><?= e(CLUB['email']) ?></a>
         </p>

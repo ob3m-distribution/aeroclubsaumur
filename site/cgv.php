@@ -29,7 +29,7 @@ require __DIR__ . '/inc/hero.php';
       <div>
         <p>
           Le site <?= e(site_url()) ?> est édité par le <strong><?= e(CLUB['nom']) ?></strong>,
-          <?= e(CLUB['forme']) ?>, SIREN <?= e(CLUB['siren']) ?>, dont le siège est situé
+          <?= e(CLUB['forme']) ?>, SIRET <?= e(CLUB['siret']) ?>, dont le siège est situé
           <?= e(CLUB['adresse_1']) ?>, Route de Marson, 49400 Saint-Hilaire-Saint-Florent.
           Contact : <a href="mailto:<?= e(CLUB['email']) ?>"><?= e(CLUB['email']) ?></a>,
           <a href="tel:<?= e(tel_lien(CLUB['tel_mobile'])) ?>"><?= e(CLUB['tel_mobile']) ?></a>.
