@@ -1,17 +1,16 @@
-name: Déploiement dev
+name: Déploiement
 
 on:
   push:
     branches: [main]
 
-concurrency:
-  group: deploy-dev
-  cancel-in-progress: false
-
 jobs:
-  deploy:
+  dev:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
 
@@ -50,4 +49,48 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: python deploy_ci.py rollback
+
+  prod:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-prod
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        run: pip install paramiko
+
+      - name: Déployer sur le serveur (bascule par renommage)
+        id: deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_PROD }}
+        run: python deploy_ci.py deploy
+
+      - name: Vérifier que le site répond (healthcheck)
+        id: healthcheck
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" "https://aeroclub-saumur.fr/")
+          echo "Code HTTP reçu : $code"
+          if [ "$code" != "200" ] && [ "$code" != "302" ]; then
+            echo "Healthcheck en échec (code $code)"
+            exit 1
+          fi
+
+      - name: Revenir en arrière si le healthcheck a échoué
+        if: failure() && steps.deploy.outcome == 'success'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_PROD }}
         run: python deploy_ci.py rollback

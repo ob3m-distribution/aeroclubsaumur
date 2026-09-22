@@ -1,14 +1,18 @@
 # ==================================================================
 # Saumur Air Club
-# ATTENTION : les blocs 1 et 2 sont propres a l'espace de DEV.
-# Ils devront etre retires le jour de la bascule en production.
+# ATTENTION : les blocs 1 et 2 sont propres a l'espace de DEV. Ce fichier
+# est deploye tel quel sur le dev ET la prod (dossiers distincts) : les
+# blocs DEV sont conditionnes au nom d'hote pour ne jamais s'appliquer
+# en production, sans avoir a maintenir deux .htaccess differents.
 # ==================================================================
 
 # ---- 1. DEV : mot de passe obligatoire ---------------------------
-AuthType Basic
-AuthName "Saumur Air Club - Espace de developpement"
-AuthUserFile "/kunden/homepages/12/d168617917/htdocs/AEROCLUB/Aeroclub Saumur - Espace developpement/.htpasswd"
-Require valid-user
+<If "%{HTTP_HOST} == 'dev.aeroclub-saumur.fr'">
+    AuthType Basic
+    AuthName "Saumur Air Club - Espace de developpement"
+    AuthUserFile "/kunden/homepages/12/d168617917/htdocs/AEROCLUB/Aeroclub Saumur - Espace developpement/.htpasswd"
+    Require valid-user
+</If>
 
 # Le webhook Stripe doit rester joignable SANS mot de passe : Stripe ne
 # peut pas s'authentifier. Sa securite vient de la signature HMAC verifiee
@@ -18,9 +22,11 @@ Require valid-user
 # Sa securite vient de la signature HMAC verifiee dans webhook/stripe.php.
 
 # ---- 2. DEV : interdiction formelle d'indexer --------------------
-<IfModule mod_headers.c>
-    Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
-</IfModule>
+<If "%{HTTP_HOST} == 'dev.aeroclub-saumur.fr'">
+    <IfModule mod_headers.c>
+        Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+    </IfModule>
+</If>
 
 # ---- 3. Securite -------------------------------------------------
 <FilesMatch "^\.(htaccess|htpasswd)$">

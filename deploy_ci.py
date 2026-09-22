@@ -138,6 +138,11 @@ def deployer():
         sys.exit(f"Dossier introuvable : {LOCAL}")
 
     chemin_live = os.environ["DEPLOY_PATH"]
+    if not chemin_live:
+        # Secret GitHub absent : la variable existe mais est vide. Sans
+        # ce garde-fou on manipulerait des chemins du type "_new"/"_old"
+        # a la racine du compte SFTP.
+        sys.exit("DEPLOY_PATH est vide — secret GitHub manquant ou non configure.")
     staging = f"{chemin_live}_new"
     backup = f"{chemin_live}_old"
 
@@ -153,6 +158,15 @@ def deployer():
         print(f"  {envoyes} fichier(s) envoye(s)")
 
         reporter_persistants(sftp, chemin_live, staging)
+
+        if not existe(sftp, chemin_live):
+            # Premier deploiement sur cet environnement (ex. bootstrap d'un
+            # dossier de production tout neuf) : rien a basculer, on installe
+            # directement.
+            print(f"  premier deploiement : creation directe de {chemin_live}")
+            sftp.rename(staging, chemin_live)
+            print("Deploiement termine (premiere installation, pas de sauvegarde).")
+            return
 
         if existe(sftp, backup):
             print(f"  suppression de l'ancienne sauvegarde : {backup}")
@@ -175,12 +189,23 @@ def deployer():
 
 def rollback():
     chemin_live = os.environ["DEPLOY_PATH"]
+    if not chemin_live:
+        sys.exit("DEPLOY_PATH est vide — secret GitHub manquant ou non configure.")
     backup = f"{chemin_live}_old"
 
     t, sftp = connecter()
     try:
         if not existe(sftp, backup):
-            sys.exit(f"Pas de sauvegarde disponible ({backup} introuvable) — rollback impossible")
+            # Pas de version precedente (ex. tout premier deploiement sur un
+            # environnement neuf) : rien a restaurer, on retire juste la
+            # version defaillante plutot que de la laisser en ligne.
+            echoue = f"{chemin_live}_failed"
+            if existe(sftp, echoue):
+                supprimer_recursif(sftp, echoue)
+            print(f"  pas de sauvegarde : mise de cote de {chemin_live} -> {echoue}")
+            sftp.rename(chemin_live, echoue)
+            print(f"Rollback termine (premier deploiement) : plus rien en ligne sur ce chemin. Version en echec conservee dans {echoue}.")
+            return
 
         echoue = f"{chemin_live}_failed"
         if existe(sftp, echoue):
