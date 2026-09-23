@@ -2,7 +2,10 @@ name: Audit sécurité hebdo
 
 on:
   schedule:
-    - cron: "0 6 * * 1" # tous les lundis à 6h00 UTC
+    # 3h UTC = 5h heure de Paris (CEST, UTC+2) — 4h en hiver (CET, UTC+1),
+    # le cron GitHub Actions ne suit pas le changement d'heure. Marge large
+    # avant 9h dans les deux cas.
+    - cron: "0 3 * * 1"
   workflow_dispatch: {}
 
 jobs:
