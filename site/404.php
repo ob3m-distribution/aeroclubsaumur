@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 http_response_code(404);
-$page = '';
+$page        = '';
+$titre       = 'Page introuvable';
+$description = 'Cette page n’existe pas ou plus. Retrouvez l’accueil du Saumur Air Club, ou contactez-nous directement.';
 require __DIR__ . '/inc/header.php';
 ?>
 

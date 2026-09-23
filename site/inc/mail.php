@@ -315,7 +315,7 @@ function email_notification_club(array $bon): bool
 {
     $sujet = sprintf('Nouvelle demande de bon cadeau — %s', $bon['reference']);
 
-    $corps = <<<TXT
+    $texte = <<<TXT
 Une nouvelle demande de bon cadeau vient d'être enregistrée sur le site.
 
 RÉFÉRENCE : {$bon['reference']}
@@ -330,10 +330,10 @@ ACHETEUR
 TXT;
 
     if (!empty($bon['message'])) {
-        $corps .= "MESSAGE\n  {$bon['message']}\n\n";
+        $texte .= "MESSAGE\n  {$bon['message']}\n\n";
     }
 
-    $corps .= <<<TXT
+    $texte .= <<<TXT
 --
 Le paiement en ligne n'est pas encore actif : merci de recontacter
 l'acheteur pour convenir du règlement.
@@ -341,7 +341,24 @@ l'acheteur pour convenir du règlement.
 Message automatique du site du Saumur Air Club.
 TXT;
 
-    return envoyer_email(EMAIL_CLUB, $sujet, $corps, $bon['email']);
+    $messageHtml = !empty($bon['message'])
+        ? '<p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#4C596B;"><strong style="color:#14294D;">Message</strong><br>' . nl2br(e((string) $bon['message'])) . '</p>'
+        : '';
+    $corpsHtml =
+        '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;">Une nouvelle demande de bon cadeau vient d\'être enregistrée sur le site.</p>'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        .   'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 20px;">'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">Référence</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($bon['reference']) . '</td></tr>'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">Montant</td><td style="padding:6px 0;text-align:right;font-weight:bold;font-size:18px;color:#14294D;">' . e($bon['montant_affiche']) . '</td></tr>'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">Statut</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#B08D2C;">En attente de paiement</td></tr>'
+        . '</table>'
+        . '<p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#4C596B;"><strong style="color:#14294D;">Acheteur</strong><br>'
+        .   e($bon['prenom']) . ' ' . e($bon['nom']) . '<br>Email : ' . e($bon['email']) . '<br>Téléphone : ' . e($bon['telephone']) . '</p>'
+        . $messageHtml
+        . '<p style="margin:0;font-size:13px;line-height:1.6;color:#78859A;">Le paiement en ligne n\'est pas encore actif : merci de recontacter l\'acheteur pour convenir du règlement.</p>';
+    $html = email_gabarit('Nouvelle demande de bon cadeau', $corpsHtml);
+
+    return envoyer_email_html_pj(EMAIL_CLUB, $sujet, $html, $texte, [], $bon['email']);
 }
 
 /** Le bon cadeau lui-même, envoyé à l'acheteur une fois le paiement confirmé. */
@@ -469,7 +486,7 @@ function email_paiement_recu_club(array $bon): bool
     $montant = prix((int) $bon['montant_cents']);
     $expire  = date('d/m/Y', strtotime((string) $bon['expire_le']));
 
-    $corps = <<<TXT
+    $texte = <<<TXT
 Un bon cadeau vient d'être payé en ligne.
 
 CODE       : {$bon['code']}
@@ -489,7 +506,21 @@ Le bénéficiaire vous contactera pour convenir d'une date de vol.
 Message automatique du site du Saumur Air Club.
 TXT;
 
-    return envoyer_email(EMAIL_CLUB, $sujet, $corps, $bon['acheteur_email']);
+    $corpsHtml =
+        '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;">Un bon cadeau vient d\'être payé en ligne.</p>'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        .   'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 20px;">'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">Code</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($bon['code']) . '</td></tr>'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">Référence</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($bon['reference']) . '</td></tr>'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">Montant</td><td style="padding:6px 0;text-align:right;font-weight:bold;font-size:18px;color:#14294D;">' . e($montant) . '</td></tr>'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">Valable jusqu\'au</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($expire) . '</td></tr>'
+        . '</table>'
+        . '<p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#4C596B;"><strong style="color:#14294D;">Acheteur</strong><br>'
+        .   e($bon['acheteur_prenom']) . ' ' . e($bon['acheteur_nom']) . '<br>Email : ' . e($bon['acheteur_email']) . '<br>Téléphone : ' . e($bon['acheteur_telephone']) . '</p>'
+        . '<p style="margin:0;font-size:13px;line-height:1.6;color:#78859A;">Le bon a été envoyé automatiquement à l\'acheteur. Le bénéficiaire vous contactera pour convenir d\'une date de vol.</p>';
+    $html = email_gabarit('Bon cadeau payé', $corpsHtml);
+
+    return envoyer_email_html_pj(EMAIL_CLUB, $sujet, $html, $texte, [], $bon['acheteur_email']);
 }
 
 /** Accusé de réception à l'acheteur. */

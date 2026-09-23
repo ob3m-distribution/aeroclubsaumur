@@ -141,9 +141,14 @@ function image(string $cle, string $defaut, array $attributs = []): string
         }
     }
 
+    // 23/09/2026 : alt='' (image decorative, intentionnel) etait traite comme
+    // "rien a mettre" et disparaissait -- pire qu'un alt="" vide, un alt
+    // absent. Seul null ("pas fourni du tout") doit sauter l'attribut ;
+    // les autres attributs (srcset, sizes...) ne sont eux jamais vides a
+    // dessein, donc le comportement pour eux ne change pas.
     $attrs = '';
     foreach ($attributs as $nom => $valeur) {
-        if ($valeur === null || $valeur === '') {
+        if ($valeur === null || ($valeur === '' && $nom !== 'alt')) {
             continue;
         }
         $attrs .= sprintf(' %s="%s"', e((string) $nom), e((string) $valeur));

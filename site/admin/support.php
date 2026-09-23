@@ -142,10 +142,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         } else {
             // Le membre relance : alerte au bureau.
             $sujet = sprintf('[Support Saumur #%d] Nouvelle réponse — %s', $tid, $ticket['sujet']);
-            $corpsMail = "{$auteur} a ajouté une réponse au ticket n° {$tid} « {$ticket['sujet']} » :\n\n"
+            $lienTicket = 'https://' . ($_SERVER['HTTP_HOST'] ?? 'dev.aeroclub-saumur.fr') . '/admin/support.php?ticket=' . $tid;
+            $texte = "{$auteur} a ajouté une réponse au ticket n° {$tid} « {$ticket['sujet']} » :\n\n"
                 . $corps . "\n\n→ Répondez directement à cet e-mail pour lui écrire, ou ouvrez le ticket :\n"
-                . 'https://' . ($_SERVER['HTTP_HOST'] ?? 'dev.aeroclub-saumur.fr') . '/admin/support.php?ticket=' . $tid;
-            envoyer_email(SUPPORT_EMAIL, $sujet, $corpsMail, (string) $moi['email']);
+                . $lienTicket;
+            $htmlCorps =
+                '<p style="margin:0 0 14px;font-size:15px;line-height:1.6;"><strong>' . e($auteur) . '</strong> a ajouté une réponse au ticket n° ' . (int) $tid . ' <strong>« ' . e($ticket['sujet']) . ' »</strong> :</p>'
+                . '<div style="border-left:3px solid #B08D2C;background:#f8f9f9;padding:12px 16px;margin:0 0 20px;font-size:14px;line-height:1.6;white-space:pre-wrap;">'
+                . e($corps) . '</div>'
+                . '<p style="margin:0 0 22px;">' . email_bouton($lienTicket, 'Ouvrir le ticket') . '</p>'
+                . '<p style="margin:0;font-size:13px;line-height:1.6;color:#78859A;">Vous pouvez aussi répondre directement à cet e-mail pour lui écrire.</p>';
+            envoyer_email_html_pj(SUPPORT_EMAIL, $sujet, email_gabarit('Nouvelle réponse au ticket', $htmlCorps), $texte, [], (string) $moi['email']);
             $_SESSION['message_succes'] = 'Votre réponse a bien été transmise.';
         }
         header('Location: ' . $retour, true, 303);
