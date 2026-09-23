@@ -60,6 +60,10 @@ const EMAIL_EXPEDITEUR_NOM = 'Saumur Air Club';
 const STRIPE_CLE_PUBLIQUE   = '{stripe_pk}';
 const STRIPE_CLE_SECRETE    = '{stripe_sk}';
 const STRIPE_WEBHOOK_SECRET = '{stripe_whsec}';
+
+/* Secret pour les scripts ponctuels proteges par jeton (taches/) —
+   jamais code en dur dans un fichier versionne, voir PROD_INSTALLER_SECRET. */
+const INSTALLER_SECRET = '{installer_secret}';
 """
 
 
@@ -78,6 +82,7 @@ def generer_config_local():
         stripe_pk=echapper_php(os.environ["PROD_STRIPE_PK"]),
         stripe_sk=echapper_php(os.environ["PROD_STRIPE_SK"]),
         stripe_whsec=echapper_php(os.environ["PROD_STRIPE_WHSEC"]),
+        installer_secret=echapper_php(os.environ.get("PROD_INSTALLER_SECRET", "")),
     )
 
 
