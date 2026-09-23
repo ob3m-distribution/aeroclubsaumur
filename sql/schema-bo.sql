@@ -11,7 +11,10 @@ CREATE TABLE IF NOT EXISTS membres (
 
   -- Le rôle porte les autorisations. Elles sont définies en PHP
   -- (inc/auth.php) : plus simple à lire qu'une table de jointure.
-  role ENUM('administrateur','secretariat','instructeur','lecture')
+  -- Liste complète des roles reellement utilises par le code (ROLES
+  -- dans inc/auth.php) — 'superadmin' et 'adherent' manquaient ici a
+  -- l'origine, decouvert le 23/09/2026 en creant le premier compte prod.
+  role ENUM('superadmin','administrateur','secretariat','instructeur','lecture','adherent')
        NOT NULL DEFAULT 'lecture',
 
   actif             TINYINT(1)   NOT NULL DEFAULT 1,
@@ -19,6 +22,9 @@ CREATE TABLE IF NOT EXISTS membres (
   -- Anti-force brute : on compte les échecs et on bloque temporairement.
   echecs_connexion  SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   bloque_jusqua     DATETIME     NULL,
+  -- Mot de passe oublie / invitation premiere connexion (inc/auth.php).
+  reset_token       VARCHAR(64)  NULL,
+  reset_expire      DATETIME     NULL,
   cree_le           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   UNIQUE KEY uniq_email (email),
