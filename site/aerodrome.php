@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 $page = 'aerodrome';
-$description = 'L’aérodrome de Saumur Terrefort : piste de 1450 m, fréquence 120.605, avitaillement, club house. Informations pratiques et accès.';
+$description = 'Découvrez l’aérodrome de Saumur Terrefort : piste de 1450 m, fréquence 120.605, club house et avitaillement. Toutes les infos pratiques pour nous rejoindre.';
 require __DIR__ . '/inc/header.php';
 
 $hero = [

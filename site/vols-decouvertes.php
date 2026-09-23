@@ -64,7 +64,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 }
 
 $page = 'vols-decouvertes';
-$description = 'Vol découverte au-dessus du Val de Loire : 30 minutes de survol des châteaux et du vignoble, à partir de 130 €. Vol d’initiation aux commandes avec un instructeur.';
+$description = 'Vol découverte au-dessus du Val de Loire : 30 minutes de survol des châteaux et du vignoble, dès 130 €, aux commandes avec un instructeur.';
 require __DIR__ . '/inc/header.php';
 
 $hero = [

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 $page = 'index';
-$description = 'Aéro-club de Saumur, au cœur du Val de Loire. Vol découverte, vol d’initiation et formation au pilotage sur l’aérodrome de Saumur Terrefort.';
+$description = 'Envie de voler au-dessus du Val de Loire ? Vol découverte, initiation au pilotage et formation complète au Saumur Air Club, aérodrome de Saumur Terrefort.';
 require __DIR__ . '/inc/header.php';
 
 $hero = [

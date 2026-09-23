@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 $page = 'tarifs-inscriptions';
-$description = 'Tarifs et modalités d’adhésion au Saumur Air Club : cotisation annuelle, licence fédérale, tarifs horaires par avion.';
+$description = 'Devenez pilote au Saumur Air Club : découvrez nos tarifs d’adhésion, cotisation annuelle, licence fédérale et tarifs horaires par avion.';
 require __DIR__ . '/inc/header.php';
 
 $hero = [

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 $page = 'avions';
-$description = 'La flotte du Saumur Air Club : Evektor SportStar, Cessna 172 N et Robin DR 400-180.';
+$description = 'Découvrez la flotte du Saumur Air Club : Evektor SportStar, Cessna 172 N et Robin DR 400-180, pour vos vols découverte, votre formation et vos sorties en club.';
 require __DIR__ . '/inc/header.php';
 
 $hero = [
