@@ -38,7 +38,7 @@
     Require all denied
 </FilesMatch>
 
-Options -Indexes -MultiViews
+Options -Indexes
 ServerSignature Off
 
 <IfModule mod_headers.c>
