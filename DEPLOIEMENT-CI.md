@@ -42,8 +42,11 @@ runner GitHub Actions.
 3. Bascule par renommage : le dossier actuellement en ligne devient
    `<dossier live>_old`, le nouveau prend sa place. C'est quasi instantané
    côté visiteurs.
-4. Healthcheck : le workflow vérifie que `https://dev.aeroclub-saumur.fr/`
-   répond bien (200 ou 302).
+4. Healthcheck : le workflow vérifie que `http://dev.aeroclub-saumur.fr/`
+   répond bien (200 ou 302). En HTTP simple, pas HTTPS : le certificat SSL
+   de ce sous-domaine a été réaffecté au domaine principal lors de la mise
+   en production (23/09/2026), sur décision du club — pas besoin de SSL
+   pour un espace de test protégé par mot de passe.
 5. **Si le healthcheck échoue**, rollback automatique : la version
    précédente (`_old`) est remise en place, et la version défaillante est
    conservée dans `<dossier live>_failed` pour investigation.

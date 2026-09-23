@@ -35,7 +35,7 @@ jobs:
         run: |
           code=$(curl -s -o /dev/null -w "%{http_code}" \
             -u "${{ secrets.DEV_BASICAUTH_USER }}:${{ secrets.DEV_BASICAUTH_PASSWORD }}" \
-            "https://dev.aeroclub-saumur.fr/")
+            "http://dev.aeroclub-saumur.fr/")
           echo "Code HTTP reçu : $code"
           if [ "$code" != "200" ] && [ "$code" != "302" ]; then
             echo "Healthcheck en échec (code $code)"
