@@ -86,29 +86,57 @@ function envoyer_email_html_pj(string $destinataire, string $sujet, string $html
     return @mail($destinataire, $sujetEncode, $m, implode("\r\n", $entetes), '-f' . EMAIL_EXPEDITEUR);
 }
 
-/** Gabarit HTML de marque (bandeau marine + carte blanche). Renvoie le HTML complet. */
+/**
+ * URL absolue du logo blanc (fond sombre), pour l'en-tête des e-mails.
+ * Construite depuis le domaine d'expédition (EMAIL_EXPEDITEUR) plutôt que
+ * $_SERVER['HTTP_HOST'] : les e-mails partent aussi depuis les tâches cron
+ * (site/taches), sans aucun contexte HTTP -- toujours le domaine de prod,
+ * jamais dev (qui de toute façon exige un mot de passe HTTP, voir
+ * .htaccess -- l'image n'y serait pas chargeable par un client mail).
+ */
+function email_logo_url(): string
+{
+    $domaine = strrchr(EMAIL_EXPEDITEUR, '@');
+    return 'https://' . ($domaine !== false ? substr($domaine, 1) : 'aeroclub-saumur.fr') . '/assets/img/logo-blanc.png';
+}
+
+/** Gabarit HTML de marque (bandeau marine + logo + liseré or + carte blanche).
+ *  Refonte du 23/09/2026 : logo au lieu d'un simple libellé texte, liseré en
+ *  dégradé (au lieu d'un aplat), police alignée sur --police de style.css
+ *  (system-ui : la police choisie en back-office est auto-hébergée, donc
+ *  injoignable depuis un e-mail -- même repli que l'option "Inter" du BO). */
 function email_gabarit(string $titre, string $corpsHtml): string
 {
-    $nom = e(CLUB['nom']);
+    $police = "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif";
     return '<!doctype html><html lang="fr"><head><meta charset="utf-8">'
         . '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
-        . '<body style="margin:0;padding:0;background:#eef1f5;font-family:Arial,Helvetica,sans-serif;color:#0e1112;">'
-        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f5;padding:24px 12px;"><tr><td align="center">'
-        . '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 12px rgba(20,41,77,.08);">'
-        . '<tr><td style="background:#14294D;padding:26px 32px;">'
-        .   '<div style="color:#D8BC6A;font-size:13px;letter-spacing:3px;text-transform:uppercase;">Saumur</div>'
-        .   '<div style="color:#ffffff;font-size:24px;font-weight:bold;letter-spacing:.5px;">' . $nom . '</div>'
+        . '<body style="margin:0;padding:0;background:#EFF4F9;font-family:' . $police . ';color:#16263F;">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#EFF4F9;padding:32px 12px;"><tr><td align="center">'
+        . '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(20,41,77,.08),0 8px 24px -8px rgba(20,41,77,.16);">'
+        . '<tr><td style="background:#14294D;padding:30px 32px;text-align:center;">'
+        .   '<img src="' . e(email_logo_url()) . '" alt="' . e(CLUB['nom']) . '" width="180" height="44" style="display:block;margin:0 auto;height:44px;width:auto;border:0;">'
         . '</td></tr>'
-        . '<tr><td style="height:4px;background:#B08D2C;"></td></tr>'
-        . '<tr><td style="padding:32px;">'
-        .   '<h1 style="margin:0 0 16px;font-size:20px;color:#14294D;">' . e($titre) . '</h1>'
+        . '<tr><td style="height:4px;line-height:0;font-size:0;background:linear-gradient(90deg,#8C6E1F,#D8BC6A,#B08D2C);"></td></tr>'
+        . '<tr><td style="padding:36px 32px;">'
+        .   '<h1 style="margin:0 0 18px;font-size:21px;color:#14294D;">' . e($titre) . '</h1>'
         .   $corpsHtml
         . '</td></tr>'
-        . '<tr><td style="background:#f8f9f9;padding:20px 32px;border-top:1px solid #e1e4e5;font-size:12px;color:#83888a;">'
-        .   e(CLUB['nom']) . ' — Aérodrome de Saumur Terrefort, Route de Marson, 49400 Saumur<br>'
+        . '<tr><td style="background:#f8f9f9;padding:22px 32px;border-top:1px solid #e1e4e5;font-size:12px;color:#83888a;">'
+        .   '<strong style="color:#14294D;">' . e(CLUB['nom']) . '</strong><br>'
+        .   e(CLUB['adresse_1']) . ', ' . e(CLUB['adresse_2']) . '<br>'
         .   'Tél. ' . e(CLUB['tel_mobile']) . ' · ' . e(CLUB['email_vols'])
         . '</td></tr>'
-        . '</table></td></tr></table></body></html>';
+        . '</table>'
+        . '<p style="margin:14px 0 0;font-size:11px;color:#9AA4B2;">Cet e-mail vous est adressé par ' . e(CLUB['nom']) . ' suite à une démarche sur notre site.</p>'
+        . '</td></tr></table></body></html>';
+}
+
+/** Bouton d'action des e-mails : même bleu marine que .bouton--sombre du
+ *  site (style.css, --bleu-nuit "fonds sombres : hero, pied, panneaux,
+ *  boutons"), même rayon (--rayon: 3px). */
+function email_bouton(string $href, string $libelle): string
+{
+    return '<a href="' . e($href) . '" style="display:inline-block;background:#14294D;border:1px solid #14294D;color:#ffffff;font-size:15px;font-weight:600;padding:13px 28px;border-radius:3px;text-decoration:none;">' . e($libelle) . '</a>';
 }
 
 /**
@@ -162,25 +190,36 @@ function envoyer_email_pj(string $destinataire, string $sujet, string $corps, ar
  */
 function email_lien_mot_de_passe(string $destinataire, string $prenom, string $lien, bool $invitation = false): bool
 {
+    $bonjour = $prenom !== '' ? "Bonjour {$prenom}," : 'Bonjour,';
     if ($invitation) {
         $sujet = 'Votre accès à l’espace adhérents du Saumur Air Club';
-        $corps = "Bonjour {$prenom},\n\n"
+        $texte = "{$bonjour}\n\n"
             . "Un compte vient d’être créé pour vous sur l’espace adhérents du Saumur Air Club.\n"
             . "Pour l’activer, cliquez sur le lien ci-dessous et choisissez votre mot de passe :\n\n"
             . $lien . "\n\n"
             . "Ce lien est valable 7 jours.\n\n"
             . "À bientôt,\nLe Saumur Air Club";
+        $intro = 'Un compte vient d\'être créé pour vous sur l\'espace adhérents du club. Pour l\'activer, choisissez votre mot de passe en cliquant ci-dessous :';
+        $texteBouton = 'Activer mon compte';
+        $validite = 'Ce lien est valable 7 jours.';
     } else {
         $sujet = 'Réinitialisation de votre mot de passe — Saumur Air Club';
-        $corps = "Bonjour {$prenom},\n\n"
+        $texte = "{$bonjour}\n\n"
             . "Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le lien "
             . "ci-dessous pour en choisir un nouveau :\n\n"
             . $lien . "\n\n"
             . "Ce lien est valable 24 heures. Si vous n’êtes pas à l’origine de cette demande, "
             . "ignorez simplement cet e-mail.\n\n"
             . "Le Saumur Air Club";
+        $intro = 'Vous avez demandé à réinitialiser votre mot de passe. Choisissez-en un nouveau en cliquant ci-dessous :';
+        $texteBouton = 'Choisir un nouveau mot de passe';
+        $validite = 'Ce lien est valable 24 heures. Si vous n\'êtes pas à l\'origine de cette demande, ignorez simplement cet e-mail.';
     }
-    return envoyer_email($destinataire, $sujet, $corps);
+    $corpsHtml = '<p style="margin:0 0 22px;font-size:15px;line-height:1.6;">' . e($bonjour) . '<br><br>' . e($intro) . '</p>'
+        . '<p style="margin:0 0 22px;">' . email_bouton($lien, $texteBouton) . '</p>'
+        . '<p style="margin:0;font-size:13px;line-height:1.6;color:#78859A;">' . e($validite) . '</p>';
+    $html = email_gabarit($invitation ? 'Bienvenue au club' : 'Réinitialisation de mot de passe', $corpsHtml);
+    return envoyer_email_html_pj($destinataire, $sujet, $html, $texte);
 }
 
 /** Invite un membre à remplir/renouveler son adhésion en ligne. */
@@ -189,7 +228,7 @@ function email_lien_reinscription(string $destinataire, string $prenom, string $
     $annee = COTISATION_ANNEE;
     $bonjour = $prenom !== '' ? "Bonjour {$prenom}," : 'Bonjour,';
     $sujet = 'Renouvelez votre adhésion ' . $annee . ' — Saumur Air Club';
-    $corps = "{$bonjour}\n\n"
+    $texte = "{$bonjour}\n\n"
         . "La campagne d'adhésion {$annee} est ouverte. Vous pouvez renouveler votre "
         . "adhésion en ligne, en quelques minutes, à l'adresse suivante :\n\n"
         . $lien . "\n\n"
@@ -197,7 +236,12 @@ function email_lien_reinscription(string $destinataire, string $prenom, string $
         . "déjà pré-remplies, il ne vous reste qu'à les vérifier, joindre votre licence et "
         . "votre visite médicale, puis régler la cotisation.\n\n"
         . "À très bientôt,\nLe Saumur Air Club";
-    return envoyer_email($destinataire, $sujet, $corps);
+    $corpsHtml = '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;">' . e($bonjour) . '<br><br>'
+        . "La campagne d'adhésion <strong>{$annee}</strong> est ouverte. Vous pouvez renouveler votre adhésion en ligne, en quelques minutes.</p>"
+        . '<p style="margin:0 0 22px;">' . email_bouton($lien, 'Renouveler mon adhésion') . '</p>'
+        . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;">Connectez-vous à votre espace adhérent : vos informations de l\'an dernier sont déjà pré-remplies, il ne vous reste qu\'à les vérifier, joindre votre licence et votre visite médicale, puis régler la cotisation.</p>';
+    $html = email_gabarit('Renouvellement d\'adhésion ' . $annee, $corpsHtml);
+    return envoyer_email_html_pj($destinataire, $sujet, $html, $texte);
 }
 
 /** Envoie au futur membre les modalités de règlement de sa cotisation. */
@@ -205,9 +249,22 @@ function email_lien_paiement(string $destinataire, string $prenom, string $mode,
 {
     $montant = prix($montantCents);
     $bonjour = $prenom !== '' ? "Bonjour {$prenom}," : 'Bonjour,';
+    // Encart "Montant / Référence [/ IBAN]" -- même gabarit visuel que le
+    // récapitulatif du bon cadeau (email_bon_cadeau), pour rester cohérent
+    // entre les deux seuls e-mails du site qui affichent un montant à régler.
+    $ligneIban = $mode !== 'carte'
+        ? '<tr><td style="padding:6px 0;color:#83888a;">IBAN</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">FR76 —— à compléter par le club ——</td></tr>'
+        : '';
+    $encart = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        . 'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 22px;">'
+        . '<tr><td style="padding:6px 0;color:#83888a;">Montant</td><td style="padding:6px 0;text-align:right;font-weight:bold;font-size:18px;color:#14294D;">' . e($montant) . '</td></tr>'
+        . '<tr><td style="padding:6px 0;color:#83888a;">Référence</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($reference) . '</td></tr>'
+        . $ligneIban
+        . '</table>';
+
     if ($mode === 'carte') {
         $sujet = 'Réglez votre cotisation par carte — Saumur Air Club';
-        $corps = "{$bonjour}\n\nVotre dossier d'inscription est complet. Il ne reste qu'à régler votre "
+        $texte = "{$bonjour}\n\nVotre dossier d'inscription est complet. Il ne reste qu'à régler votre "
             . "cotisation de {$montant}.\n\nPaiement par carte bancaire : votre lien de paiement sécurisé "
             . "vous est adressé ci-dessous.\n\n"
             . "  Montant   : {$montant}\n"
@@ -215,9 +272,12 @@ function email_lien_paiement(string $destinataire, string $prenom, string $mode,
             . "(Le paiement par carte en ligne sera bientôt actif ; en attendant, le virement reste "
             . "possible — répondez à cet e-mail pour les coordonnées.)\n\n"
             . "À très bientôt,\nLe Saumur Air Club";
+        $corpsHtml = '<p style="margin:0 0 20px;font-size:15px;line-height:1.6;">' . e($bonjour) . '<br><br>Votre dossier d\'inscription est complet. Il ne reste qu\'à régler votre cotisation.</p>'
+            . $encart
+            . '<p style="margin:0;font-size:13px;line-height:1.6;color:#78859A;">Le paiement par carte en ligne sera bientôt actif ; en attendant, le virement reste possible — répondez à cet e-mail pour les coordonnées.</p>';
     } else {
         $sujet = 'Réglez votre cotisation par virement — Saumur Air Club';
-        $corps = "{$bonjour}\n\nVotre dossier d'inscription est complet. Il ne reste qu'à régler votre "
+        $texte = "{$bonjour}\n\nVotre dossier d'inscription est complet. Il ne reste qu'à régler votre "
             . "cotisation de {$montant} par virement bancaire :\n\n"
             . "  Bénéficiaire : " . CLUB['nom'] . "\n"
             . "  IBAN         : FR76 —— à compléter par le club ——\n"
@@ -225,21 +285,29 @@ function email_lien_paiement(string $destinataire, string $prenom, string $mode,
             . "  Montant      : {$montant}\n\n"
             . "Votre adhésion sera activée dès réception du virement.\n\n"
             . "À très bientôt,\nLe Saumur Air Club";
+        $corpsHtml = '<p style="margin:0 0 20px;font-size:15px;line-height:1.6;">' . e($bonjour) . '<br><br>Votre dossier d\'inscription est complet. Il ne reste qu\'à régler votre cotisation par virement bancaire, au bénéficiaire <strong>' . e(CLUB['nom']) . '</strong> :</p>'
+            . $encart
+            . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;">Votre adhésion sera activée dès réception du virement.</p>';
     }
-    return envoyer_email($destinataire, $sujet, $corps);
+    $html = email_gabarit($mode === 'carte' ? 'Paiement de votre cotisation' : 'Paiement par virement', $corpsHtml);
+    return envoyer_email_html_pj($destinataire, $sujet, $html, $texte);
 }
 
 /** Invite une personne (sans compte) à remplir une demande de pré-inscription. */
 function email_lien_preinscription(string $destinataire, string $lien): bool
 {
     $sujet = 'Rejoignez le Saumur Air Club — demande d’inscription';
-    $corps = "Bonjour,\n\n"
+    $texte = "Bonjour,\n\n"
         . "Vous souhaitez rejoindre le Saumur Air Club ? Remplissez votre demande "
         . "d'inscription en ligne à l'adresse suivante :\n\n"
         . $lien . "\n\n"
         . "Nous reviendrons vers vous rapidement pour finaliser votre adhésion.\n\n"
         . "À très bientôt,\nLe Saumur Air Club";
-    return envoyer_email($destinataire, $sujet, $corps);
+    $corpsHtml = '<p style="margin:0 0 22px;font-size:15px;line-height:1.6;">Bonjour,<br><br>Vous souhaitez rejoindre le Saumur Air Club ? Remplissez votre demande d\'inscription en ligne en cliquant ci-dessous :</p>'
+        . '<p style="margin:0 0 22px;">' . email_bouton($lien, 'Faire ma demande d\'inscription') . '</p>'
+        . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;">Nous reviendrons vers vous rapidement pour finaliser votre adhésion.</p>';
+    $html = email_gabarit('Rejoindre le club', $corpsHtml);
+    return envoyer_email_html_pj($destinataire, $sujet, $html, $texte);
 }
 
 /** Notification au club : une demande vient d'arriver. */
@@ -351,7 +419,7 @@ function email_relance_bon(array $bon, int $joursRestants): bool
 
     $sujet = 'Votre bon cadeau expire bientôt — ' . $num;
 
-    $corps = <<<TXT
+    $texte = <<<TXT
 Bonjour {$prenom},
 
 Votre bon cadeau pour un vol au-dessus du Val de Loire arrive à
@@ -377,7 +445,21 @@ Aérodrome de Saumur Terrefort
 Route de Marson, 49400 SAUMUR
 TXT;
 
-    return envoyer_email($bon['acheteur_email'], $sujet, $corps);
+    // Même encart que email_bon_cadeau (boîte à liseré or) : c'est le même
+    // bon qu'on rappelle, il doit rester immédiatement reconnaissable.
+    $corpsHtml =
+        '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;">Bonjour <strong>' . e($prenom) . '</strong>,<br>'
+        . 'votre bon cadeau pour un vol au-dessus du Val de Loire arrive à échéance <strong>' . e($delai) . '</strong>. Ne laissez pas passer ce beau moment !</p>'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        .   'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 22px;">'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">N° du bon</td><td style="padding:6px 0;text-align:right;font-weight:bold;font-size:18px;color:#B08D2C;">' . e((string) $num) . '</td></tr>'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">À utiliser avant le</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($fin) . '</td></tr>'
+        . '</table>'
+        . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;">Il vous suffit de contacter le club pour convenir d\'une date de vol, selon la météo et les disponibilités.<br>'
+        .   'Téléphone : <strong>' . e($tel) . '</strong> · Email : <strong>' . e($email) . '</strong></p>';
+    $html = email_gabarit('Votre bon cadeau expire bientôt', $corpsHtml);
+
+    return envoyer_email_html_pj($bon['acheteur_email'], $sujet, $html, $texte);
 }
 
 /** Notification au club : un paiement vient d'aboutir. */
@@ -418,7 +500,7 @@ function email_accuse_acheteur(array $bon): bool
     $tel   = CLUB['tel_mobile'];
     $email = CLUB['email_vols'];
 
-    $corps = <<<TXT
+    $texte = <<<TXT
 Bonjour {$bon['prenom']},
 
 Nous avons bien reçu votre demande de bon cadeau pour un vol découverte
@@ -442,5 +524,17 @@ Aérodrome de Saumur Terrefort
 Route de Marson, 49400 SAUMUR
 TXT;
 
-    return envoyer_email($bon['email'], $sujet, $corps);
+    $corpsHtml =
+        '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;">Bonjour <strong>' . e($bon['prenom']) . '</strong>,<br>'
+        . 'nous avons bien reçu votre demande de bon cadeau pour un vol découverte au-dessus du Val de Loire. Merci !</p>'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        .   'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 22px;">'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">Votre référence</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($bon['reference']) . '</td></tr>'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">Montant</td><td style="padding:6px 0;text-align:right;font-weight:bold;font-size:18px;color:#14294D;">' . e($bon['montant_affiche']) . '</td></tr>'
+        . '</table>'
+        . '<p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#4C596B;">Le club va vous recontacter très rapidement pour finaliser le règlement et vous transmettre votre bon cadeau.</p>'
+        . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;">Une question d\'ici là ?<br>Téléphone : <strong>' . e($tel) . '</strong> · Email : <strong>' . e($email) . '</strong></p>';
+    $html = email_gabarit('Demande bien reçue', $corpsHtml);
+
+    return envoyer_email_html_pj($bon['email'], $sujet, $html, $texte);
 }
