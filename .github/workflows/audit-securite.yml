@@ -1,0 +1,106 @@
+name: Audit sécurité hebdo
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # tous les lundis à 6h00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Exécuter l'audit et envoyer le rapport par email
+        env:
+          OPS_SECRET: ${{ secrets.PROD_OPS_SECRET }}
+        run: |
+          set -uo pipefail
+          DOMAIN="https://aeroclub-saumur.fr"
+          HOST="aeroclub-saumur.fr"
+
+          # ---- 1. En-têtes de sécurité --------------------------------
+          headers=$(curl -s -D - -o /dev/null "$DOMAIN/")
+          manquants=""
+          for h in "X-Content-Type-Options" "X-Frame-Options" "Referrer-Policy" \
+                   "Permissions-Policy" "Content-Security-Policy" "Strict-Transport-Security"; do
+            echo "$headers" | grep -qi "^$h:" || manquants="$manquants $h"
+          done
+          if [ -z "$manquants" ]; then
+            r_headers="ok"; d_headers="Les 6 en-têtes présents"
+          else
+            r_headers="ALERTE"; d_headers="Manquants :$manquants"
+          fi
+
+          # ---- 2. Cookies (session) ------------------------------------
+          cookie=$(curl -s -D - -o /dev/null "$DOMAIN/admin/connexion.php" | grep -i "^set-cookie" | head -1)
+          if echo "$cookie" | grep -qi "secure" && echo "$cookie" | grep -qi "httponly"; then
+            r_cookies="ok"; d_cookies="Secure + HttpOnly présents"
+          else
+            r_cookies="ALERTE"; d_cookies="Cookie de session sans Secure/HttpOnly"
+          fi
+
+          # ---- 3. Chemins sensibles -------------------------------------
+          expose=""
+          for p in /inc/config.php /inc/db.php /inc/config-local.php /.env /.htpasswd /.git/config /sql/schema.sql; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$DOMAIN$p")
+            if [ "$code" = "200" ]; then expose="$expose $p"; fi
+          done
+          if [ -z "$expose" ]; then
+            r_chemins="ok"; d_chemins="Aucun exposé"
+          else
+            r_chemins="ALERTE"; d_chemins="Exposés :$expose"
+          fi
+
+          # ---- 4. Protection admin ---------------------------------------
+          admin_code=$(curl -s -o /dev/null -w "%{http_code}" "$DOMAIN/admin/")
+          if [ "$admin_code" = "302" ] || [ "$admin_code" = "301" ]; then
+            r_admin="ok"; d_admin="Page admin protégée (code $admin_code sans session)"
+          else
+            r_admin="ALERTE"; d_admin="Code inattendu : $admin_code"
+          fi
+
+          # ---- 5. Certificat TLS ------------------------------------------
+          enddate=$(echo | openssl s_client -connect "$HOST:443" -servername "$HOST" 2>/dev/null \
+                     | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+          if [ -n "$enddate" ]; then
+            end_ts=$(date -d "$enddate" +%s)
+            now_ts=$(date +%s)
+            jours=$(( (end_ts - now_ts) / 86400 ))
+            if [ "$jours" -gt 14 ]; then
+              r_tls="ok"; d_tls="Valide encore $jours j"
+            else
+              r_tls="ALERTE"; d_tls="Expire dans $jours j"
+            fi
+          else
+            r_tls="ALERTE"; d_tls="Impossible de lire le certificat"
+          fi
+
+          # ---- 6. npm/deps & pare-feu (info) -------------------------------
+          r_deps="ok"; d_deps="Non applicable : pas de projet npm ni de serveur maîtrisé (IONOS)"
+
+          global="OK"
+          for r in "$r_headers" "$r_cookies" "$r_chemins" "$r_admin" "$r_tls"; do
+            [ "$r" = "ok" ] || global="ALERTE"
+          done
+
+          now=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
+          sujet="[Saumur] Audit sécurité hebdo : $global"
+
+          corps="<h2>Audit sécurité Saumur — $global</h2>"
+          corps="$corps<p>$DOMAIN · $now</p>"
+          corps="$corps<table border='1' cellpadding='6' cellspacing='0'>"
+          corps="$corps<tr><th>Contrôle</th><th>Résultat</th><th>Détail</th></tr>"
+          corps="$corps<tr><td>En-têtes de sécurité</td><td>$r_headers</td><td>$d_headers</td></tr>"
+          corps="$corps<tr><td>Cookies</td><td>$r_cookies</td><td>$d_cookies</td></tr>"
+          corps="$corps<tr><td>Chemins sensibles</td><td>$r_chemins</td><td>$d_chemins</td></tr>"
+          corps="$corps<tr><td>Protection admin</td><td>$r_admin</td><td>$d_admin</td></tr>"
+          corps="$corps<tr><td>Certificat TLS</td><td>$r_tls</td><td>$d_tls</td></tr>"
+          corps="$corps<tr><td>npm/deps &amp; pare-feu (info)</td><td>$r_deps</td><td>$d_deps</td></tr>"
+          corps="$corps</table>"
+
+          echo "Résultat global : $global"
+
+          curl -sf -X POST "$DOMAIN/taches/notifier.php" \
+            --data-urlencode "k=$OPS_SECRET" \
+            --data-urlencode "sujet=$sujet" \
+            --data-urlencode "corps=$corps"
