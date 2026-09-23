@@ -42,8 +42,14 @@ jobs:
             exit 1
           fi
 
+      - name: "Premier déploiement en échec : rollback ignoré"
+        if: failure() && steps.deploy.outputs.bootstrap == 'true'
+        run: |
+          echo "Premier déploiement sur ce dossier : le healthcheck peut échouer normalement tant que le domaine ne pointe pas encore dessus."
+          echo "Dossier conservé tel quel, pas de rollback."
+
       - name: Revenir en arrière si le healthcheck a échoué
-        if: failure() && steps.deploy.outcome == 'success'
+        if: failure() && steps.deploy.outcome == 'success' && steps.deploy.outputs.bootstrap != 'true'
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -95,8 +101,14 @@ jobs:
             exit 1
           fi
 
+      - name: "Premier déploiement en échec : rollback ignoré"
+        if: failure() && steps.deploy.outputs.bootstrap == 'true'
+        run: |
+          echo "Premier déploiement sur ce dossier : le healthcheck peut échouer normalement tant que le domaine ne pointe pas encore dessus."
+          echo "Dossier conservé tel quel, pas de rollback."
+
       - name: Revenir en arrière si le healthcheck a échoué
-        if: failure() && steps.deploy.outcome == 'success'
+        if: failure() && steps.deploy.outcome == 'success' && steps.deploy.outputs.bootstrap != 'true'
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}

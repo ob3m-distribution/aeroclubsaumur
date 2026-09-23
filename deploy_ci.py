@@ -81,6 +81,15 @@ def generer_config_local():
     )
 
 
+def ecrire_sortie_github(cle, valeur):
+    """Ecrit une sortie de step GitHub Actions ($GITHUB_OUTPUT), sans effet
+    si le script tourne hors CI (deploiement manuel)."""
+    chemin = os.environ.get("GITHUB_OUTPUT")
+    if chemin:
+        with open(chemin, "a") as f:
+            f.write(f"{cle}={valeur}\n")
+
+
 def connecter():
     # Timeout explicite : sans lui, une connexion qui se fige (coupure
     # reseau cote IONOS) bloque le job indefiniment plutot que d'echouer.
@@ -227,9 +236,13 @@ def deployer():
         if not existe(sftp, chemin_live):
             # Premier deploiement sur cet environnement (ex. bootstrap d'un
             # dossier de production tout neuf) : rien a basculer, on installe
-            # directement.
+            # directement. Signale "bootstrap" au workflow pour qu'il ne
+            # declenche pas de rollback si le healthcheck echoue ensuite —
+            # avant que le domaine ne pointe vers ce dossier, un healthcheck
+            # en echec est normal, pas une preuve que le deploiement est mauvais.
             print(f"  premier deploiement : creation directe de {chemin_live}")
             sftp.rename(staging, chemin_live)
+            ecrire_sortie_github("bootstrap", "true")  # cf. .github/workflows/deploy.yml
             print("Deploiement termine (premiere installation, pas de sauvegarde).")
             return
 
