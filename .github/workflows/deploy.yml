@@ -89,6 +89,7 @@ jobs:
           PROD_STRIPE_PK: ${{ secrets.PROD_STRIPE_PK }}
           PROD_STRIPE_SK: ${{ secrets.PROD_STRIPE_SK }}
           PROD_STRIPE_WHSEC: ${{ secrets.PROD_STRIPE_WHSEC }}
+          PROD_INSTALLER_SECRET: ${{ secrets.PROD_INSTALLER_SECRET }}
         run: python deploy_ci.py deploy
 
       - name: Vérifier que le site répond (healthcheck)
