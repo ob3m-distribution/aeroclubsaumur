@@ -74,6 +74,15 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_PROD }}
+          GENERER_CONFIG_LOCAL: "1"
+          PROD_DB_HOST: ${{ secrets.PROD_DB_HOST }}
+          PROD_DB_PORT: ${{ secrets.PROD_DB_PORT }}
+          PROD_DB_NAME: ${{ secrets.PROD_DB_NAME }}
+          PROD_DB_USER: ${{ secrets.PROD_DB_USER }}
+          PROD_DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+          PROD_STRIPE_PK: ${{ secrets.PROD_STRIPE_PK }}
+          PROD_STRIPE_SK: ${{ secrets.PROD_STRIPE_SK }}
+          PROD_STRIPE_WHSEC: ${{ secrets.PROD_STRIPE_WHSEC }}
         run: python deploy_ci.py deploy
 
       - name: Vérifier que le site répond (healthcheck)

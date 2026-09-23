@@ -32,8 +32,53 @@ IGNORER_DOSSIERS = {".git", "__pycache__", "node_modules", "_originaux"}
 # voir .gitignore) mais qui existent sur le serveur et doivent survivre a
 # chaque deploiement, sans quoi le site neuf n'a ni secrets ni donnees
 # reelles. A tenir synchronise avec .gitignore si la liste change la-bas.
-PERSISTANTS_FICHIERS = [".htpasswd", "inc/config-local.php"]
+# inc/config-local.php n'y figure pas : sur l'environnement qui met
+# GENERER_CONFIG_LOCAL=1 (la prod), il est regenere a chaque deploiement
+# depuis les secrets GitHub plutot que reporte tel quel (voir plus bas) ;
+# sur les autres (le dev), il reste gere a la main comme avant.
+PERSISTANTS_FICHIERS = [".htpasswd"]
 PERSISTANTS_DOSSIERS = ["docs-inscriptions", "docs-adherents", "uploads"]
+
+CONFIG_LOCAL_TEMPLATE = """<?php
+declare(strict_types=1);
+
+/* Genere automatiquement par deploy_ci.py depuis les secrets GitHub —
+   ne pas modifier a la main, ce serait ecrase au prochain deploiement. */
+
+const BDD = [
+    'hote'         => '{db_host}',
+    'port'         => {db_port},
+    'base'         => '{db_name}',
+    'utilisateur'  => '{db_user}',
+    'mot_de_passe' => '{db_password}',
+];
+
+const EMAIL_CLUB = 'voler@saumurairclub.fr';
+const EMAIL_EXPEDITEUR = 'noreply@aeroclub-saumur.fr';
+const EMAIL_EXPEDITEUR_NOM = 'Saumur Air Club';
+
+const STRIPE_CLE_PUBLIQUE   = '{stripe_pk}';
+const STRIPE_CLE_SECRETE    = '{stripe_sk}';
+const STRIPE_WEBHOOK_SECRET = '{stripe_whsec}';
+"""
+
+
+def echapper_php(valeur):
+    """Echappe pour une chaine PHP entre apostrophes simples."""
+    return valeur.replace("\\", "\\\\").replace("'", "\\'")
+
+
+def generer_config_local():
+    return CONFIG_LOCAL_TEMPLATE.format(
+        db_host=echapper_php(os.environ["PROD_DB_HOST"]),
+        db_port=int(os.environ["PROD_DB_PORT"]),
+        db_name=echapper_php(os.environ["PROD_DB_NAME"]),
+        db_user=echapper_php(os.environ["PROD_DB_USER"]),
+        db_password=echapper_php(os.environ["PROD_DB_PASSWORD"]),
+        stripe_pk=echapper_php(os.environ["PROD_STRIPE_PK"]),
+        stripe_sk=echapper_php(os.environ["PROD_STRIPE_SK"]),
+        stripe_whsec=echapper_php(os.environ["PROD_STRIPE_WHSEC"]),
+    )
 
 
 def connecter():
@@ -99,9 +144,29 @@ def copier_dossier_distant(sftp, source, dest):
             copier_distant(sftp, s, d)
 
 
+def installer_config_local(sftp, chemin_live, staging):
+    """inc/config-local.php : regenere depuis les secrets sur l'environnement
+    qui le demande (GENERER_CONFIG_LOCAL=1, la prod), sinon reporte tel quel
+    depuis la version en ligne (comportement historique, utilise par le dev)."""
+    if os.environ.get("GENERER_CONFIG_LOCAL") == "1":
+        print("  generation de inc/config-local.php depuis les secrets")
+        with sftp.open(f"{staging}/inc/config-local.php", "w") as f:
+            f.write(generer_config_local())
+        return
+
+    src = f"{chemin_live}/inc/config-local.php"
+    if existe(sftp, src):
+        print("  fichier persistant reporte : inc/config-local.php")
+        copier_distant(sftp, src, f"{staging}/inc/config-local.php")
+    else:
+        print("  ATTENTION : inc/config-local.php absent de la version en ligne actuelle, ignore")
+
+
 def reporter_persistants(sftp, chemin_live, staging):
     """Reporte dans `staging` les fichiers/dossiers qui vivent uniquement
     sur le serveur (secrets, donnees membres) avant la bascule."""
+    installer_config_local(sftp, chemin_live, staging)
+
     for f in PERSISTANTS_FICHIERS:
         src = f"{chemin_live}/{f}"
         if existe(sftp, src):

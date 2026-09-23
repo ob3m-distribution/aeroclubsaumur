@@ -85,29 +85,59 @@ Dans **Settings → Secrets and variables → Actions** du dépôt :
 | `DEPLOY_USER` | `acc2123289695` |
 | `DEPLOY_PASSWORD` | le mot de passe SFTP du compte de déploiement |
 | `DEPLOY_PATH` | `Aeroclub Saumur - Espace developpement` (dossier **dev**) |
-| `DEPLOY_PATH_PROD` | dossier **prod** (ex. `Aeroclub Saumur - Production`) |
+| `DEPLOY_PATH_PROD` | `Aeroclub Saumur - Production` |
 | `DEV_BASICAUTH_USER` | `sac` (protection de l'espace dev) |
 | `DEV_BASICAUTH_PASSWORD` | le mot de passe Basic Auth de l'espace dev |
+| `PROD_DB_HOST` | hôte MySQL/MariaDB de la base de production |
+| `PROD_DB_PORT` | port (3306) |
+| `PROD_DB_NAME` | nom de la base de production |
+| `PROD_DB_USER` | utilisateur de la base de production |
+| `PROD_DB_PASSWORD` | mot de passe de la base de production |
+| `PROD_STRIPE_PK` | clé publique Stripe live (`pk_live_...`) |
+| `PROD_STRIPE_SK` | clé secrète Stripe live (`sk_live_...`) |
+| `PROD_STRIPE_WHSEC` | secret de signature du webhook Stripe live (`whsec_...`) |
 
 `DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_PASSWORD` sont partagés (même compte
 SFTP) — seul le chemin de destination change entre dev et prod. Le
 healthcheck prod ne prend pas de Basic Auth : `aeroclub-saumur.fr` doit
 être librement accessible.
 
+Les 8 secrets `PROD_DB_*`/`PROD_STRIPE_*` alimentent la génération
+automatique de `inc/config-local.php` sur la prod (voir section
+suivante) — ils ne servent pas pour le dev, qui garde son
+`config-local.php` géré à la main sur le serveur.
+
 ⚠️ **Les deux secrets `DEV_BASICAUTH_*` sont indispensables au healthcheck
 dev.** S'ils sont absents ou faux, le healthcheck reçoit un 401 et
 déclenche un rollback à chaque déploiement — même si le déploiement
 lui-même s'est bien passé.
+
+## `inc/config-local.php` en prod : généré, pas déposé à la main
+
+Sur le job prod, `deploy_ci.py` reçoit `GENERER_CONFIG_LOCAL=1` : au lieu
+de reporter un fichier existant (comme pour `.htpasswd` ou comme le fait
+le dev), il **régénère `inc/config-local.php` à chaque déploiement** à
+partir des 8 secrets `PROD_DB_*`/`PROD_STRIPE_*`. Avantages :
+- jamais besoin de déposer ce fichier à la main sur le serveur ;
+- changer une clé Stripe ou un mot de passe de base = mettre à jour le
+  secret GitHub, le déploiement suivant s'en charge ;
+- pas de risque de fichier resté périmé après une rotation de secret.
+
+Le dev, lui, garde son `config-local.php` géré à la main sur le serveur
+(comportement historique, inchangé) — `GENERER_CONFIG_LOCAL` n'est pas
+défini sur son job.
 
 ## Bootstrap du dossier de production
 
 Le dossier prod n'existe pas tant que personne ne l'a créé. Avant le tout
 premier push après ajout de `DEPLOY_PATH_PROD` :
 
-1. `inc/config-local.php` doit être déposé une fois manuellement dans le
-   futur dossier prod, avec les **vraies clés Stripe live** — sans lui, le
-   premier déploiement prod se terminera comme le tout premier test dev
-   (500, rollback automatique) faute de secrets.
+1. Les 8 secrets `PROD_DB_*`/`PROD_STRIPE_*` doivent être renseignés —
+   tant que `PROD_STRIPE_SK` (ou un autre) est absent, `config-local.php`
+   sera généré avec une valeur vide pour ce champ : le dossier sera bien
+   créé, mais les fonctionnalités concernées (paiement, base de données)
+   ne marcheront pas tant que le secret manquant n'est pas ajouté — sans
+   gravité tant qu'aucun domaine ne pointe encore dessus.
 2. Le domaine `aeroclub-saumur.fr` doit pointer vers ce dossier (panneau
    IONOS) pour que le healthcheck puisse le joindre.
 
