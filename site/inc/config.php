@@ -4,6 +4,9 @@ declare(strict_types=1);
 // En-têtes de sécurité HTTP, émis avant toute sortie (voir securite.php).
 require_once __DIR__ . '/securite.php';
 
+// Erreurs PHP dans un fichier récupérable par SFTP (voir journal-erreurs.php).
+require_once __DIR__ . '/journal-erreurs.php';
+
 /* ------------------------------------------------------------------
    Configuration generale du site Saumur Air Club
    ------------------------------------------------------------------ */
