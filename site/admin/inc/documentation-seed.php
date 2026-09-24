@@ -118,7 +118,7 @@ return [
 "- **Audit sécurité hebdo** (lundi) : en-têtes, cookies, chemins sensibles, protection admin, expiration TLS → rapport e-mail.\n" .
 "- **Logs serveur quotidiens** : erreurs PHP + logs d'accès IONOS rapatriés par SFTP, archivés 30 j, e-mail si erreurs ou 5xx.\n" .
 "- **E-mails via IONOS** (endpoint `notifier.php`), pas de service tiers.\n" .
-"- **Sauvegarde de la base** : endpoint d'export protégé (`taches/export-db.php`) prêt, mais aucune sauvegarde automatique n'est planifiée à ce jour.\n\n" .
+"- **Sauvegarde nocturne de la base** (3h) : export protégé, contrôle d'intégrité, gzip horodaté dans `sauvegardes/` sur l'espace SFTP IONOS, **14 dernières conservées**, e-mail en cas d'échec.\n\n" .
 "## Limite connue\n" .
 "- Une panne **totale** ne peut pas s'auto-notifier (l'e-mail dépend d'IONOS). Filet externe (UptimeRobot) prévu pour la prod — voir `MONITORING-EXTERNE.md`.",
 ],

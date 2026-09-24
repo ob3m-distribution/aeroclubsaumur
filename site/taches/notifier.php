@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 /* ==================================================================
    Notification e-mail via IONOS — appelé par les workflows GitHub
-   Actions d'ops (audit sécurité hebdo, logs serveur quotidiens). L'e-mail part de noreply@aeroclub-
+   Actions d'ops (audit sécurité hebdo, logs serveur quotidiens, échec de
+   la sauvegarde nocturne). L'e-mail part de noreply@aeroclub-
    saumur.fr (mail() IONOS), pas d'un service tiers.
 
    Protégé par le secret d'ops. Le destinataire est FIXÉ côté serveur
