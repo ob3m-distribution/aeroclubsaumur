@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 /* ==================================================================
-   Notification e-mail via IONOS — appelé par les scripts d'ops du VPS
-   (sentinelle, sauvegarde, audit). L'e-mail part de noreply@aeroclub-
+   Notification e-mail via IONOS — appelé par les workflows GitHub
+   Actions d'ops (audit sécurité hebdo, logs serveur quotidiens). L'e-mail part de noreply@aeroclub-
    saumur.fr (mail() IONOS), pas d'un service tiers.
 
    Protégé par le secret d'ops. Le destinataire est FIXÉ côté serveur

@@ -1,12 +1,12 @@
 # Filet de surveillance externe — à activer à la mise en PROD
 
 ## Pourquoi
-La surveillance interne (Sentinelle sur le VPS, alertes par e-mail IONOS) ne peut **pas**
+La surveillance en place (workflows GitHub Actions, alertes par e-mail IONOS) ne peut **pas**
 prévenir quand le site est **totalement** hors service, car l'e-mail dépend d'IONOS
 lui-même. Un pinger **externe** interroge le site depuis ses propres serveurs et alerte
 par **son propre canal** (indépendant d'IONOS) : c'est le seul moyen d'être prévenu
 d'une panne totale. C'est un **filet de secours**, il complète (ne remplace pas)
-la Sentinelle, la sauvegarde et l'audit déjà en place.
+l'audit sécurité hebdo et la récupération quotidienne des logs déjà en place.
 
 ## Service recommandé
 **UptimeRobot** — https://uptimerobot.com — plan **gratuit** (50 moniteurs, intervalle 5 min).

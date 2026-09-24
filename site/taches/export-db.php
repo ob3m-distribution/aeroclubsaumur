@@ -2,9 +2,9 @@
 declare(strict_types=1);
 
 /* ==================================================================
-   Export de sauvegarde à distance — appelé UNIQUEMENT par le cron de
-   sauvegarde sur le VPS Hostinger (le port MySQL 3306 est fermé côté
-   IONOS, donc pas de mysqldump distant possible).
+   Export de sauvegarde à distance, pour un script de sauvegarde externe
+   (le port MySQL 3306 est fermé côté IONOS, donc pas de mysqldump
+   distant possible). Aucun appelant automatique n'est en place à ce jour.
 
    Triple protection : (1) HTTP Basic Auth du dev, (2) secret dédié
    comparé en temps constant, (3) HTTPS obligatoire. Ne renvoie jamais
@@ -64,4 +64,4 @@ foreach ($tables as $t) {
     }
 }
 echo "SET FOREIGN_KEY_CHECKS=1;\n";
-echo "-- END EXPORT OK\n";   // marqueur d'intégrité vérifié côté VPS
+echo "-- END EXPORT OK\n";   // marqueur d'intégrité à vérifier par l'appelant
