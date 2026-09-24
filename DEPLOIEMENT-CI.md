@@ -146,3 +146,26 @@ premier push après ajout de `DEPLOY_PATH_PROD` :
 
 Une fois ces deux points faits, le pipeline gère tout le reste
 automatiquement, dev et prod en parallèle, à chaque push.
+
+## Récupération quotidienne des logs du serveur
+
+`.github/workflows/logs.yml` tourne chaque jour à 4h UTC (et à la
+demande via *Run workflow*) et exécute `logs_ci.py`, qui réutilise la
+connexion SFTP du déploiement :
+
+- **Erreurs PHP** : sans réglage, `error_log()` écrit dans le log
+  d'erreurs Apache d'IONOS, illisible pour le client.
+  `site/inc/journal-erreurs.php` (inclus par `config.php` et `db.php`)
+  les redirige vers `logs-php/<dossier du site>.log`, **à côté** du
+  dossier du site : hors de la racine web, et pas écrasé par la bascule
+  de déploiement. Le script le renomme, le rapatrie puis le supprime —
+  le serveur ne garde que les erreurs pas encore lues.
+- **Logs d'accès Apache** : dossier `logs/` fourni par IONOS (IP
+  anonymisées, rotation gérée par IONOS). Les fichiers des 3 derniers
+  jours sont rapatriés ; les réponses 5xx de la veille sont comptées.
+  Si le compte SFTP n'a pas accès à ce dossier, le résumé l'indique.
+
+Tout est archivé comme artifact `logs-serveur` du workflow (30 jours).
+S'il y a au moins une erreur PHP ou une réponse 5xx, un résumé part par
+email via `taches/notifier.php` (secret `PROD_OPS_SECRET`). Aucun
+nouveau secret à configurer.
