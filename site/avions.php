@@ -7,8 +7,8 @@ require __DIR__ . '/inc/header.php';
 $hero = [
   'page'         => true,
   'cle_image'    => 'avions.hero.image',
-  'image'        => '/assets/img/avions-hero.jpg',
-  'alt'          => 'Les trois avions du club — F-HSAU, F-HACS et F-GCNQ — alignés devant la tour de l’aérodrome',
+  'image'        => '/assets/img/avions-hero-baron.jpg',
+  'alt'          => 'Avion bimoteur du Saumur Air Club sur le tarmac, devant la tour de contrôle',
   'titre'        => 'Nos avions',
   'cle_titre'    => 'avions.hero.titre',
   'accroche'     => 'Trois appareils, de l’école au voyage.',
