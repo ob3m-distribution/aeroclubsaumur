@@ -114,11 +114,11 @@ return [
  'cle' => 'exploitation',
  'titre' => 'Sauvegardes, supervision & audit',
  'contenu' =>
-"## Sur le VPS (dossier dédié)\n" .
-"- **Sentinelle** toutes les 5 min (ping, 2 essais, alerte e-mail unique + retour en ligne).\n" .
-"- **Sauvegarde** nocturne : base + secrets via endpoint d'export protégé, contrôle d'intégrité, gzip horodaté, **rotation 14 j**.\n" .
+"## Automatisations (GitHub Actions — tout l'hébergement est chez IONOS)\n" .
 "- **Audit sécurité hebdo** (lundi) : en-têtes, cookies, chemins sensibles, protection admin, expiration TLS → rapport e-mail.\n" .
-"- **E-mails via IONOS** (endpoint `notifier.php`), pas de service tiers.\n\n" .
+"- **Logs serveur quotidiens** : erreurs PHP + logs d'accès IONOS rapatriés par SFTP, archivés 30 j, e-mail si erreurs ou 5xx.\n" .
+"- **E-mails via IONOS** (endpoint `notifier.php`), pas de service tiers.\n" .
+"- **Sauvegarde nocturne de la base** (3h) : export protégé, contrôle d'intégrité, gzip horodaté dans `sauvegardes/` sur l'espace SFTP IONOS, **14 dernières conservées**, e-mail en cas d'échec.\n\n" .
 "## Limite connue\n" .
 "- Une panne **totale** ne peut pas s'auto-notifier (l'e-mail dépend d'IONOS). Filet externe (UptimeRobot) prévu pour la prod — voir `MONITORING-EXTERNE.md`.",
 ],

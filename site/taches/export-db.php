@@ -2,9 +2,11 @@
 declare(strict_types=1);
 
 /* ==================================================================
-   Export de sauvegarde à distance — appelé UNIQUEMENT par le cron de
-   sauvegarde sur le VPS Hostinger (le port MySQL 3306 est fermé côté
-   IONOS, donc pas de mysqldump distant possible).
+   Export de sauvegarde à distance, appelé chaque nuit par
+   sauvegarde_ci.py (.github/workflows/sauvegarde.yml) — le port MySQL
+   3306 est fermé côté IONOS, donc pas de mysqldump distant possible.
+   Passer le secret en en-tête X-Export-Secret plutôt qu'en ?k= : dans
+   l'URL, il finirait dans les logs d'accès.
 
    Triple protection : (1) HTTP Basic Auth du dev, (2) secret dédié
    comparé en temps constant, (3) HTTPS obligatoire. Ne renvoie jamais
@@ -64,4 +66,4 @@ foreach ($tables as $t) {
     }
 }
 echo "SET FOREIGN_KEY_CHECKS=1;\n";
-echo "-- END EXPORT OK\n";   // marqueur d'intégrité vérifié côté VPS
+echo "-- END EXPORT OK\n";   // marqueur d'intégrité vérifié par sauvegarde_ci.py

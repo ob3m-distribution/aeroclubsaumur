@@ -42,3 +42,6 @@ __pycache__/
 Thumbs.db
 *.log
 _probe_*.php
+
+# Logs rapatriés du serveur par logs_ci.py (données de connexion)
+logs-recuperes/

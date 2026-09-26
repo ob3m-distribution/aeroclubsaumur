@@ -1,0 +1,55 @@
+name: Logs serveur quotidiens
+
+on:
+  schedule:
+    # 4h UTC = 6h heure de Paris (CEST) — 5h en hiver (CET), le cron
+    # GitHub Actions ne suit pas le changement d'heure.
+    - cron: "0 4 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: logs-serveur
+  cancel-in-progress: false
+
+jobs:
+  logs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        run: pip install paramiko
+
+      - name: Récupérer les logs par SFTP
+        id: logs
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PATH_PROD: ${{ secrets.DEPLOY_PATH_PROD }}
+        run: python logs_ci.py
+
+      - name: Archiver les logs (30 jours)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-serveur
+          path: logs-recuperes/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Alerter par email s'il y a des erreurs
+        if: steps.logs.outputs.alerte == 'true'
+        env:
+          OPS_SECRET: ${{ secrets.PROD_OPS_SECRET }}
+        run: |
+          curl -sf -X POST "https://aeroclub-saumur.fr/taches/notifier.php" \
+            --data-urlencode "k=$OPS_SECRET" \
+            --data-urlencode "sujet=[Saumur] Erreurs dans les logs du serveur" \
+            --data-urlencode "corps@logs-recuperes/resume.html"

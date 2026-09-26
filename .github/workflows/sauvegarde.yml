@@ -1,0 +1,46 @@
+name: Sauvegarde nocturne de la base
+
+on:
+  schedule:
+    # 1h UTC = 3h heure de Paris (CEST) — 2h en hiver (CET), le cron
+    # GitHub Actions ne suit pas le changement d'heure.
+    - cron: "0 1 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: sauvegarde-base
+  cancel-in-progress: false
+
+jobs:
+  sauvegarde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        run: pip install paramiko
+
+      - name: Exporter la base et l'envoyer sur l'espace SFTP
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH_PROD: ${{ secrets.DEPLOY_PATH_PROD }}
+          OPS_SECRET: ${{ secrets.PROD_OPS_SECRET }}
+        run: python sauvegarde_ci.py
+
+      - name: Alerter par email si la sauvegarde a échoué
+        if: failure()
+        env:
+          OPS_SECRET: ${{ secrets.PROD_OPS_SECRET }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -sf -X POST "https://aeroclub-saumur.fr/taches/notifier.php" \
+            --data-urlencode "k=$OPS_SECRET" \
+            --data-urlencode "sujet=[Saumur] ÉCHEC de la sauvegarde nocturne de la base" \
+            --data-urlencode "corps=<p>La sauvegarde de la base de production a échoué cette nuit.</p><p>Détail : <a href=\"$RUN_URL\">$RUN_URL</a></p>"
