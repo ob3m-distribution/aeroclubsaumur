@@ -170,7 +170,9 @@ ErrorDocument 404 /404.php
     </FilesMatch>
     # CSS et JS sont versionnes par ?v=N : un cache long est sans risque.
     <FilesMatch "\.(css|js)$">
-        Header set Cache-Control "public, max-age=604800"
+        # 1 an (PageSpeed, 26/09/2026) : fichiers versionnés ?v=N — toujours
+        # incrémenter N à chaque modification.
+        Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
     <FilesMatch "\.(jpe?g|png|webp|svg|ico)$">
         Header set Cache-Control "public, max-age=15552000"
