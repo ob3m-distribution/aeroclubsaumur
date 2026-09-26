@@ -142,9 +142,13 @@ ErrorDocument 404 /404.php
     ExpiresActive On
     ExpiresDefault                       "access plus 1 hour"
 
-    ExpiresByType text/css               "access plus 7 days"
-    ExpiresByType text/javascript        "access plus 7 days"
-    ExpiresByType application/javascript "access plus 7 days"
+    # 1 an (PageSpeed, 26/09/2026) : site.js est appelé avec ?v=N, qu'il
+    # faut TOUJOURS incrémenter quand on le modifie (sinon les visiteurs
+    # gardent l'ancien jusqu'à un an). Le CSS est désormais intégré aux
+    # pages (inc/header.php) : ce réglage ne le concerne plus directement.
+    ExpiresByType text/css               "access plus 1 year"
+    ExpiresByType text/javascript        "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
 
     ExpiresByType image/jpeg             "access plus 6 months"
     ExpiresByType image/png              "access plus 6 months"

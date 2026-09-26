@@ -13,8 +13,15 @@ require_once __DIR__ . '/db.php';
 const POLICES = [
     'inter' => [
         'nom'         => 'Inter',
-        'famille'     => "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+        'famille'     => "'Inter', 'Inter Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
         'fichiers'    => ['Inter-latin.woff2', 'Inter-latin-ext.woff2'],
+        // Police système recalée sur les dimensions d'Inter (mêmes valeurs
+        // que next/font) : le texte ne bouge plus quand Inter arrive.
+        // PageSpeed 26/09/2026 : CLS 0,108 sur /cgv mobile, 0 après.
+        'secours'     => "@font-face{font-family:'Inter Fallback';"
+                       . "src:local('Arial'),local('Helvetica'),local('Liberation Sans');"
+                       . "ascent-override:90.44%;descent-override:22.52%;"
+                       . "line-gap-override:0%;size-adjust:107.12%}",
         'description' => 'Neutre et très lisible. Le choix sûr — mais on la voit partout.',
         'caractere'   => 'Sobre',
     ],
@@ -106,6 +113,7 @@ function police_css(): string
             $famille, $fichier, $plages[$plage]
         );
     }
+    $css .= $p['secours'] ?? '';
     $css .= sprintf(':root{--police:%s}', $p['famille']);
 
     return $css;

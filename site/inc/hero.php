@@ -42,11 +42,12 @@ $rendu = static function (string $champ, string $type = 'court') use ($h): strin
 <section class="<?= e($classesHero) ?>">
   <div class="hero__cadre">
   <?php if (!empty($h['fond'])): /* Accueil animé : 3 calques (fond fixe, nuages, avion). */ ?>
-    <img class="hero__fond"   src="<?= e((string) $h['fond']) ?>"   alt="<?= e((string) $h['alt']) ?>" fetchpriority="high">
+    <?php $srcNuages = attributs_srcset((string) $h['nuages'], '100vw'); ?>
+    <img class="hero__fond"   src="<?= e((string) $h['fond']) ?>"<?= attributs_srcset((string) $h['fond'], '100vw') ?>   alt="<?= e((string) $h['alt']) ?>" fetchpriority="high">
     <div class="hero__nuages">
-      <img src="<?= e((string) $h['nuages']) ?>" alt=""><img src="<?= e((string) $h['nuages']) ?>" alt="">
+      <img src="<?= e((string) $h['nuages']) ?>"<?= $srcNuages ?> alt=""><img src="<?= e((string) $h['nuages']) ?>"<?= $srcNuages ?> alt="">
     </div>
-    <img class="hero__avion"  src="<?= e((string) $h['avion']) ?>"  alt="Avion du club en vol">
+    <img class="hero__avion"  src="<?= e((string) $h['avion']) ?>"<?= attributs_srcset((string) $h['avion'], '100vw') ?>  alt="Avion du club en vol">
   <?php elseif (!empty($h['cle_image'])): ?>
     <?= image((string) $h['cle_image'], (string) $h['image'], [
           'class' => 'hero__image',
@@ -55,13 +56,13 @@ $rendu = static function (string $champ, string $type = 'court') use ($h): strin
           'style' => $stylePosition,
         ]) ?>
   <?php else: ?>
-    <img class="hero__image" src="<?= e((string) $h['image']) ?>"
+    <img class="hero__image" src="<?= e((string) $h['image']) ?>"<?= attributs_srcset((string) $h['image'], '100vw') ?>
          alt="<?= e((string) $h['alt']) ?>" fetchpriority="high"<?= $stylePosition ? ' style="' . e($stylePosition) . '"' : '' ?>>
   <?php endif; ?>
   </div>
 
   <?php if (!empty($h['logo'])): ?>
-    <img class="hero__logo" src="<?= e((string) $h['logo']) ?>"
+    <img class="hero__logo" src="<?= e((string) $h['logo']) ?>"<?= attributs_srcset((string) $h['logo'], '(max-width:700px) 148px, min(34vw, 470px)', 300) ?>
          alt="<?= e((string) ($h['logo_alt'] ?? 'Saumur Air Club')) ?>"
          width="752" height="184">
   <?php endif; ?>
