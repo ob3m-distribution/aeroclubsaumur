@@ -7,8 +7,8 @@ require __DIR__ . '/inc/header.php';
 $hero = [
   'page'         => true,
   'cle_image'    => 'tarifs.hero.image',
-  'image'        => '/assets/img/tarifs-hero.jpg',
-  'alt'          => 'Vue en vol sous l’aile d’un avion, au-dessus d’une mer de nuages',
+  'image'        => '/assets/img/tarifs-hero-loire.jpg',
+  'alt'          => 'La Loire et ses bancs de sable vus d’avion, près de Saumur',
   'titre'        => 'Tarifs & inscriptions',
   'cle_titre'    => 'tarifs.hero.titre',
   'accroche'     => 'Rejoindre le club, se former, voler toute l’année.',
