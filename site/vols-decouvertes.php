@@ -98,7 +98,7 @@ require __DIR__ . '/inc/hero.php';
     <div class="grille grille--2">
       <article class="carte">
         <div class="carte__media">
-          <?= image('vols.carte1.image', '/assets/img/vol-decouverte-cockpit.jpg', ['alt' => 'Deux passagers dans le cockpit pendant un vol découverte au-dessus des nuages', 'loading' => 'lazy', 'sizes' => '(min-width:860px) 50vw, 100vw']) ?>
+          <?= image('vols.carte1.image', '/assets/img/vol-decouverte-cockpit.jpg', ['alt' => 'Le tableau de bord d’un Cessna 172 du club en vol, vu depuis le siège avant, sous un ciel bleu', 'loading' => 'lazy', 'sizes' => '(min-width:860px) 50vw, 100vw']) ?>
           <div class="etiquettes"><span class="etiquette"><?= texte('vols.carte1.etiq1', 'En passager') ?></span><span class="etiquette"><?= texte('vols.carte1.etiq2', '30 min') ?></span></div>
         </div>
         <div class="carte__corps">
@@ -112,7 +112,7 @@ require __DIR__ . '/inc/hero.php';
 
       <article class="carte">
         <div class="carte__media">
-          <?= image('vols.carte2.image', '/assets/img/vol-initiation.jpg', ['alt' => 'Un avion du club (F-HACS) en vol au-dessus de Saumur et de la Loire', 'loading' => 'lazy', 'sizes' => '(min-width:860px) 50vw, 100vw']) ?>
+          <?= image('vols.carte2.image', '/assets/img/vol-initiation.jpg', ['alt' => 'Un élève aux commandes du Robin DR400 F-HZAF du club, avec son instructeur, devant le hangar', 'loading' => 'lazy', 'sizes' => '(min-width:860px) 50vw, 100vw']) ?>
           <div class="etiquettes"><span class="etiquette"><?= texte('vols.carte2.etiq1', 'Aux commandes') ?></span></div>
         </div>
         <div class="carte__corps">
