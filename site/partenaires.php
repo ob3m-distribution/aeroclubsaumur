@@ -7,8 +7,8 @@ require __DIR__ . '/inc/header.php';
 $hero = [
   'page'         => true,
   'cle_image'    => 'partenaires.hero.image',
-  'image'        => '/assets/img/partenaires-hero.jpg',
-  'alt'          => 'Mer de nuages vue depuis un avion',
+  'image'        => '/assets/img/partenaires-hero-pilotes.jpg',
+  'alt'          => 'Photo souvenir en noir et blanc d’un équipage de pilotes devant leur avion',
   'titre'        => 'Partenaires',
   'cle_titre'    => 'partenaires.hero.titre',
   'accroche'     => 'Ils nous accompagnent.',
