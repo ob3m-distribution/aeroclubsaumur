@@ -44,7 +44,13 @@ $imagePartage = $imagePartage ?? null;
 <link rel="icon" href="/assets/img/favicon.png" type="image/png">
 <?php require_once __DIR__ . '/polices.php'; ?>
 <link rel="preload" href="<?= e(police_preload()) ?>" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/css/style.css?v=69">
+<?php /* PageSpeed (26/09/2026) : feuille de style intégrée à la page — la
+   <link> séparée bloquait le premier affichage de 0,4 à 0,75 s en mobile.
+   🔴 Source = style.css, mais c'est style.min.css qui est servi : après
+   toute modification de style.css, régénérer style.min.css
+   (npx lightningcss-cli --minify style.css -o style.min.css), sinon le
+   changement ne s'affiche pas. */ ?>
+<style><?php readfile(__DIR__ . '/../assets/css/style.min.css'); ?></style>
 <style><?= police_css() ?></style>
 <?= balises_partage($titreComplet, $description, $imagePartage) ?>
 <?= donnees_structurees($page) ?>
@@ -62,7 +68,7 @@ $imagePartage = $imagePartage ?? null;
 
     <nav class="nav" id="menu-principal" aria-label="Menu principal">
       <a class="nav__logo" href="/" aria-label="<?= e(CLUB['nom']) ?> — accueil">
-        <img src="/assets/img/logo.png?v=2" alt="<?= e(CLUB['nom']) ?>" width="752" height="184">
+        <img src="/assets/img/logo.png?v=2"<?= attributs_srcset('/assets/img/logo.png?v=2', '139px', 300) ?> alt="<?= e(CLUB['nom']) ?>" width="752" height="184">
       </a>
       <ul>
         <?php foreach (PAGES as $slug => $p): ?>

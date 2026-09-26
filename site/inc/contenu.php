@@ -123,6 +123,30 @@ function image_url(string $cle, string $defaut): string
 }
 
 /**
+ * Attributs srcset/sizes si une variante réduite existe à côté de l'image
+ * (« photo-900.jpg » pour « photo.jpg »). Chaîne vide sinon : l'image
+ * d'origine reste servie seule, comme avant.
+ *
+ * PageSpeed (26/09/2026) : le hero de l'accueil, celui des pages légales et
+ * les logos envoyaient 750 à 1600 px de large à un téléphone.
+ */
+function attributs_srcset(string $url, string $sizes, int $largeurPetite = 900): string
+{
+    if (!preg_match('/^([^?]+)\.(jpe?g|png)(\?.*)?$/i', $url, $m)) {
+        return '';
+    }
+    $racine = __DIR__ . '/..';
+    $petite = $m[1] . '-' . $largeurPetite . '.' . $m[2];
+    if (!is_file($racine . $petite)) {
+        return '';
+    }
+    $taille  = @getimagesize($racine . $m[1] . '.' . $m[2]);
+    $largeur = $taille ? $taille[0] : 1600;
+    return sprintf(' srcset="%s %dw, %s %dw" sizes="%s"',
+        e($petite), $largeurPetite, e($url), $largeur, e($sizes));
+}
+
+/**
  * Balise <img> complète et modifiable.
  *
  * @param array $attributs alt, class, width, height, loading, fetchpriority…

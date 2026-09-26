@@ -1473,3 +1473,20 @@ td { color: var(--gris-700); }
 .paiement-option { border: 1.5px solid var(--gris-200); border-radius: var(--rayon); padding: 1.2rem; text-align: center; }
 .paiement-option h3 { margin: 0 0 .35rem; }
 .paiement-option .bouton { margin-top: .75rem; width: 100%; justify-content: center; }
+
+/* ── Corrections accessibilité PageSpeed (26/09/2026) ──
+   Le gris #78859A n'atteint pas le contraste minimum WCAG (4,5:1) :
+   3,87 sur le bleu nuit du pied de page, 3,74 sur fond blanc.
+   Fond clair  → gris plus foncé #5F6B7E (5,40 sur blanc, 4,88 sur --gris-100)
+   Fond sombre → gris plus clair #95A1B4 (5,53 sur --bleu-nuit)            */
+:root { --gris-500: #5F6B7E; }
+.pied, .section--noir { --gris-500: #95A1B4; }
+/* Liens du pied de page : zone cliquable ≥ 24 px de haut (cible tactile). */
+.pied-acc__corps a { display: inline-block; padding-block: 3px; }
+
+/* Sur-titres dorés sur fond clair (validé par le club le 26/09/2026) :
+   l'or de la palette #B08D2C n'a qu'un contraste de 3,1 sur blanc et 2,8
+   sur --gris-100 pour 4,5 requis → or plus soutenu #86691C (5,2 et 4,7).
+   Les sur-titres sur fond sombre (hero, section--noir, appel, panneau)
+   gardent leur couleur : leurs sélecteurs sont plus précis. */
+.surtitre { color: #86691C; }
