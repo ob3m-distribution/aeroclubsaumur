@@ -186,6 +186,16 @@ require __DIR__ . '/inc/hero.php';
                sizes="(min-width:880px) 50vw, 100vw"
                alt="La salle de convivialité du club house, avec baby-foot"
                width="1600" height="1200" loading="lazy">
+          <img src="/assets/img/club-house-bureau.jpg"
+               srcset="/assets/img/club-house-bureau-900.jpg 900w, /assets/img/club-house-bureau.jpg 1600w"
+               sizes="(min-width:880px) 50vw, 100vw"
+               alt="Le bureau du club, avec postes de travail et accès à l’étage"
+               width="1600" height="1200" loading="lazy">
+          <img src="/assets/img/club-house-etagere.jpg"
+               srcset="/assets/img/club-house-etagere-900.jpg 900w, /assets/img/club-house-etagere.jpg 1200w"
+               sizes="(min-width:880px) 50vw, 100vw"
+               alt="L’étagère du bureau, avec modèles réduits et documentation FFA/DTO"
+               width="1200" height="1600" loading="lazy">
         </div>
       </div>
     </div>
