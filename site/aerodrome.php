@@ -7,8 +7,8 @@ require __DIR__ . '/inc/header.php';
 $hero = [
   'page'         => true,
   'cle_image'    => 'aerodrome.hero.image',
-  'image'        => '/assets/img/aerodrome-terrefort.jpg',
-  'alt'          => 'Vue aérienne de l’aérodrome de Saumur Terrefort',
+  'image'        => '/assets/img/aerodrome-vue-tour.jpg',
+  'alt'          => 'Vue panoramique depuis la tour de contrôle sur la piste de l’aérodrome de Saumur Terrefort',
   'titre'        => 'Aérodrome & Club House',
   'cle_titre'    => 'aerodrome.hero.titre',
   'accroche'     => 'Une localisation idéale, au sud du fleuve royal.',
