@@ -83,11 +83,22 @@ require __DIR__ . '/inc/hero.php';
 <section class="section">
   <div class="conteneur">
     <div class="panneau">
-      <div class="panneau__media">
-        <?= image('avions.dr400.photo', '/assets/img/robin-dr400.jpg', [
-              'alt' => 'Le Robin DR 400-180 F-HZAF du club sur l’aérodrome de Saumur',
-              'loading' => 'lazy',
-            ]) ?>
+      <div class="panneau__media panneau__media--galerie">
+        <img src="/assets/img/robin-dr400.jpg"
+             srcset="/assets/img/robin-dr400-900.jpg 900w, /assets/img/robin-dr400.jpg 1200w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="Le Robin DR 400-180 F-HZAF du club sur l’aérodrome de Saumur"
+             loading="lazy" class="est-visible">
+        <img src="/assets/img/robin-dr400-face.jpg"
+             srcset="/assets/img/robin-dr400-face-900.jpg 900w, /assets/img/robin-dr400-face.jpg 1280w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="Le Robin DR 400 F-HZAF, vue de face avec un pilote en cabine"
+             loading="lazy">
+        <img src="/assets/img/robin-dr400-parking.jpg"
+             srcset="/assets/img/robin-dr400-parking-900.jpg 900w, /assets/img/robin-dr400-parking.jpg 1280w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="Le Robin DR 400 F-HZAF au parking avec deux passagers"
+             loading="lazy">
       </div>
       <div class="panneau__texte">
         <p class="surtitre"><?= texte('avions.dr400.surtitre', '210 €/h') ?></p>
