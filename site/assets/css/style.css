@@ -806,6 +806,15 @@ a:hover { color: var(--bleu-encre); }
   .panneau__media { min-height: 240px; }
 }
 
+/* Fondu enchaine a l'interieur d'un .panneau__media (plusieurs photos) :
+   meme logique que .galerie-fondu, mais sans reappliquer radius/ombre --
+   .panneau__media/.panneau les gerent deja au niveau du conteneur. */
+.panneau__media--galerie img {
+  opacity: 0;
+  transition: opacity 1200ms ease;
+}
+.panneau__media--galerie img.est-visible { opacity: 1; }
+
 /* ---------- Chiffres en encadrés -------------------------------------- */
 /* Sur fond sombre : encadrés à bordure fine, comme leurs stats "157,000". */
 

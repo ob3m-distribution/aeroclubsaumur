@@ -20,11 +20,27 @@ require __DIR__ . '/inc/hero.php';
 <section class="section">
   <div class="conteneur">
     <div class="panneau">
-      <div class="panneau__media">
-        <?= image('avions.evektor.photo', '/assets/img/evektor-fhsau.jpg', [
-              'alt' => 'L’Evektor SportStar RTC F-HSAU, livrée blanche à bandes verte et rouge',
-              'loading' => 'lazy',
-            ]) ?>
+      <div class="panneau__media panneau__media--galerie">
+        <img src="/assets/img/evektor-hangar.jpg"
+             srcset="/assets/img/evektor-hangar-900.jpg 900w, /assets/img/evektor-hangar.jpg 1280w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="L’Evektor SportStar F-HLEB dans le hangar du club"
+             loading="lazy" class="est-visible">
+        <img src="/assets/img/evektor-cockpit-canopy.jpg"
+             srcset="/assets/img/evektor-cockpit-canopy-900.jpg 900w, /assets/img/evektor-cockpit-canopy.jpg 1280w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="Le cockpit vitré de l’Evektor SportStar, avionique Garmin"
+             loading="lazy">
+        <img src="/assets/img/evektor-cockpit-instruments.jpg"
+             srcset="/assets/img/evektor-cockpit-instruments-900.jpg 900w, /assets/img/evektor-cockpit-instruments.jpg 1600w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="Le poste de pilotage biplace de l’Evektor SportStar, deux écrans Garmin"
+             loading="lazy">
+        <img src="/assets/img/evektor-hangar-porte.jpg"
+             srcset="/assets/img/evektor-hangar-porte-900.jpg 900w, /assets/img/evektor-hangar-porte.jpg 1280w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="L’Evektor SportStar F-HLEB à l’entrée du hangar"
+             loading="lazy">
       </div>
       <div class="panneau__texte">
         <p class="surtitre"><?= texte('avions.evektor.surtitre', 'Deux appareils · 138 €/h') ?></p>
@@ -84,5 +100,21 @@ require __DIR__ . '/inc/hero.php';
     </div>
   </div>
 </section>
+
+<script>
+// Galerie photo de l'Evektor SportStar : fondu enchaîné, une image visible à la fois.
+(function () {
+  document.querySelectorAll('.galerie-fondu, .panneau__media--galerie').forEach(function (g) {
+    var imgs = g.querySelectorAll('img');
+    if (imgs.length < 2) return;
+    var i = 0;
+    setInterval(function () {
+      imgs[i].classList.remove('est-visible');
+      i = (i + 1) % imgs.length;
+      imgs[i].classList.add('est-visible');
+    }, 4000);
+  });
+})();
+</script>
 
 <?php require __DIR__ . '/inc/footer.php'; ?>
