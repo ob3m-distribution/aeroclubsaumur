@@ -83,10 +83,28 @@ require __DIR__ . '/inc/hero.php';
       </div>
 
       <div class="duo__media">
-        <?= image('aerodrome.photo.terrain', '/assets/img/aerodrome-avion.jpg', [
-              'alt' => 'Avions du club sur l’aire de stationnement de l’aérodrome de Saumur Terrefort',
-              'width' => 1600, 'height' => 900, 'loading' => 'lazy',
-            ]) ?>
+        <div class="galerie-fondu">
+          <img src="/assets/img/aerodrome-tour-club.jpg"
+               srcset="/assets/img/aerodrome-tour-club-900.jpg 900w, /assets/img/aerodrome-tour-club.jpg 1458w"
+               sizes="(min-width:880px) 50vw, 100vw"
+               alt="La tour de contrôle et le bâtiment du club, vus depuis le tarmac"
+               width="1458" height="1600" loading="lazy" class="est-visible">
+          <img src="/assets/img/aerodrome-tour-banderoles.jpg"
+               srcset="/assets/img/aerodrome-tour-banderoles-900.jpg 900w, /assets/img/aerodrome-tour-banderoles.jpg 1600w"
+               sizes="(min-width:880px) 50vw, 100vw"
+               alt="Le bâtiment du Saumur Air Club et sa tour, avec l’école ULM Saumur Air Moustiques"
+               width="1600" height="1200" loading="lazy">
+          <img src="/assets/img/aerodrome-parking.jpg"
+               srcset="/assets/img/aerodrome-parking-900.jpg 900w, /assets/img/aerodrome-parking.jpg 1280w"
+               sizes="(min-width:880px) 50vw, 100vw"
+               alt="Le club et son parking, au pied de la tour de contrôle"
+               width="1280" height="700" loading="lazy">
+          <img src="/assets/img/aerodrome-avitaillement.jpg"
+               srcset="/assets/img/aerodrome-avitaillement-900.jpg 900w, /assets/img/aerodrome-avitaillement.jpg 1280w"
+               sizes="(min-width:880px) 50vw, 100vw"
+               alt="Le poste d’avitaillement de l’aérodrome, carte bleue et carte Total"
+               width="1280" height="718" loading="lazy">
+        </div>
       </div>
     </div>
 
