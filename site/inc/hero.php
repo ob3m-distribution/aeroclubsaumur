@@ -26,6 +26,13 @@ $classesHero = 'hero'
     . ($variante ? ' hero--' . preg_replace('/[^a-z-]/', '', $variante) : '');
 
 /** Affiche un element : modifiable si une cle est fournie, brut sinon. */
+/* Cadrage vertical de la photo ('position' => 'center 15%') : le hero
+   rogne l'image en object-fit: cover, et la barre de navigation passe
+   par-dessus le haut -- utile quand le sujet (des visages) est en haut. */
+$stylePosition = !empty($h['position'])
+    ? 'object-position:' . preg_replace('/[^a-z0-9% .-]/', '', (string) $h['position'])
+    : null;
+
 $rendu = static function (string $champ, string $type = 'court') use ($h): string {
     $valeur = (string) ($h[$champ] ?? '');
     $cle    = $h['cle_' . $champ] ?? null;
@@ -45,10 +52,11 @@ $rendu = static function (string $champ, string $type = 'court') use ($h): strin
           'class' => 'hero__image',
           'alt' => (string) $h['alt'],
           'fetchpriority' => 'high',
+          'style' => $stylePosition,
         ]) ?>
   <?php else: ?>
     <img class="hero__image" src="<?= e((string) $h['image']) ?>"
-         alt="<?= e((string) $h['alt']) ?>" fetchpriority="high">
+         alt="<?= e((string) $h['alt']) ?>" fetchpriority="high"<?= $stylePosition ? ' style="' . e($stylePosition) . '"' : '' ?>>
   <?php endif; ?>
   </div>
 
