@@ -755,6 +755,31 @@ a:hover { color: var(--bleu-encre); }
   .duo--inverse .duo__media { order: 0; }
 }
 
+/* Galerie photo en fondu enchaine (club house, etc.) : plusieurs images
+   empilees dans le meme cadre, une seule visible a la fois, transition en
+   fondu geree par .est-visible (bascule en JS, voir le script du club
+   house). Le radius/l'ombre passe du <img> (duo__media img) au conteneur,
+   puisque les images sont superposees en position absolue. */
+.galerie-fondu {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(20,41,77,.06), 0 12px 30px -12px rgba(20,41,77,.18);
+}
+.galerie-fondu img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+  box-shadow: none;
+  opacity: 0;
+  transition: opacity 1200ms ease;
+}
+.galerie-fondu img.est-visible { opacity: 1; }
+
 /* ---------- Panneau mixte image + texte sombre ------------------------ */
 /* Leur bloc « résultats financiers » : image à gauche, panneau sombre à droite. */
 

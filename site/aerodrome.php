@@ -134,21 +134,43 @@ require __DIR__ . '/inc/hero.php';
 
 <section class="section">
   <div class="conteneur">
-    <div style="margin-bottom:2rem">
-      <p class="surtitre"><?= texte('aerodrome.club.surtitre', 'Sur place') ?></p>
-      <h2 class="titre-filet"><?= texte('aerodrome.club.titre', 'Le club house') ?></h2>
-    </div>
+    <div class="duo">
+      <div>
+        <p class="surtitre"><?= texte('aerodrome.club.surtitre', 'Sur place') ?></p>
+        <h2 class="titre-filet"><?= texte('aerodrome.club.titre', 'Le club house') ?></h2>
 
-    <ul class="liste-check">
-      <li><?= texte('aerodrome.club.point1',
-        'Une salle des pilotes dotée des équipements informatiques et de la documentation '
-        . 'aéronautique nécessaires à la préparation des vols et aux formations.', 'long') ?></li>
-      <li><?= texte('aerodrome.club.point2',
-        'Une seconde salle pour les formations et les réunions.', 'long') ?></li>
-      <li><?= texte('aerodrome.club.point3',
-        'Un espace d’accueil et de convivialité où pilotes et visiteurs se retrouvent pour '
-        . 'préparer leurs vols, se désaltérer et partager leur passion entre deux décollages.', 'long') ?></li>
-    </ul>
+        <ul class="liste-check">
+          <li><?= texte('aerodrome.club.point1',
+            'Une salle des pilotes dotée des équipements informatiques et de la documentation '
+            . 'aéronautique nécessaires à la préparation des vols et aux formations.', 'long') ?></li>
+          <li><?= texte('aerodrome.club.point2',
+            'Une seconde salle pour les formations et les réunions.', 'long') ?></li>
+          <li><?= texte('aerodrome.club.point3',
+            'Un espace d’accueil et de convivialité où pilotes et visiteurs se retrouvent pour '
+            . 'préparer leurs vols, se désaltérer et partager leur passion entre deux décollages.', 'long') ?></li>
+        </ul>
+      </div>
+
+      <div class="duo__media">
+        <div class="galerie-fondu">
+          <img src="/assets/img/club-house-bar.jpg"
+               srcset="/assets/img/club-house-bar-900.jpg 900w, /assets/img/club-house-bar.jpg 1600w"
+               sizes="(min-width:880px) 50vw, 100vw"
+               alt="Le bar du club house, avec sa fresque murale d’avion vintage"
+               width="1600" height="1200" loading="lazy" class="est-visible">
+          <img src="/assets/img/club-house-salon.jpg"
+               srcset="/assets/img/club-house-salon-900.jpg 900w, /assets/img/club-house-salon.jpg 1600w"
+               sizes="(min-width:880px) 50vw, 100vw"
+               alt="Le salon du club house, avec télévision, bibliothèque et vue sur la piste"
+               width="1600" height="1200" loading="lazy">
+          <img src="/assets/img/club-house-babyfoot.jpg"
+               srcset="/assets/img/club-house-babyfoot-900.jpg 900w, /assets/img/club-house-babyfoot.jpg 1600w"
+               sizes="(min-width:880px) 50vw, 100vw"
+               alt="La salle de convivialité du club house, avec baby-foot"
+               width="1600" height="1200" loading="lazy">
+        </div>
+      </div>
+    </div>
 
     <div class="duo" style="margin-top:2.5rem">
       <div>
@@ -175,5 +197,22 @@ require __DIR__ . '/inc/hero.php';
     </div>
   </div>
 </section>
+
+<script>
+// Galerie photo du club house : fondu enchaîné, une image visible à la fois.
+// Générique (querySelectorAll) : réutilisable si une autre galerie-fondu apparaît sur le site.
+(function () {
+  document.querySelectorAll('.galerie-fondu').forEach(function (g) {
+    var imgs = g.querySelectorAll('img');
+    if (imgs.length < 2) return;
+    var i = 0;
+    setInterval(function () {
+      imgs[i].classList.remove('est-visible');
+      i = (i + 1) % imgs.length;
+      imgs[i].classList.add('est-visible');
+    }, 4000);
+  });
+})();
+</script>
 
 <?php require __DIR__ . '/inc/footer.php'; ?>
