@@ -70,11 +70,27 @@ require __DIR__ . '/inc/hero.php';
           'C’est un quadriplace destiné au voyage. Stable et facile à piloter, il sert '
           . 'aussi bien aux vols découverte qu’à la formation et au vol de nuit.', 'long') ?></p>
       </div>
-      <div class="panneau__media">
-        <?= image('avions.cessna.photo', '/assets/img/cessna-172.jpg', [
-              'alt' => 'Le Cessna 172 F-GCNQ du club devant la tour de l’aérodrome de Saumur',
-              'loading' => 'lazy',
-            ]) ?>
+      <div class="panneau__media panneau__media--galerie">
+        <img src="/assets/img/cessna-172.jpg"
+             srcset="/assets/img/cessna-172-900.jpg 900w, /assets/img/cessna-172.jpg 1600w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="Le Cessna 172 F-GCNQ du club devant la tour de l’aérodrome de Saumur"
+             loading="lazy" class="est-visible">
+        <img src="/assets/img/cessna-172-hangar-arriere.jpg"
+             srcset="/assets/img/cessna-172-hangar-arriere-900.jpg 900w, /assets/img/cessna-172-hangar-arriere.jpg 1280w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="Le Cessna 172 F-GCNQ vu de l’arrière dans le hangar"
+             loading="lazy">
+        <img src="/assets/img/cessna-172-hangar-cote.jpg"
+             srcset="/assets/img/cessna-172-hangar-cote-900.jpg 900w, /assets/img/cessna-172-hangar-cote.jpg 1280w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="Le Cessna 172 F-GCNQ dans le hangar du club"
+             loading="lazy">
+        <img src="/assets/img/cessna-172-avitaillement.jpg"
+             srcset="/assets/img/cessna-172-avitaillement-900.jpg 900w, /assets/img/cessna-172-avitaillement.jpg 1600w"
+             sizes="(min-width:880px) 50vw, 100vw"
+             alt="Le Cessna 172 F-GCNQ près du camion d’avitaillement mobile"
+             loading="lazy">
       </div>
     </div>
   </div>
