@@ -102,7 +102,7 @@ $matrice = function (array $lignes, callable $idFn, callable $nomFn, callable $s
   <p class="aide" style="margin:0 0 1rem">
     Définissez les dossiers visibles pour chaque rôle. Un membre qui cumule plusieurs rôles voit
     les dossiers de tous ses rôles ; tout membre a au moins l’accès « Adhérents ». Les rôles
-    Instructeurs et Bureau voient toujours tout et n’apparaissent pas ici.
+    Administrateurs, Instructeurs et Bureau voient toujours tout et n’apparaissent pas ici.
     Pensez à cocher ici tout nouveau dossier créé dans la bibliothèque.
   </p>
   <form method="post">
@@ -123,7 +123,7 @@ $matrice = function (array $lignes, callable $idFn, callable $nomFn, callable $s
 <div class="bloc">
   <div class="bloc__titre"><h2>Accès par membre</h2></div>
   <p class="aide" style="margin:0 0 1rem">
-    Le détail par membre (hors Instructeurs et Bureau, qui voient tout). Les cases reflètent
+    Le détail par membre (hors Administrateurs, Instructeurs et Bureau, qui voient tout). Les cases reflètent
     l’accès effectif, celui de ses rôles par défaut : ajoutez ou retirez des dossiers pour
     affiner au cas par cas.
   </p>

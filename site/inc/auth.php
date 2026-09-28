@@ -47,9 +47,9 @@ const ROLES = [
     ],
     'administrateur' => [
         'libelle'     => 'Administrateurs',
-        'description' => 'Consultent toute la bibliothèque, sauf le dossier DTO.',
-        'droits'      => [],
-        'biblio'      => 'dossiers',
+        'description' => 'Consultent et modifient toute la bibliothèque.',
+        'droits'      => ['biblio.gerer'],
+        'biblio'      => 'tout',
     ],
     'instructeur' => [
         'libelle'     => 'Instructeurs',

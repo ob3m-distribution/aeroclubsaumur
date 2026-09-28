@@ -165,7 +165,7 @@ function supprimer_membre_dossiers(int $membreId): void {
     db()->prepare('DELETE FROM membre_dossiers WHERE membre_id = ?')->execute([$membreId]);
 }
 
-/** Le membre voit-il tous les dossiers ? (Bureau, Instructeurs, super admin) */
+/** Le membre voit-il tous les dossiers ? (Administrateurs, Bureau, Instructeurs, super admin) */
 function membre_voit_tout(array $membre): bool {
     foreach (roles_du_membre($membre) as $r) {
         if ((ROLES[$r]['biblio'] ?? null) === 'tout') return true;

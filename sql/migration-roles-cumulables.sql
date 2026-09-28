@@ -4,7 +4,9 @@
 --  5 rôles, un membre peut en avoir plusieurs :
 --    Adhérents       : bibliothèque en lecture, sauf DTO et
 --                      Conseils d’administration
---    Administrateurs : bibliothèque en lecture, sauf DTO
+--    Administrateurs : toute la bibliothèque, lecture et modification
+--                      (modifié le 28/09/2026 : réglé dans le code, les
+--                      lignes role_dossiers 'administrateur' ne servent plus)
 --    Instructeurs    : toute la bibliothèque en lecture
 --    Bureau          : toute la bibliothèque, lecture et modification
 --    Bons cadeaux    : /admin/bons.php et sa gestion
