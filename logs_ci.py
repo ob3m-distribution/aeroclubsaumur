@@ -33,8 +33,9 @@ import posixpath
 import re
 import stat as stat_module
 import sys
+import urllib.parse
 
-from deploy_ci import connecter, ecrire_sortie_github, existe
+from deploy_ci import LOCAL, connecter, ecrire_sortie_github, existe
 
 SORTIE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs-recuperes")
 
@@ -127,8 +128,34 @@ def erreurs_5xx(fichiers, jour):
     return compte
 
 
-def construire_resume(php, fichiers_acces, e5xx, hier):
+# Reecritures de site/.htaccess qui ne correspondent pas a un fichier
+# du meme nom.
+ROUTES_REECRITES = {"/robots.txt", "/sitemap.xml"}
+
+
+def page_du_site(url):
+    """Vrai si l'URL correspond a une page qui existe dans site/ : fichier,
+    dossier avec index.php, ou URL propre sans .php (regle de .htaccess).
+    Sert a distinguer une vraie panne des robots qui sondent des chemins
+    inexistants (wp-config.php.bak, /cgi-bin/php...) : IONOS leur repond
+    souvent par un 500/503 plutot qu'un 404, ce qui noierait les vraies
+    alertes sous le bruit quotidien."""
+    chemin = urllib.parse.unquote(url.split("?", 1)[0])
+    if chemin in ("", "/") or chemin in ROUTES_REECRITES:
+        return True
+    relatif = posixpath.normpath(chemin).lstrip("/")
+    if relatif.startswith("..") or "\0" in relatif:
+        return False
+    local = os.path.join(LOCAL, relatif)
+    return (os.path.isfile(local)
+            or os.path.isfile(os.path.join(local, "index.php"))
+            or os.path.isfile(local.rstrip("/") + ".php"))
+
+
+def construire_resume(php, fichiers_acces, e5xx_tout, hier):
     total_php = sum(len(l) for l in php.values())
+    e5xx = {k: n for k, n in e5xx_tout.items() if page_du_site(k[1])}
+    robots = {k: n for k, n in e5xx_tout.items() if k not in e5xx}
     total_5xx = sum(e5xx.values())
     c = [f"<h2>Logs du serveur — {hier.strftime('%d/%m/%Y')}</h2>",
          "<table border='1' cellpadding='6' cellspacing='0'>",
@@ -138,7 +165,9 @@ def construire_resume(php, fichiers_acces, e5xx, hier):
     if fichiers_acces is None:
         c.append("<tr><td>Réponses 5xx (veille)</td><td>logs d'accès introuvables</td></tr>")
     else:
-        c.append(f"<tr><td>Réponses 5xx (veille)</td><td>{total_5xx}</td></tr>")
+        c.append(f"<tr><td>Réponses 5xx sur des pages du site (veille)</td><td>{total_5xx}</td></tr>")
+        c.append(f"<tr><td>Requêtes de robots en erreur, ignorées (veille)</td>"
+                 f"<td>{sum(robots.values())}</td></tr>")
     c.append("</table>")
 
     for env, lignes in php.items():
@@ -148,7 +177,7 @@ def construire_resume(php, fichiers_acces, e5xx, hier):
             c.append("<pre style='white-space:pre-wrap;font-size:12px'>"
                      + html.escape("\n".join(extrait)) + "</pre>")
     if e5xx:
-        c.append("<h3>Réponses 5xx de la veille</h3><table border='1' cellpadding='4' cellspacing='0'>"
+        c.append("<h3>Réponses 5xx sur des pages du site (veille)</h3><table border='1' cellpadding='4' cellspacing='0'>"
                  "<tr><th>Code</th><th>URL</th><th>Nombre</th></tr>")
         for (code, url), n in sorted(e5xx.items(), key=lambda x: -x[1])[:20]:
             c.append(f"<tr><td>{code}</td><td>{html.escape(url)}</td><td>{n}</td></tr>")

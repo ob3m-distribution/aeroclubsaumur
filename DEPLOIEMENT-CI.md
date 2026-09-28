@@ -172,8 +172,12 @@ connexion SFTP du déploiement :
   (`DEPLOY_PATH`…) seraient décalés et le déploiement casserait.
 
 Tout est archivé comme artifact `logs-serveur` du workflow (30 jours).
-S'il y a au moins une erreur PHP ou une réponse 5xx, un résumé part par
-email via `taches/notifier.php` (secret `PROD_OPS_SECRET`). Aucun
+S'il y a au moins une erreur PHP ou une réponse 5xx **sur une page qui
+existe dans `site/`**, un résumé part par email via `taches/notifier.php`
+(secret `PROD_OPS_SECRET`). Les 5xx sur des chemins inexistants — robots
+qui sondent `wp-config.php.bak`, `/cgi-bin/php`… et auxquels IONOS
+répond souvent 500/503 plutôt que 404 — sont seulement comptés dans le
+résumé, sans déclencher d'email. Aucun
 nouveau secret à configurer.
 
 ## Sauvegarde nocturne de la base
