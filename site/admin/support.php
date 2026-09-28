@@ -364,7 +364,7 @@ if ($gestion) {
       </p>
       <div class="actions">
         <a class="btn btn--contour" href="/admin/guide.php" target="_blank" rel="noopener">Ouvrir le guide en ligne ↗</a>
-        <a class="btn btn--contour" href="/assets/guide-utilisateur.pdf" target="_blank" rel="noopener">Télécharger le guide (PDF)</a>
+        <a class="btn btn--contour" href="/assets/guide-utilisateur.pdf?v=20260928" target="_blank" rel="noopener">Télécharger le guide (PDF)</a>
       </div>
     </div>
     <div class="bloc">

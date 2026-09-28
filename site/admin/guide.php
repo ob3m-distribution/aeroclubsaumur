@@ -60,7 +60,16 @@ require __DIR__ . '/inc/entete.php';
 
 .guide .g-pied{margin-top:1.5rem;padding-top:1.2rem;border-top:1px solid var(--gris-200);display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;justify-content:space-between}
 .guide .g-pied span{color:var(--gris-500);font-size:.85rem}
-@media print{.bo__menu,.bo__barre,.g-choix,.g-pied{display:none!important}.bo__contenu{padding:0!important}}
+@media print{
+  .bo__menu,.bo__barre,.g-choix,.g-pied,.lien-evitement{display:none!important}
+  .bo,.bo__corps{display:block!important}.bo__contenu{padding:0!important;max-width:none!important}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .guide .g-etape,.guide .g-astuce,.guide .g-attention{break-inside:avoid}
+  .guide h2,.guide h3.g-tache,.guide .g-kicker{break-after:avoid}
+  .guide section#bureau{break-before:page}
+  .guide .g-etapes{gap:.35rem}.guide .g-etape{padding:.5rem .8rem}.guide .g-etape::before{width:24px;height:24px;font-size:.8rem}
+  .guide .g-bloc{padding:.75rem}.guide section{margin-bottom:1.2rem}.guide h3.g-tache{margin:1rem 0 .3rem}
+}
 </style>
 
 <div class="guide">
@@ -92,9 +101,9 @@ require __DIR__ . '/inc/entete.php';
         <div class="g-etape"><div><h4>Remplissez vos coordonnées</h4><p>Votre <span class="g-ch">prénom</span>, <span class="g-ch">nom</span>, <span class="g-ch">e-mail</span> et <span class="g-ch">téléphone</span>. C’est à votre e-mail que le bon sera envoyé.</p></div></div>
         <div class="g-etape"><div><h4>Acceptez et continuez</h4><p>Cochez la petite case des conditions, puis cliquez sur <span class="g-btn">Procéder au paiement</span>.</p></div></div>
         <div class="g-etape"><div><h4>Payez par carte</h4><p>Entrez le <b>numéro de votre carte</b>, la <b>date d’expiration</b> et le <b>code à 3 chiffres</b> (au dos). Cliquez sur <span class="g-btn">Payer</span>. C’est sécurisé.</p></div></div>
-        <div class="g-etape"><div><h4>C’est fait !</h4><p>Un e-mail arrive avec votre <b>bon cadeau en PDF</b> et son numéro (ex. <span class="g-ch">WEB-2026-08-27-001</span>). Vous pouvez l’imprimer ou le transférer.</p></div></div>
+        <div class="g-etape"><div><h4>C’est fait !</h4><p>Un e-mail arrive avec votre <b>bon cadeau en PDF</b> et son numéro (ex. <span class="g-ch">WEB-2026-08-27-001</span>). Vous pouvez l’imprimer ou le transférer. Le bon est <b>valable un an</b>.</p></div></div>
       </div>
-      <div class="g-astuce"><span class="g-em">💡</span><div><b>Pour utiliser le bon :</b> la personne appelle le club avec le numéro du bon pour choisir une date de vol. Gardez bien l’e-mail !</div></div>
+      <div class="g-astuce"><span class="g-em">💡</span><div><b>Pour utiliser le bon :</b> la personne appelle le club avec le numéro du bon pour choisir une date de vol. Gardez bien l’e-mail ! Un rappel est envoyé automatiquement avant la fin de validité.</div></div>
     </div>
   </section>
 
@@ -146,7 +155,7 @@ require __DIR__ . '/inc/entete.php';
     <h2>📚 Consulter les documents du club</h2>
     <p class="g-lead">Manuels, comptes-rendus, formation… tout est rangé par dossiers dans votre espace.</p>
     <div class="g-bloc"><div class="g-etapes">
-      <div class="g-etape"><div><h4>Ouvrez votre espace</h4><p>Connectez-vous : vous voyez la <b>bibliothèque</b> avec des dossiers.</p></div></div>
+      <div class="g-etape"><div><h4>Ouvrez votre espace</h4><p>Connectez-vous : vous voyez la <b>bibliothèque</b> avec les dossiers auxquels <b>votre rôle</b> donne accès (par exemple, les dossiers DTO et Conseils d’administration ne sont pas visibles par tous les adhérents).</p></div></div>
       <div class="g-etape"><div><h4>Ouvrez un dossier</h4><p>Cliquez sur un dossier (ex. <span class="g-ch">Documentation avions</span>) pour voir ce qu’il contient.</p></div></div>
       <div class="g-etape"><div><h4>Ouvrez un document</h4><p>Cliquez sur son nom : il s’ouvre dans un nouvel onglet, prêt à lire ou télécharger.</p></div></div>
     </div>
@@ -178,35 +187,77 @@ require __DIR__ . '/inc/entete.php';
       <h3 class="g-tache"><span class="g-em">🔐</span> Se connecter au back-office</h3>
       <div class="g-bloc"><div class="g-etapes">
         <div class="g-etape"><div><h4>Allez sur la page d’administration</h4><p>Ajoutez <span class="g-ch">/admin</span> à l’adresse du site.</p></div></div>
-        <div class="g-etape"><div><h4>Connectez-vous</h4><p>Votre e-mail + mot de passe. Le menu de gauche affiche ce que <b>votre rôle</b> vous autorise.</p></div></div>
+        <div class="g-etape"><div><h4>Connectez-vous</h4><p>Votre e-mail + mot de passe. Le menu de gauche n’affiche que ce que <b>vos rôles</b> vous autorisent. En bas du menu : votre prénom et <span class="g-ch">Se déconnecter</span>.</p></div></div>
       </div></div>
+
+      <h3 class="g-tache"><span class="g-em">🎭</span> Les rôles : qui peut faire quoi</h3>
+      <div class="g-bloc"><div class="g-etapes">
+        <div class="g-etape"><div><h4>Adhérents</h4><p>Lisent la bibliothèque, <b>sauf</b> les dossiers <b>DTO</b> et <b>Conseils d’administration</b>.</p></div></div>
+        <div class="g-etape"><div><h4>Instructeurs</h4><p>Lisent <b>toute</b> la bibliothèque.</p></div></div>
+        <div class="g-etape"><div><h4>Administrateurs</h4><p>Lisent et <b>modifient toute</b> la bibliothèque.</p></div></div>
+        <div class="g-etape"><div><h4>Bureau</h4><p>Lisent et <b>modifient toute</b> la bibliothèque, et modifient les <b>Tarifs et prix</b> du site.</p></div></div>
+        <div class="g-etape"><div><h4>Bons cadeaux</h4><p>Accèdent à la page <b>Bons cadeaux</b> et à sa gestion (ajouter un vol, valider un paiement, renvoyer…).</p></div></div>
+      </div>
+      <div class="g-astuce"><span class="g-em">➕</span><div><b>Une personne peut avoir plusieurs rôles</b> : elle cumule leurs accès. Chaque rôle sert aussi de liste de destinataires pour les newsletters. Les <b>super administrateurs</b> ont accès à tout.</div></div>
+      </div>
 
       <h3 class="g-tache"><span class="g-em">🎁</span> Suivre les bons cadeaux</h3>
       <div class="g-bloc"><div class="g-etapes">
-        <div class="g-etape"><div><h4>Ouvrez « Bons cadeaux »</h4><p>Vous voyez la liste de tous les bons.</p></div></div>
-        <div class="g-etape"><div><h4>Trier ou filtrer</h4><p>Cliquez sur le <b>titre d’une colonne</b> pour trier, ou sur la petite flèche <b>▾</b> pour filtrer.</p></div></div>
+        <div class="g-etape"><div><h4>Ouvrez « Bons cadeaux »</h4><p>Vous voyez la liste de tous les bons, avec leur <b>numéro</b> (<span class="g-ch">WEB-…</span> payé en ligne, <span class="g-ch">CLUB-…</span> réglé au club) et leur <b>statut</b> : <span class="g-ch">Payé en espèces</span>, <span class="g-ch">Payé par Stripe</span>, <span class="g-ch">En attente virement</span>…</p></div></div>
+        <div class="g-etape"><div><h4>Trier ou filtrer</h4><p>Cliquez sur le <b>titre d’une colonne</b> pour trier, ou sur la petite flèche <b>▾</b> pour filtrer. Le menu <b>Statut</b> en haut filtre aussi par mode de paiement.</p></div></div>
         <div class="g-etape"><div><h4>Noter un vol réalisé</h4><p>Sur la ligne du bon, choisissez la <b>date de réalisation</b> et le <b>pilote</b>, puis <span class="g-btn">Enregistrer</span>.</p></div></div>
-        <div class="g-etape"><div><h4>Actions sur un bon</h4><p>Cliquez sur le bon pour l’ouvrir : <b>renvoyer par e-mail</b>, <b>prolonger</b> (1 à 6 mois) ou <b>rembourser</b> (total ou partiel, par Stripe).</p></div></div>
+        <div class="g-etape"><div><h4>Ouvrir un bon</h4><p>Cliquez sur le nom ou le numéro : la fiche affiche le <b>code du bon</b>, le vol, le paiement et la fin de validité (<b>un an</b> après le paiement). Actions possibles : <b>imprimer le PDF</b>, <b>renvoyer par e-mail</b>, <b>prolonger</b> (1 à 6 mois), <b>rembourser</b>, <b>annuler</b>.</p></div></div>
       </div></div>
 
-      <h3 class="g-tache"><span class="g-em">👥</span> Suivre les adhérents</h3>
+      <h3 class="g-tache"><span class="g-em">✍️</span> Ajouter un vol vendu au club ou par téléphone</h3>
+      <div class="g-bloc"><div class="g-etapes">
+        <div class="g-etape"><div><h4>Cliquez sur « + Ajouter un vol »</h4><p>Dans « Bons cadeaux », à droite de <span class="g-ch">Exporter en CSV</span>.</p></div></div>
+        <div class="g-etape"><div><h4>Choisissez le vol</h4><p><b>Vol découverte</b> (1, 2 ou 3 personnes) ou <b>vol d’initiation</b> (1 h 30 ou 3 h). Le montant s’affiche tout seul. Indiquez le bénéficiaire si vous le connaissez.</p></div></div>
+        <div class="g-etape"><div><h4>Renseignez l’acheteur</h4><p>Prénom et nom. L’<b>e-mail</b> n’est obligatoire que si quelque chose doit lui être envoyé.</p></div></div>
+        <div class="g-etape"><div><h4>Choisissez le paiement</h4><p><b>« Le client paie maintenant, au club »</b> : Espèces, Chèque ou Carte bancaire (TPE) → le bon est <b>payé et numéroté tout de suite</b> ; cochez « Envoyer aussi le bon par e-mail » si besoin.<br>
+          <b>« Le client paiera plus tard, à distance »</b> : Virement (le client reçoit le <b>RIB du club</b> par e-mail) ou Carte bancaire en ligne (le client reçoit un <b>lien de paiement</b>) → le bon reste <b>« en attente »</b>, sans numéro.</p></div></div>
+        <div class="g-etape"><div><h4>Créez le bon</h4><p>L’encadré <b>« Ce qui va se passer »</b> résume la suite avant de cliquer sur <span class="g-btn">Créer le bon</span>.</p></div></div>
+      </div>
+      <div class="g-astuce"><span class="g-em">🏦</span><div><b>Le virement est arrivé ?</b> Ouvrez le bon → choisissez le mode reçu → <span class="g-btn">Valider le paiement</span> : il est numéroté et envoyé au client. Le client paie par carte en ligne ? Rien à faire : le bon passe <b>« Payé par Stripe »</b> et part tout seul. Besoin de relancer : <b>« Renvoyer le lien de paiement »</b> ou <b>« Renvoyer le RIB »</b> sur la fiche du bon.</div></div>
+      </div>
+
+      <h3 class="g-tache"><span class="g-em">💶</span> Modifier les tarifs et prix</h3>
+      <div class="g-bloc"><div class="g-etapes">
+        <div class="g-etape"><div><h4>Ouvrez « Tarifs et prix »</h4><p>Tous les prix du site sont rangés par catégorie : vols découverte, initiation, heures de vol, cotisation, Passeport FFA, licence et options. Cliquez sur une catégorie pour l’ouvrir.</p></div></div>
+        <div class="g-etape"><div><h4>Changez un prix</h4><p>Tapez le montant en euros (<span class="g-ch">130</span> ou <span class="g-ch">130,50</span>). La colonne de droite rappelle la valeur d’origine.</p></div></div>
+        <div class="g-etape"><div><h4>Enregistrez</h4><p><span class="g-btn">Enregistrer les tarifs</span> : pages, formulaires et montants à payer sont à jour immédiatement. Les bons déjà achetés gardent leur prix.</p></div></div>
+      </div>
+      <div class="g-astuce"><span class="g-em">🏦</span><div>Dans la même page, rubrique <b>« Coordonnées bancaires »</b> : saisissez l’<b>IBAN</b> et le <b>BIC</b> du club. Ils sont envoyés automatiquement pour les paiements par virement.</div></div>
+      </div>
+
+      <h3 class="g-tache"><span class="g-em">👥</span> Membres, rôles et invitations</h3>
+      <div class="g-bloc"><div class="g-etapes">
+        <div class="g-etape"><div><h4>Ouvrez « Membres &amp; accès »</h4><p>La liste de tous les membres, avec leurs rôles, leur dernière connexion et leur accès.</p></div></div>
+        <div class="g-etape"><div><h4>Trouver des membres</h4><p>Tapez un nom dans la <b>recherche</b>, ou cliquez sur la flèche <b>▾</b> d’une colonne : ▾ <b>Rôles</b> → ne cocher que « Bureau », ▾ <b>Dernière connexion</b> → ne garder que « jamais »…</p></div></div>
+        <div class="g-etape"><div><h4>Changer les rôles d’un membre</h4><p>Cochez ou décochez ses rôles sur sa ligne, puis <span class="g-btn">OK</span>.</p></div></div>
+        <div class="g-etape"><div><h4>Envoyer les invitations</h4><p>Cochez des membres un par un, ou <b>« Sélectionner tous les membres affichés »</b>, puis <span class="g-btn">Envoyer l’invitation par e-mail</span>. Chacun reçoit un lien pour choisir son mot de passe (valable 72 h).</p></div></div>
+      </div></div>
+
+      <h3 class="g-tache"><span class="g-em">👤</span> Suivre les adhérents</h3>
       <div class="g-bloc"><div class="g-etapes">
         <div class="g-etape"><div><h4>Ouvrez « Adhérents »</h4><p>Onglet <b>Réinscription</b> : les dossiers. Onglet <b>Nouvelle inscription</b> : les demandes reçues.</p></div></div>
         <div class="g-etape"><div><h4>Ouvrir un dossier</h4><p>Cliquez sur un nom pour la <b>fiche complète</b> : tout modifier, ajouter une <b>photo</b> et des <b>documents</b>.</p></div></div>
         <div class="g-etape"><div><h4>Valider un dossier</h4><p>Cochez <b>Cotisation reçue</b>, <b>Licence à jour</b>, <b>Médicale à jour</b> puis <span class="g-btn">Enregistrer</span>. Le site retient qui a coché et quand.</p></div></div>
-        <div class="g-etape"><div><h4>Transformer une demande en membre</h4><p>Cochez les étapes puis <span class="g-btn">Valider et convertir en membre officiel</span> : le compte est créé automatiquement.</p></div></div>
+        <div class="g-etape"><div><h4>Transformer une demande en membre</h4><p>Cochez les étapes puis <span class="g-btn">Valider et convertir en membre officiel</span> : le compte est créé automatiquement, avec le rôle Adhérents.</p></div></div>
       </div></div>
 
       <h3 class="g-tache"><span class="g-em">📁</span> Gérer les documents &amp; les accès</h3>
       <div class="g-bloc"><div class="g-etapes">
-        <div class="g-etape"><div><h4>Ranger la bibliothèque</h4><p>Dans <b>« Bibliothèque adhérents »</b> : créez un dossier, déposez un fichier, et <b>glissez-déposez</b> pour changer l’ordre.</p></div></div>
-        <div class="g-etape"><div><h4>Choisir qui voit quoi</h4><p>Dans <b>« Accès bibliothèque »</b>, cochez les dossiers autorisés — <b>par rôle</b>, puis <b>membre par membre</b> si besoin.</p></div></div>
-      </div></div>
+        <div class="g-etape"><div><h4>Ranger la bibliothèque</h4><p>Dans <b>« Bibliothèque adhérents »</b> (Bureau, Administrateurs) : créez un dossier, déposez un fichier, et <b>glissez-déposez</b> pour changer l’ordre.</p></div></div>
+        <div class="g-etape"><div><h4>Choisir ce que voient les Adhérents</h4><p>Dans <b>« Accès bibliothèque »</b>, cochez les dossiers visibles par le rôle <b>Adhérents</b>, puis membre par membre si besoin. Les Administrateurs, Instructeurs et le Bureau voient déjà tout.</p></div></div>
+      </div>
+      <div class="g-astuce"><span class="g-em">⚠️</span><div><b>Nouveau dossier créé ?</b> Il reste invisible pour les Adhérents tant qu’il n’est pas coché dans « Accès bibliothèque ». C’est voulu, pour qu’aucun document sensible ne soit visible par erreur.</div></div>
+      </div>
 
       <h3 class="g-tache"><span class="g-em">✉️</span> Envoyer une newsletter</h3>
       <div class="g-bloc"><div class="g-etapes">
         <div class="g-etape"><div><h4>Ouvrez « Newsletters »</h4></div></div>
-        <div class="g-etape"><div><h4>Choisissez qui reçoit</h4><p>Filtrez par <b>rôle</b>, <b>adhésion à jour</b> ou <b>paiement</b>. Le <b>nombre de destinataires</b> s’affiche.</p></div></div>
+        <div class="g-etape"><div><h4>Choisissez qui reçoit</h4><p>Tous les membres, ou un <b>rôle</b> (ex. <span class="g-ch">Rôle Bureau</span>, <span class="g-ch">Rôle Instructeurs</span>), puis filtrez si besoin par <b>adhésion à jour</b> ou <b>paiement</b>. Le <b>nombre de destinataires</b> s’affiche.</p></div></div>
         <div class="g-etape"><div><h4>Écrivez le message</h4><p>Un sujet, un texte. Astuce : écrivez <span class="g-ch">{prenom}</span> pour personnaliser.</p></div></div>
         <div class="g-etape"><div><h4>Envoyez</h4><p>Cliquez sur <span class="g-btn">Envoyer</span>. L’envoi est ajouté à l’historique.</p></div></div>
       </div></div>
@@ -216,7 +267,7 @@ require __DIR__ . '/inc/entete.php';
   </section>
 
   <div class="g-pied">
-    <span>Mode d’emploi du site du <strong>Saumur Air Club</strong> · réalisé par OB3M Distribution</span>
+    <span>Mode d’emploi du site du <strong>Saumur Air Club</strong> · réalisé par OB3M Distribution · mis à jour le 28/09/2026</span>
     <button class="btn btn--contour" onclick="window.print()">Imprimer / enregistrer en PDF</button>
   </div>
 
