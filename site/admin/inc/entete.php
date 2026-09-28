@@ -35,7 +35,7 @@ unset($_SESSION['message_succes'], $_SESSION['message_erreur']);
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/assets/img/favicon.png" type="image/png">
 <link rel="preload" href="/assets/fonts/Inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/admin/assets/admin.css?v=18">
+<link rel="stylesheet" href="/admin/assets/admin.css?v=19">
 </head>
 <body>
 
@@ -64,8 +64,7 @@ unset($_SESSION['message_succes'], $_SESSION['message_erreur']);
     </nav>
 
     <div class="bo__moi">
-      <p class="bo__moi-nom"><?= e($moi['prenom'] . ' ' . $moi['nom']) ?></p>
-      <p class="bo__moi-role"><?= e(libelle_roles($moi)) ?></p>
+      <span class="bo__moi-nom" title="<?= e($moi['prenom'] . ' ' . $moi['nom']) ?>"><?= e($moi['prenom']) ?></span>
       <a class="bo__deconnexion" href="/admin/deconnexion.php">Se déconnecter</a>
     </div>
   </aside>
