@@ -69,8 +69,20 @@ require __DIR__ . '/inc/hero.php';
     <div class="duo" style="margin-top:2.5rem">
       <div>
         <h3><?= texte('contact.horaires.titre', 'Horaires d’ouverture') ?></h3>
-        <p><?= texte('contact.horaires.texte',
-          'Horaires à préciser — cliquez ici pour les renseigner.', 'long') ?></p>
+        <table class="horaires">
+          <caption class="visuellement-cache">Horaires d’ouverture du club, jour par jour</caption>
+          <tbody>
+            <?php $aujourdhui = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'][(int) date('w')]; ?>
+            <?php foreach (HORAIRES_OUVERTURE as $jour => $plage): ?>
+              <tr<?= $jour === $aujourdhui ? ' class="horaires__auj"' : '' ?>>
+                <th scope="row"><?= e(ucfirst($jour)) ?></th>
+                <td<?= $plage === null ? ' class="horaires__ferme"' : '' ?>><?= e($plage ?? 'Fermé') ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+        <p class="texte-petit" style="margin-top:.6rem"><?= texte('contact.horaires.note',
+          'En dehors de ces horaires, appelez-nous ou écrivez-nous.', 'long') ?></p>
       </div>
       <div>
         <h3><?= texte('contact.reseaux.titre', 'Nous suivre') ?></h3>

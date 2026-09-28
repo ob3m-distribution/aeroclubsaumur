@@ -1503,3 +1503,12 @@ td { color: var(--gris-700); }
 .reseaux__lien--instagram svg { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%); }
 .reseaux__lien span { display: flex; flex-direction: column; line-height: 1.2; }
 .reseaux__lien small { font-size: .8rem; opacity: .7; }
+
+/* --- Contact : horaires d'ouverture --- */
+.horaires { width: 100%; max-width: 22rem; border-collapse: collapse; margin-top: .5rem; font-size: .95rem; }
+.horaires th, .horaires td { padding: .45rem .2rem; border-bottom: 1px solid rgba(20,41,77,.1); text-align: left; }
+.horaires th { font-weight: 500; }
+.horaires td { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.horaires td.horaires__ferme { font-weight: 400; opacity: .6; }
+.horaires__auj th, .horaires__auj td { color: #B08D2C; }
+.horaires__auj th::after { content: ' · aujourd’hui'; font-size: .8em; font-weight: 400; }

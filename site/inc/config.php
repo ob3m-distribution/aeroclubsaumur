@@ -43,6 +43,17 @@ const RESEAUX_SOCIAUX = [
     'instagram' => ['Instagram', 'https://www.instagram.com/aeroclub_saumurairclub/',  '@aeroclub_saumurairclub'],
 ];
 
+/** Horaires d'ouverture du club (page Contact). null = fermé. */
+const HORAIRES_OUVERTURE = [
+    'lundi'    => null,
+    'mardi'    => null,
+    'mercredi' => null,
+    'jeudi'    => null,
+    'vendredi' => null,
+    'samedi'   => '14:00–18:00',
+    'dimanche' => '14:00–18:00',
+];
+
 /** Hebergeur du site — mention legale OBLIGATOIRE. */
 const HEBERGEUR = [
     'nom'     => 'IONOS SARL',

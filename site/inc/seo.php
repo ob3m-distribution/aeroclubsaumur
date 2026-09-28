@@ -114,7 +114,8 @@ function donnees_structurees(string $page = 'index'): string
             'longitude' => CLUB['lon'],
         ],
         'areaServed' => ['@type' => 'Place', 'name' => 'Val de Loire, Saumur'],
-        'sameAs'     => [],   // à compléter avec Facebook / Instagram quand on les aura
+        'sameAs'     => array_values(array_map(fn($r) => $r[1], RESEAUX_SOCIAUX)),
+        'openingHoursSpecification' => horaires_schema(),
     ];
 
     $blocs = [$club];
@@ -167,4 +168,23 @@ function pages_publiques(): array
         ['/confidentialite',     '0.2', 'yearly'],
         // /adherents est volontairement absent : page en construction.
     ];
+}
+
+/** Horaires d'ouverture (HORAIRES_OUVERTURE) au format schema.org. */
+function horaires_schema(): array
+{
+    $jours = ['lundi' => 'Monday', 'mardi' => 'Tuesday', 'mercredi' => 'Wednesday', 'jeudi' => 'Thursday',
+              'vendredi' => 'Friday', 'samedi' => 'Saturday', 'dimanche' => 'Sunday'];
+    $parPlage = [];
+    foreach (HORAIRES_OUVERTURE as $jour => $plage) {
+        if ($plage !== null && preg_match('/^(\d{2}:\d{2})\D+(\d{2}:\d{2})$/u', $plage, $m)) {
+            $parPlage[$m[1] . '-' . $m[2]][] = 'https://schema.org/' . $jours[$jour];
+        }
+    }
+    $out = [];
+    foreach ($parPlage as $plage => $j) {
+        [$ouvre, $ferme] = explode('-', $plage);
+        $out[] = ['@type' => 'OpeningHoursSpecification', 'dayOfWeek' => $j, 'opens' => $ouvre, 'closes' => $ferme];
+    }
+    return $out;
 }
