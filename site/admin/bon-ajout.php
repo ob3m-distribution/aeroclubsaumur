@@ -143,16 +143,46 @@ require __DIR__ . '/inc/entete.php';
   </div>
 
   <h2 style="margin-top:1.5rem">Le paiement</h2>
-  <div class="modes-paiement">
-    <?php foreach (MODES_PAIEMENT as $k => [$libMode]): ?>
-      <label class="bon-radio"><input type="radio" name="mode" value="<?= e($k) ?>" <?= $modeSel === $k ? 'checked' : '' ?>><span><?= e($libMode) ?></span></label>
+  <?php
+    /* [icône, titre court, ce qui se passe] — affichage en deux familles. */
+    $cartesPaiement = [
+      'especes'  => ['💶', 'Espèces',              'Réglé sur place'],
+      'cheque'   => ['🧾', 'Chèque',               'Réglé sur place'],
+      'cb_club'  => ['💳', 'Carte bancaire (TPE)', 'Réglé sur place'],
+      'virement' => ['🏦', 'Virement bancaire',    'Le RIB du club part par e-mail'],
+      'stripe'   => ['🔗', 'Carte bancaire en ligne', 'Un lien de paiement part par e-mail'],
+    ];
+    $famillesPaiement = [
+      ['Le client paie maintenant, au club', 'Le bon est payé et numéroté tout de suite.', MODES_AU_CLUB],
+      ['Le client paiera plus tard, à distance', 'Le bon reste « en attente » jusqu’au paiement, sans numéro.', ['virement', 'stripe']],
+    ];
+  ?>
+  <div class="paiement-familles">
+    <?php foreach ($famillesPaiement as [$titreFam, $sousTitreFam, $modesFam]): ?>
+      <fieldset class="paiement-famille">
+        <legend><?= e($titreFam) ?></legend>
+        <p class="paiement-famille__aide"><?= e($sousTitreFam) ?></p>
+        <div class="paiement-cartes">
+          <?php foreach ($modesFam as $k): [$ico, $titreMode, $effet] = $cartesPaiement[$k]; ?>
+            <label class="paiement-carte">
+              <input type="radio" name="mode" value="<?= e($k) ?>" <?= $modeSel === $k ? 'checked' : '' ?>>
+              <span class="paiement-carte__ico" aria-hidden="true"><?= $ico ?></span>
+              <span class="paiement-carte__txt"><strong><?= e($titreMode) ?></strong><small><?= e($effet) ?></small></span>
+            </label>
+          <?php endforeach; ?>
+        </div>
+      </fieldset>
     <?php endforeach; ?>
   </div>
-  <p class="aide" id="mode-aide" style="margin:.5rem 0 0"></p>
-  <label class="champ-case" id="envoyer-case" style="margin-top:.6rem">
-    <input type="checkbox" name="envoyer" value="1" <?= !empty($valeurs['envoyer']) ? 'checked' : '' ?>>
-    <span>Envoyer le bon cadeau (PDF) par e-mail à l’acheteur</span>
-  </label>
+
+  <div class="paiement-resultat" id="paiement-resultat" aria-live="polite">
+    <p class="paiement-resultat__titre">Ce qui va se passer</p>
+    <ul id="mode-aide"></ul>
+    <label class="champ-case" id="envoyer-case">
+      <input type="checkbox" name="envoyer" value="1" <?= !empty($valeurs['envoyer']) ? 'checked' : '' ?>>
+      <span>Envoyer aussi le bon cadeau (PDF) par e-mail à l’acheteur</span>
+    </label>
+  </div>
 
   <div class="actions" style="margin-top:1.5rem;align-items:center">
     <button type="submit" class="btn">Créer le bon</button>
@@ -165,11 +195,18 @@ require __DIR__ . '/inc/entete.php';
   var f = document.getElementById('formulaire');
   var PRIX_DEC = <?= json_encode(vols_decouverte()) ?>, PRIX_INI = <?= json_encode(vols_initiation()) ?>;
   var AIDE = {
-    especes:  'Le bon est créé payé, avec son numéro.',
-    cheque:   'Le bon est créé payé, avec son numéro.',
-    cb_club:  'Le bon est créé payé, avec son numéro.',
-    virement: 'Le bon est créé « En attente virement », sans numéro. Le RIB du club est envoyé par e-mail ; validez le paiement depuis la fiche du bon à réception.',
-    stripe:   'Le bon est créé « En attente Stripe ». Un lien de paiement par carte est envoyé par e-mail ; le bon est payé et envoyé automatiquement dès le paiement.'
+    especes:  ['Le bon est créé au statut « Payé en espèces », avec son numéro (CLUB-…).',
+               'Vous pouvez l’imprimer depuis sa fiche, ou l’envoyer par e-mail (case ci-dessous).'],
+    cheque:   ['Le bon est créé au statut « Payé en chèque », avec son numéro (CLUB-…).',
+               'Vous pouvez l’imprimer depuis sa fiche, ou l’envoyer par e-mail (case ci-dessous).'],
+    cb_club:  ['Le bon est créé au statut « Payé en CB au club », avec son numéro (CLUB-…).',
+               'Vous pouvez l’imprimer depuis sa fiche, ou l’envoyer par e-mail (case ci-dessous).'],
+    virement: ['Le bon est créé au statut « En attente virement », sans numéro.',
+               'Le client reçoit par e-mail le RIB du club et le libellé à indiquer.',
+               'À réception du virement : ouvrez la fiche du bon → « Valider le paiement ». Il est alors numéroté et envoyé au client.'],
+    stripe:   ['Le bon est créé au statut « En attente Stripe », sans numéro.',
+               'Le client reçoit par e-mail un lien pour payer par carte.',
+               'Dès qu’il a payé, le bon passe « Payé par Stripe » et lui est envoyé automatiquement.']
   };
   function euros(c){ return (c % 100 ? (c/100).toFixed(2).replace('.', ',') : (c/100)) + ' €'; }
   function val(n){ var r = f.querySelector('input[name="' + n + '"]:checked'); return r ? r.value : ''; }
@@ -181,7 +218,12 @@ require __DIR__ . '/inc/entete.php';
     var c = (t === 'initiation') ? PRIX_INI[f.querySelector('#duree_initiation').value] : PRIX_DEC[nb];
     if (c) document.getElementById('bon-total').textContent = euros(c);
     var auClub = ['especes', 'cheque', 'cb_club'].indexOf(m) !== -1;
-    document.getElementById('mode-aide').textContent = AIDE[m] || '';
+    var ul = document.getElementById('mode-aide');
+    ul.textContent = '';
+    (AIDE[m] || ['Choisissez un mode de paiement.']).forEach(function (t) {
+      var li = document.createElement('li'); li.textContent = t; ul.appendChild(li);
+    });
+    document.getElementById('paiement-resultat').className = 'paiement-resultat' + (m ? (auClub ? ' paiement-resultat--paye' : ' paiement-resultat--attente') : '');
     document.getElementById('envoyer-case').style.display = auClub ? '' : 'none';
     var envoi = f.querySelector('input[name="envoyer"]').checked;
     document.getElementById('email-aide').textContent = (!auClub || envoi) ? '(obligatoire)' : '(facultatif)';

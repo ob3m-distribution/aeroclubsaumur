@@ -35,7 +35,7 @@ unset($_SESSION['message_succes'], $_SESSION['message_erreur']);
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/assets/img/favicon.png" type="image/png">
 <link rel="preload" href="/assets/fonts/Inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/admin/assets/admin.css?v=17">
+<link rel="stylesheet" href="/admin/assets/admin.css?v=18">
 </head>
 <body>
 

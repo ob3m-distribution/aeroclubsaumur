@@ -557,3 +557,32 @@ th.triable::after { content: ' ⇅'; color: var(--gris-300); }
 th.triable[data-sens="asc"]::after { content: ' ▲'; color: var(--gris-700); }
 th.triable[data-sens="desc"]::after { content: ' ▼'; color: var(--gris-700); }
 .col-case { width: 2rem; }
+
+/* --- Ajouter un vol : choix du paiement en deux familles --- */
+.paiement-familles { display: grid; grid-template-columns: 1fr; gap: .9rem; }
+.paiement-famille { border: 1px solid var(--gris-200); border-radius: 10px; padding: .9rem 1rem 1rem; margin: 0; min-width: 0; }
+.paiement-famille legend { padding: 0 .4rem; font-weight: 700; font-size: .9rem; color: var(--noir); }
+.paiement-famille__aide { margin: 0 0 .75rem; font-size: .8rem; color: var(--gris-500); }
+.paiement-cartes { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: .5rem; }
+.paiement-carte { position: relative; display: flex; align-items: center; gap: .6rem; cursor: pointer;
+  border: 1.5px solid var(--gris-300); border-radius: 8px; padding: .7rem .75rem; background: var(--blanc);
+  transition: border-color .15s, background .15s, box-shadow .15s; }
+.paiement-carte:hover { border-color: var(--rouge); }
+.paiement-carte input { position: absolute; opacity: 0; pointer-events: none; }
+.paiement-carte:has(input:focus-visible) { outline: 2px solid var(--rouge); outline-offset: 2px; }
+.paiement-carte:has(input:checked) { border-color: var(--rouge); background: rgba(176,141,44,.08);
+  box-shadow: 0 0 0 1px var(--rouge) inset; }
+.paiement-carte:has(input:checked)::after { content: '✓'; position: absolute; top: .35rem; right: .5rem;
+  font-size: .8rem; font-weight: 700; color: var(--rouge); }
+.paiement-carte__ico { font-size: 1.35rem; line-height: 1; }
+.paiement-carte__txt { display: flex; flex-direction: column; line-height: 1.25; }
+.paiement-carte__txt strong { font-size: .875rem; color: var(--noir); }
+.paiement-carte__txt small { font-size: .72rem; color: var(--gris-500); }
+.paiement-resultat { margin-top: 1rem; padding: .85rem 1rem; border-radius: 10px; border-left: 4px solid var(--gris-300);
+  background: var(--gris-050); }
+.paiement-resultat--paye { border-left-color: var(--vert); background: var(--vert-fond); }
+.paiement-resultat--attente { border-left-color: var(--ambre); background: var(--ambre-fond); }
+.paiement-resultat__titre { margin: 0 0 .35rem; font-weight: 700; font-size: .85rem; }
+.paiement-resultat ul { margin: 0 0 .25rem; padding-left: 1.1rem; font-size: .85rem; }
+.paiement-resultat li { margin-bottom: .2rem; }
+.paiement-resultat .champ-case { margin-top: .5rem; }
