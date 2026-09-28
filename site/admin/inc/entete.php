@@ -35,7 +35,7 @@ unset($_SESSION['message_succes'], $_SESSION['message_erreur']);
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/assets/img/favicon.png" type="image/png">
 <link rel="preload" href="/assets/fonts/Inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/admin/assets/admin.css?v=19">
+<link rel="stylesheet" href="/admin/assets/admin.css?v=20">
 </head>
 <body>
 
@@ -47,6 +47,7 @@ unset($_SESSION['message_succes'], $_SESSION['message_erreur']);
     <div class="bo__marque">
       <span class="marque"><span class="marque__saumur">Saumur</span> <span class="marque__club">Air Club</span></span>
       <span class="bo__sous-marque">Back-office</span>
+      <a class="bo__deconnexion" href="/admin/deconnexion.php" title="Connecté : <?= e($moi['prenom'] . ' ' . $moi['nom']) ?>">Se déconnecter</a>
     </div>
 
     <nav aria-label="Menu du back-office">
@@ -63,10 +64,6 @@ unset($_SESSION['message_succes'], $_SESSION['message_erreur']);
       </ul>
     </nav>
 
-    <div class="bo__moi">
-      <span class="bo__moi-nom" title="<?= e($moi['prenom'] . ' ' . $moi['nom']) ?>"><?= e($moi['prenom']) ?></span>
-      <a class="bo__deconnexion" href="/admin/deconnexion.php">Se déconnecter</a>
-    </div>
   </aside>
 
   <div class="bo__corps">

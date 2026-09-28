@@ -121,13 +121,9 @@ a:hover { color: var(--rouge-fonce); }
   border-left-color: var(--rouge-clair);
 }
 
-.bo__moi { padding: .8rem 1.25rem; border-top: 1px solid rgba(255,255,255,.1);
-  display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-.bo__moi-nom { margin: 0; color: var(--blanc); font-weight: 500; font-size: .875rem;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bo__moi-role { margin: 0 0 .5rem; font-size: .8125rem; color: var(--gris-500); }
-.bo__deconnexion { color: var(--gris-300); font-size: .8125rem; text-decoration: none; }
-.bo__deconnexion:hover { color: var(--blanc); text-decoration: underline; }
+.bo__menu .bo__deconnexion { display: inline-block; margin-top: .6rem; padding: 0; border: 0;
+  color: var(--gris-300); font-size: .8125rem; text-decoration: none; }
+.bo__menu .bo__deconnexion:hover { background: none; color: var(--blanc); text-decoration: underline; }
 
 .bo__corps { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 

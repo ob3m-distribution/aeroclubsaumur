@@ -187,7 +187,7 @@ require __DIR__ . '/inc/entete.php';
       <h3 class="g-tache"><span class="g-em">🔐</span> Se connecter au back-office</h3>
       <div class="g-bloc"><div class="g-etapes">
         <div class="g-etape"><div><h4>Allez sur la page d’administration</h4><p>Ajoutez <span class="g-ch">/admin</span> à l’adresse du site.</p></div></div>
-        <div class="g-etape"><div><h4>Connectez-vous</h4><p>Votre e-mail + mot de passe. Le menu de gauche n’affiche que ce que <b>vos rôles</b> vous autorisent. En bas du menu : votre prénom et <span class="g-ch">Se déconnecter</span>.</p></div></div>
+        <div class="g-etape"><div><h4>Connectez-vous</h4><p>Votre e-mail + mot de passe. Le menu de gauche n’affiche que ce que <b>vos rôles</b> vous autorisent. Pour quitter : <span class="g-ch">Se déconnecter</span>, en haut du menu, sous « Saumur Air Club · Back-office ».</p></div></div>
       </div></div>
 
       <h3 class="g-tache"><span class="g-em">🎭</span> Les rôles : qui peut faire quoi</h3>
