@@ -482,44 +482,57 @@ TXT;
     return envoyer_email_html_pj($bon['acheteur_email'], $sujet, $html, $texte);
 }
 
-/** Notification au club : un paiement vient d'aboutir. */
-function email_paiement_recu_club(array $bon): bool
+/**
+ * Notification au club : un paiement vient d'aboutir.
+ * $renvoi : renvoi manuel (taches/renvoyer-notification-bon.php), avec les
+ * informations à jour.
+ */
+function email_paiement_recu_club(array $bon, bool $renvoi = false): bool
 {
     $numero  = (string) ($bon['numero_bon'] ?: $bon['reference']);
     $sujet   = 'Bon cadeau PAYÉ — ' . $numero;
     $montant = prix((int) $bon['montant_cents']);
     $expire  = date('d/m/Y', strtotime((string) ($bon['date_fin_validite'] ?: $bon['expire_le'])));
+    $payeLe  = $bon['paye_le'] ? date('d/m/Y à H:i', strtotime((string) $bon['paye_le'])) : '—';
+    $statut  = statut_bon($bon)[0];
+    $vol     = libelle_vol_bon($bon);
+    $offert  = trim((string) ($bon['offert_a'] ?? ''));
+    $intro   = $renvoi
+        ? 'Renvoi de la notification de paiement de ce bon cadeau, avec les informations à jour.'
+        : 'Un bon cadeau vient d\'être payé.';
 
-    $texte = <<<TXT
-Un bon cadeau vient d'être payé en ligne.
+    $texte = $intro . "\n\n"
+        . "CODE DU BON      : {$numero}\n"
+        . "VOL              : {$vol}\n"
+        . ($offert !== '' ? "OFFERT À         : {$offert}\n" : '')
+        . "MONTANT          : {$montant}\n"
+        . "PAIEMENT         : {$statut}, le {$payeLe}\n"
+        . "VALABLE JUSQU'AU : {$expire}\n\n"
+        . "ACHETEUR\n"
+        . "  {$bon['acheteur_prenom']} {$bon['acheteur_nom']}\n"
+        . "  Email     : {$bon['acheteur_email']}\n"
+        . "  Téléphone : {$bon['acheteur_telephone']}\n\n"
+        . "Le bon a été envoyé à l'acheteur.\n"
+        . "Le bénéficiaire vous contactera pour convenir d'une date de vol.\n\n"
+        . "--\nMessage automatique du site du Saumur Air Club.";
 
-CODE DU BON : {$numero}
-MONTANT     : {$montant}
-VALABLE JUSQU'AU : {$expire}
-
-ACHETEUR
-  {$bon['acheteur_prenom']} {$bon['acheteur_nom']}
-  Email     : {$bon['acheteur_email']}
-  Téléphone : {$bon['acheteur_telephone']}
-
-Le bon a été envoyé automatiquement à l'acheteur.
-Le bénéficiaire vous contactera pour convenir d'une date de vol.
-
---
-Message automatique du site du Saumur Air Club.
-TXT;
+    $ligne = static fn(string $l, string $v, string $style = ''): string =>
+        '<tr><td style="padding:6px 0;color:#83888a;">' . e($l) . '</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;' . $style . '">' . e($v) . '</td></tr>';
 
     $corpsHtml =
-        '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;">Un bon cadeau vient d\'être payé en ligne.</p>'
+        '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;">' . e($intro) . '</p>'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         .   'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 20px;">'
-        .   '<tr><td style="padding:6px 0;color:#83888a;">Code du bon</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($numero) . '</td></tr>'
-        .   '<tr><td style="padding:6px 0;color:#83888a;">Montant</td><td style="padding:6px 0;text-align:right;font-weight:bold;font-size:18px;color:#14294D;">' . e($montant) . '</td></tr>'
-        .   '<tr><td style="padding:6px 0;color:#83888a;">Valable jusqu\'au</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($expire) . '</td></tr>'
+        .   $ligne('Code du bon', $numero, 'font-size:18px;color:#B08D2C;')
+        .   $ligne('Vol', $vol)
+        .   ($offert !== '' ? $ligne('Offert à', $offert) : '')
+        .   $ligne('Montant', $montant, 'font-size:18px;')
+        .   $ligne('Paiement', $statut . ', le ' . $payeLe)
+        .   $ligne('Valable jusqu\'au', $expire)
         . '</table>'
         . '<p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#4C596B;"><strong style="color:#14294D;">Acheteur</strong><br>'
         .   e($bon['acheteur_prenom']) . ' ' . e($bon['acheteur_nom']) . '<br>Email : ' . e($bon['acheteur_email']) . '<br>Téléphone : ' . e($bon['acheteur_telephone']) . '</p>'
-        . '<p style="margin:0;font-size:13px;line-height:1.6;color:#78859A;">Le bon a été envoyé automatiquement à l\'acheteur. Le bénéficiaire vous contactera pour convenir d\'une date de vol.</p>';
+        . '<p style="margin:0;font-size:13px;line-height:1.6;color:#78859A;">Le bon a été envoyé à l\'acheteur. Le bénéficiaire vous contactera pour convenir d\'une date de vol.</p>';
     $html = email_gabarit('Bon cadeau payé', $corpsHtml);
 
     return envoyer_email_html_pj(EMAIL_CLUB, $sujet, $html, $texte, [], $bon['acheteur_email']);

@@ -1,0 +1,30 @@
+name: Renvoyer la notification d'un bon payé
+
+# Renvoie au club (voler@saumurairclub.fr, fixé côté serveur) l'e-mail
+# « Bon cadeau PAYÉ » d'un bon, avec ses informations à jour.
+# Lancement : Actions → « Renvoyer la notification d'un bon payé » →
+# Run workflow, puis saisir le code du bon.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bon:
+        description: "Code du bon (WEB-…, CLUB-…, ancien code BON-… ou référence SAC-…)"
+        required: true
+        type: string
+
+jobs:
+  renvoyer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Renvoyer la notification
+        env:
+          OPS_SECRET: ${{ secrets.PROD_OPS_SECRET }}
+          BON: ${{ inputs.bon }}
+        run: |
+          code=$(curl -s -o resultat.txt -w "%{http_code}" -X POST \
+            "https://aeroclub-saumur.fr/taches/renvoyer-notification-bon.php" \
+            --data-urlencode "k=$OPS_SECRET" --data-urlencode "bon=$BON")
+          cat resultat.txt
+          [ "$code" = "200" ] || { echo "Échec (HTTP $code)"; exit 1; }
