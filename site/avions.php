@@ -25,7 +25,8 @@ require __DIR__ . '/inc/hero.php';
              srcset="/assets/img/evektor-hangar-900.jpg 900w, /assets/img/evektor-hangar.jpg 1280w"
              sizes="(min-width:880px) 50vw, 100vw"
              alt="L’Evektor SportStar F-HLEB dans le hangar du club"
-             loading="lazy" class="est-visible">
+             class="est-visible"><?php /* pas de loading="lazy" : première photo
+             visible sur mobile, c'est elle que PageSpeed mesure (LCP) */ ?>
         <img src="/assets/img/evektor-cockpit-canopy.jpg"
              srcset="/assets/img/evektor-cockpit-canopy-900.jpg 900w, /assets/img/evektor-cockpit-canopy.jpg 1280w"
              sizes="(min-width:880px) 50vw, 100vw"
