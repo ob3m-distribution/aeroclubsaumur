@@ -513,3 +513,47 @@ th.tbl-triable[data-tri=desc] .tbl-lib::after { content:' ↓'; color:var(--or,#
   border:1.5px solid var(--gris-200); border-radius:8px; cursor:pointer; font-size:.9rem; }
 .remb-opt:has(input:checked) { border-color:var(--rouge,#B08D2C); background:rgba(176,141,44,.06); }
 .remb-opt input { margin-top:.15rem; accent-color:var(--rouge,#B08D2C); }
+
+/* --- Ajouter un vol (bon saisi au B.O.) --- */
+.bon-ajout h2 { font-size: 1rem; margin: 0 0 .75rem; }
+.bon-choix, .modes-paiement { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: .9rem; }
+.modes-paiement { margin-bottom: 0; }
+.bon-radio { flex: 1 1 0; min-width: 180px; display: flex; align-items: center; gap: .55rem; cursor: pointer;
+  border: 1px solid var(--gris-300); border-radius: 8px; padding: .65rem .8rem; background: var(--blanc); font-size: .875rem; }
+.bon-radio:hover { border-color: var(--rouge); }
+.bon-radio:has(input:checked) { border-color: var(--rouge); background: rgba(176,141,44,.07); font-weight: 600; }
+.bon-radio input { margin: 0; flex: 0 0 auto; }
+.bon-benef { margin-bottom: .4rem; }
+.champ-case { display: flex; gap: .5rem; align-items: flex-start; font-size: .875rem; cursor: pointer; }
+.champ-case input { margin-top: .2rem; }
+
+/* --- Tarifs et prix : accordéons --- */
+.tarifs-cat { padding: 0; }
+.tarifs-cat > summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem; padding: 1rem 1.25rem; font-weight: 600; }
+.tarifs-cat > summary::-webkit-details-marker { display: none; }
+.tarifs-cat > summary::after { content: '▾'; color: var(--gris-500); transition: transform .2s; }
+.tarifs-cat[open] > summary::after { transform: rotate(180deg); }
+.tarifs-cat > summary .muet { margin-left: auto; font-weight: 400; font-size: .8125rem; }
+.tarifs-cat > :not(summary) { margin: 0 1.25rem 1.25rem; }
+.tarifs-saisie { display: inline-flex; align-items: center; gap: .35rem; }
+.tarifs-saisie input { width: 6.5rem; padding: .4rem .5rem; border: 1px solid var(--gris-300); border-radius: 6px;
+  font: inherit; text-align: right; }
+.tarifs-saisie input:invalid { border-color: #c0392b; }
+
+/* --- Membres & accès : filtres, tri, sélection --- */
+.membres-filtres { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; align-items: flex-start; margin-bottom: 1rem; }
+.membres-filtres fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .3rem .45rem; align-items: center; }
+.membres-filtres legend { float: left; margin-right: .4rem; font-size: .75rem; font-weight: 600; color: var(--gris-700);
+  text-transform: uppercase; letter-spacing: .04em; }
+.membres-filtres label { display: inline-flex; align-items: center; gap: .3rem; font-size: .78rem; border: 1px solid var(--gris-200);
+  border-radius: 999px; padding: .15rem .55rem; background: var(--gris-050); cursor: pointer; }
+.membres-filtres label:has(input:checked) { border-color: var(--rouge); background: #fff; font-weight: 600; }
+.membres-filtres input { margin: 0; }
+.membres-selection { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; margin-bottom: .75rem;
+  padding: .6rem .8rem; border-radius: 8px; background: var(--gris-050); font-size: .875rem; }
+th.triable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.triable::after { content: ' ⇅'; color: var(--gris-300); }
+th.triable[data-sens="asc"]::after { content: ' ▲'; color: var(--gris-700); }
+th.triable[data-sens="desc"]::after { content: ' ▼'; color: var(--gris-700); }
+.col-case { width: 2rem; }

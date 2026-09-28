@@ -17,6 +17,7 @@ const AUTORISATIONS = [
     'bons.gerer'     => 'Modifier les bons (marquer utilisé, annuler, renvoyer)',
     'biblio.gerer'   => 'Ajouter, modifier et supprimer les documents de la bibliothèque',
     'contenus.gerer' => 'Modifier les textes et les photos du site',
+    'tarifs.gerer'   => 'Modifier les tarifs et prix du site',
     'membres.gerer'  => 'Gérer les membres et leurs accès',
     'mailing.gerer'  => 'Envoyer des e-mails groupés aux membres',
 ];
@@ -36,7 +37,7 @@ const ROLES = [
     'superadmin' => [
         'libelle'     => 'Super administrateur',
         'description' => 'Accès total, seul habilité à modifier les textes et les photos du site.',
-        'droits'      => ['bons.voir', 'bons.gerer', 'biblio.gerer', 'contenus.gerer', 'membres.gerer', 'mailing.gerer'],
+        'droits'      => ['bons.voir', 'bons.gerer', 'biblio.gerer', 'contenus.gerer', 'tarifs.gerer', 'membres.gerer', 'mailing.gerer'],
         'biblio'      => 'tout',
     ],
     'adherent' => [

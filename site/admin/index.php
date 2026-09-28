@@ -46,8 +46,8 @@ $stats['ca'] = (int) $pdo->query(
 $bientot = $pdo->query(
     "SELECT * FROM bons_cadeaux
       WHERE statut='paye' AND expire_le IS NOT NULL
-        AND expire_le BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY)
-      ORDER BY expire_le ASC LIMIT 5"
+        AND COALESCE(date_fin_validite, expire_le) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY)
+      ORDER BY COALESCE(date_fin_validite, expire_le) ASC LIMIT 5"
 )->fetchAll();
 
 $derniers = $pdo->query('SELECT * FROM bons_cadeaux ORDER BY cree_le DESC LIMIT 8')->fetchAll();
@@ -88,14 +88,14 @@ require __DIR__ . '/inc/entete.php';
     </p>
     <div class="tableau">
       <table>
-        <thead><tr><th>Code</th><th>Acheteur</th><th>Expire le</th><th></th></tr></thead>
+        <thead><tr><th>Code du bon</th><th>Acheteur</th><th>Expire le</th><th></th></tr></thead>
         <tbody>
         <?php foreach ($bientot as $b): ?>
           <tr>
-            <td class="code-bon"><?= e((string) $b['code']) ?></td>
+            <td class="code-bon"><?= e((string) numero_du_bon($b)) ?></td>
             <td><?= e($b['acheteur_prenom'] . ' ' . $b['acheteur_nom']) ?><br>
                 <span style="color:var(--gris-500);font-size:.8125rem"><?= e($b['acheteur_email']) ?></span></td>
-            <td><?= e(date('d/m/Y', strtotime((string) $b['expire_le']))) ?></td>
+            <td><?= e(date('d/m/Y', strtotime((string) ($b['date_fin_validite'] ?: $b['expire_le'])))) ?></td>
             <td class="nombre"><a class="btn btn--contour btn--petit" href="/admin/bon.php?id=<?= (int) $b['id'] ?>">Ouvrir</a></td>
           </tr>
         <?php endforeach; ?>
@@ -120,15 +120,15 @@ require __DIR__ . '/inc/entete.php';
     <?php else: ?>
       <div class="tableau">
         <table>
-          <thead><tr><th>Référence</th><th>Acheteur</th><th>Statut</th><th class="nombre">Date</th></tr></thead>
+          <thead><tr><th>Code du bon</th><th>Acheteur</th><th>Statut</th><th class="nombre">Date</th></tr></thead>
           <tbody>
-          <?php foreach ($derniers as $b): [$lib, $cls] = STATUTS_BON[$b['statut']] ?? [$b['statut'], 'expire']; ?>
+          <?php foreach ($derniers as $b): [$lib, $cls] = statut_bon($b); ?>
             <tr>
               <td class="code-bon">
                 <?php if (peut('bons.voir')): ?>
-                  <a href="/admin/bon.php?id=<?= (int) $b['id'] ?>"><?= e($b['code'] ?? $b['reference']) ?></a>
+                  <a href="/admin/bon.php?id=<?= (int) $b['id'] ?>"><?= e(numero_du_bon($b) ?? 'en attente') ?></a>
                 <?php else: ?>
-                  <?= e($b['code'] ?? $b['reference']) ?>
+                  <?= e(numero_du_bon($b) ?? 'en attente') ?>
                 <?php endif; ?>
               </td>
               <td><?= e($b['acheteur_prenom'] . ' ' . $b['acheteur_nom']) ?></td>

@@ -26,16 +26,16 @@ fwrite($sortie, "\xEF\xBB\xBF");
 
 // Point-virgule : le séparateur attendu par Excel en français.
 fputcsv($sortie, [
-    'Référence', 'Code', 'Statut', 'Montant (€)',
+    'Code du bon', 'Statut', 'Vol', 'Montant (€)',
     'Prénom', 'Nom', 'Email', 'Téléphone',
-    'Créé le', 'Payé le', 'Expire le', 'Utilisé le', 'Note',
-], ';');
+    'Créé le', 'Payé le', 'Fin de validité', 'Utilisé le', 'Note',
+], ';', '"', '\\');
 
 foreach ($stmt as $b) {
     fputcsv($sortie, [
-        $b['reference'],
-        $b['code'] ?? '',
-        (STATUTS_BON[$b['statut']][0] ?? $b['statut']),
+        numero_du_bon($b) ?? '',
+        statut_bon($b)[0],
+        libelle_vol_bon($b),
         number_format((int) $b['montant_cents'] / 100, 2, ',', ''),
         $b['acheteur_prenom'],
         $b['acheteur_nom'],
@@ -43,10 +43,10 @@ foreach ($stmt as $b) {
         $b['acheteur_telephone'],
         $b['cree_le'] ? date('d/m/Y H:i', strtotime((string) $b['cree_le'])) : '',
         $b['paye_le'] ? date('d/m/Y H:i', strtotime((string) $b['paye_le'])) : '',
-        $b['expire_le'] ? date('d/m/Y', strtotime((string) $b['expire_le'])) : '',
+        ($b['date_fin_validite'] ?: $b['expire_le']) ? date('d/m/Y', strtotime((string) ($b['date_fin_validite'] ?: $b['expire_le']))) : '',
         $b['utilise_le'] ? date('d/m/Y', strtotime((string) $b['utilise_le'])) : '',
         (string) ($b['message'] ?? ''),
-    ], ';');
+    ], ';', '"', '\\');
 }
 
 fclose($sortie);

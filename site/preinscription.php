@@ -100,7 +100,7 @@ require __DIR__ . '/inc/header.php';
         <h3>Virement bancaire</h3>
         <dl class="paire" style="text-align:left">
           <dt>Bénéficiaire</dt><dd><?= e(CLUB['nom']) ?></dd>
-          <dt>IBAN</dt><dd class="code-bon">FR76 —— à compléter par le club ——</dd>
+          <dt>IBAN</dt><dd class="code-bon"><?= e(rib_iban_affiche()) ?></dd><?php if (rib('bic') !== ''): ?><dt>BIC</dt><dd class="code-bon"><?= e(rib('bic')) ?></dd><?php endif; ?>
           <dt>Référence</dt><dd class="code-bon">INSCRIPTION <?= COTISATION_ANNEE ?> — <?= e((string) ($d['nom'] ?? '')) ?></dd>
           <dt>Montant</dt><dd><strong><?= e(prix($total)) ?></strong></dd>
         </dl>

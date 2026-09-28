@@ -53,7 +53,7 @@ require __DIR__ . '/inc/entete.php';
     <label for="statut">Statut</label>
     <select id="statut" name="statut">
       <option value="">Tous</option>
-      <?php foreach (STATUTS_BON as $s => [$lib, $_]): ?>
+      <?php foreach (FILTRES_STATUT_BON as $s => [$lib]): ?>
         <option value="<?= e($s) ?>"<?= $statut === $s ? ' selected' : '' ?>><?= e($lib) ?></option>
       <?php endforeach; ?>
     </select>
@@ -66,6 +66,9 @@ require __DIR__ . '/inc/entete.php';
     <a class="btn btn--contour" href="/admin/export-bons.php?<?= e(http_build_query(['statut' => $statut, 'q' => $recherche])) ?>">
       Exporter en CSV
     </a>
+    <?php if ($peutGerer): ?>
+      <a class="btn" href="/admin/bon-ajout.php">+ Ajouter un vol</a>
+    <?php endif; ?>
   </div>
 </form>
 
@@ -107,7 +110,7 @@ require __DIR__ . '/inc/entete.php';
         </thead>
         <tbody>
         <?php foreach ($bons as $b):
-            [$lib, $cls] = STATUTS_BON[$b['statut']] ?? [$b['statut'], 'expire'];
+            [$lib, $cls] = statut_bon($b);
             $realisable = in_array($b['statut'], ['paye', 'utilise'], true);
             $ff = 'form="bonf-' . (int) $b['id'] . '"';
         ?>
@@ -116,8 +119,8 @@ require __DIR__ . '/inc/entete.php';
             <td><a href="/admin/bon.php?id=<?= (int) $b['id'] ?>"><?= e($b['acheteur_nom']) ?></a></td>
             <td><?= e($b['acheteur_prenom']) ?></td>
             <td class="code-bon">
-              <?php if (!empty($b['numero_bon'])): ?><?= e($b['numero_bon']) ?>
-              <?php else: ?><span class="muet"><?= e($b['reference']) ?></span><?php endif; ?>
+              <?php if (numero_du_bon($b)): ?><a href="/admin/bon.php?id=<?= (int) $b['id'] ?>"><?= e(numero_du_bon($b)) ?></a>
+              <?php else: ?><span class="muet">—</span><?php endif; ?>
             </td>
             <td style="font-size:.8125rem"><?= e(libelle_vol_bon($b)) ?></td>
 

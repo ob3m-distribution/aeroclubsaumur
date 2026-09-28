@@ -68,11 +68,11 @@ declare(strict_types=1);
 
       <fieldset class="bloc-form">
         <legend>Cotisation <?= $annee ?></legend>
-        <p class="aide">A — Membre Club : <?= e(prix(COTISATION_MEMBRE_CLUB)) ?> (obligatoire, inclus).</p>
+        <p class="aide">A — Membre Club : <?= e(prix(cotisation_membre())) ?> (obligatoire, inclus).</p>
 
         <p style="font-weight:600;margin:.5rem 0 .25rem">B — Choisissez votre option</p>
         <div class="cotis-options">
-          <?php foreach (COTISATION_OPTIONS as $k => [$lib, $c]): ?>
+          <?php foreach (cotisation_options() as $k => [$lib, $c]): ?>
             <label class="bon-radio"><input type="radio" name="option_cotisation" value="<?= e($k) ?>"<?= ($d['option_cotisation'] ?? '') === $k ? ' checked' : '' ?>>
               <span><?= e($lib) ?> — <?= e(prix($c)) ?></span></label>
           <?php endforeach; ?>
@@ -80,14 +80,14 @@ declare(strict_types=1);
         <div class="champ" id="bloc-passeport"<?= ($d['option_cotisation'] ?? '') === 'opt5' ? '' : ' style="display:none"' ?>>
           <label for="passeport_bloc">Bloc d’heures (Passeport FFA)</label>
           <select id="passeport_bloc" name="passeport_bloc">
-            <?php foreach (COTISATION_PASSEPORT_BLOCS as $k => [$lib, $c]): ?>
+            <?php foreach (cotisation_blocs() as $k => [$lib, $c]): ?>
               <option value="<?= e($k) ?>"<?= ($d['passeport_bloc'] ?? '') === $k ? ' selected' : '' ?>><?= e($lib) ?><?= $c ? ' — ' . e(prix($c)) : '' ?></option>
             <?php endforeach; ?>
           </select>
         </div>
 
         <p style="font-weight:600;margin:.75rem 0 .25rem">Options complémentaires</p>
-        <?php foreach (COTISATION_EXTRAS as $k => [$lib, $c, $g]): ?>
+        <?php foreach (cotisation_extras() as $k => [$lib, $c, $g]): ?>
           <label class="champ-case"><input type="checkbox" name="extras[]" value="<?= e($k) ?>"<?= in_array($k, $extrasChoisis, true) ? ' checked' : '' ?>>
             <span><?= e($lib) ?> — <?= e(prix($c)) ?></span></label>
         <?php endforeach; ?>
@@ -144,10 +144,10 @@ declare(strict_types=1);
     <script>
     (function () {
       var PRIX = <?= json_encode([
-          'membre' => COTISATION_MEMBRE_CLUB,
-          'options' => array_map(fn($o) => $o[1], COTISATION_OPTIONS),
-          'blocs' => array_map(fn($b) => $b[1], COTISATION_PASSEPORT_BLOCS),
-          'extras' => array_map(fn($x) => $x[1], COTISATION_EXTRAS),
+          'membre' => cotisation_membre(),
+          'options' => array_map(fn($o) => $o[1], cotisation_options()),
+          'blocs' => array_map(fn($b) => $b[1], cotisation_blocs()),
+          'extras' => array_map(fn($x) => $x[1], cotisation_extras()),
       ]) ?>;
       var f = document.querySelector('.formulaire');
       function euros(c){ return (c % 100 ? (c/100).toFixed(2).replace('.', ',') : (c/100)) + ' €'; }

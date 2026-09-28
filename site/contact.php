@@ -74,8 +74,24 @@ require __DIR__ . '/inc/hero.php';
       </div>
       <div>
         <h3><?= texte('contact.reseaux.titre', 'Nous suivre') ?></h3>
-        <p><?= texte('contact.reseaux.texte',
-          'Liens vers les réseaux sociaux à ajouter.', 'long') ?></p>
+        <p><?= texte('contact.reseaux.intro',
+          'Les sorties, les vols et la vie du club, au fil des saisons.', 'long') ?></p>
+        <?php
+          $icones = [
+            'facebook'  => '<path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H7.8v3h2.6V21h3.1Z"/>',
+            'instagram' => '<path d="M12 7.3a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4Zm0 7.7a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm6-7.9a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0ZM21 8.1c-.1-1.5-.4-2.8-1.5-3.9S17.2 2.8 15.7 2.7C14.2 2.6 9.8 2.6 8.3 2.7 6.8 2.8 5.5 3.1 4.4 4.2S3 6.6 2.9 8.1c-.1 1.5-.1 5.9 0 7.4.1 1.5.4 2.8 1.5 3.9s2.4 1.4 3.9 1.5c1.5.1 5.9.1 7.4 0 1.5-.1 2.8-.4 3.9-1.5s1.4-2.4 1.5-3.9c.1-1.5.1-5.9-.1-7.4Zm-2 9.3a3 3 0 0 1-1.7 1.7c-1.2.5-4 .4-5.3.4s-4.1.1-5.3-.4a3 3 0 0 1-1.7-1.7c-.5-1.2-.4-4-.4-5.3s-.1-4.1.4-5.3a3 3 0 0 1 1.7-1.7c1.2-.5 4-.4 5.3-.4s4.1-.1 5.3.4a3 3 0 0 1 1.7 1.7c.5 1.2.4 4 .4 5.3s.1 4.1-.4 5.3Z"/>',
+          ];
+        ?>
+        <ul class="reseaux">
+          <?php foreach (RESEAUX_SOCIAUX as $cle => [$nomReseau, $urlReseau, $compte]): ?>
+            <li>
+              <a class="reseaux__lien reseaux__lien--<?= e($cle) ?>" href="<?= e($urlReseau) ?>" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true" focusable="false"><?= $icones[$cle] ?></svg>
+                <span><strong><?= e($nomReseau) ?></strong><small><?= e($compte) ?></small></span>
+              </a>
+            </li>
+          <?php endforeach; ?>
+        </ul>
       </div>
     </div>
   </div>

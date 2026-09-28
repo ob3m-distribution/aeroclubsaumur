@@ -6,6 +6,22 @@ require_once __DIR__ . '/inc/stripe.php';
 
 session_demarrer();
 
+/* Lien de paiement envoyé par le club (bon saisi au back-office) : le jeton
+   secret du lien prouve que c'est bien le destinataire de l'e-mail. On
+   rattache le bon à la session, puis on revient sur l'adresse propre. */
+if (isset($_GET['bon'], $_GET['jeton'])) {
+    $bonLien = bon_par_lien((int) $_GET['bon'], (string) $_GET['jeton']);
+    if ($bonLien) {
+        $_SESSION['bon_en_cours'] = (int) $bonLien['id'];
+        $_SESSION['derniere_reference'] = $bonLien['reference'];
+        $_SESSION['dernier_email'] = $bonLien['acheteur_email'];
+        header('Location: /paiement', true, 303);
+        exit;
+    }
+    header('Location: /vols-decouvertes', true, 302);
+    exit;
+}
+
 /* On ne paie que le bon issu de SA propre session : impossible de payer
    — ou d'espionner — le bon de quelqu'un d'autre en changeant l'URL. */
 $bonId = (int) ($_SESSION['bon_en_cours'] ?? 0);
@@ -64,7 +80,7 @@ require __DIR__ . '/inc/header.php';
           <table>
             <tbody>
               <tr>
-                <td>Bon cadeau — vol découverte, 30 minutes, 1 passager</td>
+                <td>Bon cadeau — <?= e(libelle_vol_bon($bon)) ?></td>
                 <td style="text-align:right;white-space:nowrap"><?= e(prix((int) $bon['montant_cents'])) ?></td>
               </tr>
               <tr>

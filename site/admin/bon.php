@@ -35,7 +35,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
                 $s = db()->prepare("UPDATE bons_cadeaux SET statut='utilise', utilise_le=NOW() WHERE id=?");
                 $s->execute([$id]);
-                journaliser('bon.utilise', 'bon#' . $id, (string) $bon['code']);
+                journaliser('bon.utilise', 'bon#' . $id, (string) numero_du_bon($bon));
                 $_SESSION['message_succes'] = 'Bon marqué comme utilisé.';
                 break;
 
@@ -45,7 +45,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
                 $s = db()->prepare("UPDATE bons_cadeaux SET statut='annule' WHERE id=?");
                 $s->execute([$id]);
-                journaliser('bon.annule', 'bon#' . $id, (string) ($bon['code'] ?? $bon['reference']));
+                journaliser('bon.annule', 'bon#' . $id, (string) (numero_du_bon($bon) ?? $bon['reference']));
                 $_SESSION['message_succes'] = 'Bon annulé. Pensez au remboursement si le paiement a été encaissé.';
                 break;
 
@@ -55,7 +55,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
                 $s = db()->prepare("UPDATE bons_cadeaux SET statut='paye', utilise_le=NULL WHERE id=?");
                 $s->execute([$id]);
-                journaliser('bon.rouvert', 'bon#' . $id, (string) $bon['code']);
+                journaliser('bon.rouvert', 'bon#' . $id, (string) numero_du_bon($bon));
                 $_SESSION['message_succes'] = 'Bon rouvert : il est de nouveau utilisable.';
                 break;
 
@@ -119,7 +119,54 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 journaliser('bon.rembourse', 'bon#' . $id, ($total ? 'total' : 'partiel') . ' ' . prix($cents));
                 $_SESSION['message_succes'] = ($total
                     ? 'Bon remboursé intégralement (' . prix($cents) . ')'
-                    : 'Remboursement partiel de ' . prix($cents) . ' effectué') . ' via Stripe.';
+                    : 'Remboursement partiel de ' . prix($cents) . ' effectué')
+                    . (!empty($bon['stripe_payment_intent_id']) ? ' via Stripe.' : ' (noté ; à rembourser au club).');
+                break;
+
+            case 'encaisser':
+                // Paiement reçu pour un bon en attente (virement arrivé, ou
+                // acheteur venu régler au club).
+                if ($bon['statut'] !== 'en_attente_paiement') {
+                    throw new RuntimeException('Ce bon n’est pas en attente de paiement.');
+                }
+                $mode = (string) ($_POST['mode'] ?? '');
+                if (!isset(MODES_PAIEMENT[$mode]) || $mode === 'stripe') {
+                    throw new RuntimeException('Choisissez le mode de paiement reçu.');
+                }
+                [$bon] = bon_marquer_paye($id, $mode);
+                journaliser('bon.encaisse', 'bon#' . $id, MODES_PAIEMENT[$mode][1]);
+                $msg = 'Paiement enregistré (' . statut_bon($bon)[0] . ') : bon n° ' . $bon['numero_bon'] . '.';
+                if (!empty($_POST['envoyer']) && $bon['acheteur_email'] !== '') {
+                    if (email_bon_cadeau($bon)) {
+                        bon_marquer_envoye($id);
+                        $msg .= ' Envoyé à ' . $bon['acheteur_email'] . '.';
+                    } else {
+                        $msg .= ' L’e-mail n’a pas pu partir.';
+                    }
+                }
+                $_SESSION['message_succes'] = $msg;
+                break;
+
+            case 'relancer_lien':
+                if ($bon['statut'] !== 'en_attente_paiement' || ($bon['mode_paiement'] ?? '') !== 'stripe') {
+                    throw new RuntimeException('Ce bon n’attend pas de paiement en ligne.');
+                }
+                if (!email_lien_paiement_bon($bon, lien_paiement_bon($bon))) {
+                    throw new RuntimeException('L’envoi a échoué. Vérifiez l’adresse e-mail.');
+                }
+                journaliser('bon.lien_renvoye', 'bon#' . $id, (string) $bon['acheteur_email']);
+                $_SESSION['message_succes'] = 'Lien de paiement renvoyé à ' . $bon['acheteur_email'] . '.';
+                break;
+
+            case 'relancer_virement':
+                if ($bon['statut'] !== 'en_attente_paiement' || ($bon['mode_paiement'] ?? '') !== 'virement') {
+                    throw new RuntimeException('Ce bon n’attend pas de virement.');
+                }
+                if (!email_virement_bon($bon)) {
+                    throw new RuntimeException('L’envoi a échoué. Vérifiez l’adresse e-mail.');
+                }
+                journaliser('bon.rib_renvoye', 'bon#' . $id, (string) $bon['acheteur_email']);
+                $_SESSION['message_succes'] = 'RIB renvoyé à ' . $bon['acheteur_email'] . '.';
                 break;
 
             case 'note':
@@ -141,11 +188,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     exit;
 }
 
-$titre = 'Bon ' . ($bon['code'] ?? $bon['reference']);
+$titre = 'Bon ' . (numero_du_bon($bon) ?? '(en attente de paiement)');
 $actif = 'bons';
 require __DIR__ . '/inc/entete.php';
 
-[$lib, $cls] = STATUTS_BON[$bon['statut']] ?? [$bon['statut'], 'expire'];
+[$lib, $cls] = statut_bon($bon);
+$viaStripe = !empty($bon['stripe_payment_intent_id']);
 $gere = peut('bons.gerer');
 ?>
 
@@ -161,22 +209,24 @@ $gere = peut('bons.gerer');
       </div>
 
       <dl class="paire">
-        <dt>Référence</dt><dd class="code-bon"><?= e($bon['reference']) ?></dd>
-        <?php if ($bon['code']): ?>
-          <dt>Code du bon</dt>
-          <dd class="code-bon" style="font-size:1.125rem"><strong><?= e($bon['code']) ?></strong></dd>
-        <?php endif; ?>
+        <dt>Code du bon</dt>
+        <dd class="code-bon" style="font-size:1.125rem">
+          <?php if (numero_du_bon($bon)): ?><strong><?= e(numero_du_bon($bon)) ?></strong>
+          <?php else: ?><span class="muet" style="font-size:.875rem">attribué au paiement</span><?php endif; ?>
+        </dd>
+        <dt>Vol</dt><dd><?= e(libelle_vol_bon($bon)) ?><?= !empty($bon['offert_a']) ? ' · offert à ' . e((string) $bon['offert_a']) : '' ?></dd>
+        <dt>Paiement</dt><dd><?= e(MODES_PAIEMENT[$bon['mode_paiement'] ?? ''][0] ?? ($viaStripe ? MODES_PAIEMENT['stripe'][0] : 'Carte bancaire en ligne (site)')) ?></dd>
         <dt>Montant</dt><dd><?= e(prix((int) $bon['montant_cents'])) ?></dd>
         <dt>Créé le</dt><dd><?= e(date('d/m/Y à H:i', strtotime((string) $bon['cree_le']))) ?></dd>
         <?php if ($bon['paye_le']): ?>
           <dt>Payé le</dt><dd><?= e(date('d/m/Y à H:i', strtotime((string) $bon['paye_le']))) ?></dd>
         <?php endif; ?>
-        <?php if ($bon['expire_le']): ?>
+        <?php $finValidite = $bon['date_fin_validite'] ?: $bon['expire_le']; if ($finValidite): ?>
           <dt>Valable jusqu’au</dt>
           <dd>
-            <?= e(date('d/m/Y', strtotime((string) $bon['expire_le']))) ?>
+            <?= e(date('d/m/Y', strtotime((string) $finValidite))) ?>
             <?php
-              $jours = (int) floor((strtotime((string) $bon['expire_le']) - time()) / 86400);
+              $jours = (int) floor((strtotime((string) $finValidite) - time()) / 86400);
               if ($bon['statut'] === 'paye' && $jours <= 60):
             ?>
               <span class="etat etat--planifie" style="margin-left:.4rem">
@@ -195,8 +245,10 @@ $gere = peut('bons.gerer');
           <dt>Paiement Stripe</dt>
           <dd><span class="champ-lecture"><?= e($bon['stripe_payment_intent_id']) ?></span></dd>
         <?php endif; ?>
-        <dt>CGV acceptées</dt>
-        <dd><?= e(date('d/m/Y à H:i', strtotime((string) $bon['cgv_acceptees_le']))) ?></dd>
+        <?php if (empty($bon['cree_par'])): ?>
+          <dt>CGV acceptées</dt>
+          <dd><?= e(date('d/m/Y à H:i', strtotime((string) $bon['cgv_acceptees_le']))) ?></dd>
+        <?php endif; ?>
       </dl>
     </div>
 
@@ -204,8 +256,8 @@ $gere = peut('bons.gerer');
       <h2>Acheteur</h2>
       <dl class="paire">
         <dt>Nom</dt><dd><?= e($bon['acheteur_prenom'] . ' ' . $bon['acheteur_nom']) ?></dd>
-        <dt>Email</dt><dd><a href="mailto:<?= e($bon['acheteur_email']) ?>"><?= e($bon['acheteur_email']) ?></a></dd>
-        <dt>Téléphone</dt><dd><a href="tel:<?= e($bon['acheteur_telephone']) ?>"><?= e($bon['acheteur_telephone']) ?></a></dd>
+        <dt>Email</dt><dd><?= $bon['acheteur_email'] !== '' ? '<a href="mailto:' . e($bon['acheteur_email']) . '">' . e($bon['acheteur_email']) . '</a>' : '<span class="muet">—</span>' ?></dd>
+        <dt>Téléphone</dt><dd><?= $bon['acheteur_telephone'] !== '' ? '<a href="tel:' . e($bon['acheteur_telephone']) . '">' . e($bon['acheteur_telephone']) . '</a>' : '<span class="muet">—</span>' ?></dd>
       </dl>
     </div>
 
@@ -253,6 +305,10 @@ $gere = peut('bons.gerer');
               </button>
             </form>
 
+            <a class="btn btn--contour" style="width:100%;justify-content:center" href="/admin/bon-pdf.php?id=<?= (int) $bon['id'] ?>" target="_blank" rel="noopener">
+              Télécharger / imprimer le bon (PDF)
+            </a>
+
             <form method="post" data-unique>
               <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
               <input type="hidden" name="action" value="renvoyer">
@@ -298,7 +354,7 @@ $gere = peut('bons.gerer');
                 <input type="hidden" name="action" value="rembourser">
                 <h3 style="margin:0 0 .35rem">Rembourser le vol</h3>
                 <p class="muet" style="margin:0 0 1rem;font-size:.85rem">Montant réglé :
-                  <strong><?= e(prix((int) $bon['montant_cents'])) ?></strong> · remboursé sur la carte via Stripe.</p>
+                  <strong><?= e(prix((int) $bon['montant_cents'])) ?></strong> · <?= $viaStripe ? 'remboursé sur la carte via Stripe.' : 'réglé au club : le remboursement se fait au club, le site le note seulement.' ?></p>
 
                 <label class="remb-opt"><input type="radio" name="type_remb" value="total" checked>
                   <span><strong>Remboursement total</strong> — <?= e(prix((int) $bon['montant_cents'])) ?></span></label>
@@ -314,7 +370,7 @@ $gere = peut('bons.gerer');
 
                 <div class="actions" style="margin-top:1.25rem;justify-content:flex-end">
                   <button type="button" class="btn btn--contour" onclick="document.getElementById('modal-remb').close()">Annuler</button>
-                  <button type="submit" class="btn btn--danger">Procéder au remboursement via Stripe</button>
+                  <button type="submit" class="btn btn--danger"><?= $viaStripe ? 'Procéder au remboursement via Stripe' : 'Noter le remboursement' ?></button>
                 </div>
               </form>
             </dialog>
@@ -328,6 +384,41 @@ $gere = peut('bons.gerer');
               });
             })();
             </script>
+          <?php endif; ?>
+
+          <?php if ($bon['statut'] === 'en_attente_paiement'): ?>
+            <form method="post" data-unique class="bon-encaisser">
+              <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
+              <input type="hidden" name="action" value="encaisser">
+              <label for="mode-encaisse" style="font-size:.8125rem;font-weight:600">Paiement reçu</label>
+              <select id="mode-encaisse" name="mode" style="width:100%;padding:.5rem;border:1px solid var(--gris-300);border-radius:6px;margin:.3rem 0 .4rem">
+                <?php foreach (MODES_PAIEMENT as $k => [$libMode]): if ($k === 'stripe') continue; ?>
+                  <option value="<?= e($k) ?>"<?= ($bon['mode_paiement'] ?? '') === $k ? ' selected' : '' ?>><?= e($libMode) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <?php if ($bon['acheteur_email'] !== ''): ?>
+                <label class="champ-case" style="margin-bottom:.5rem"><input type="checkbox" name="envoyer" value="1" checked>
+                  <span>Envoyer le bon par e-mail à l’acheteur</span></label>
+              <?php endif; ?>
+              <button type="submit" class="btn" style="width:100%;justify-content:center"
+                      data-confirmer="Confirmer la réception du paiement ? Le bon sera numéroté et valable un an.">
+                Valider le paiement
+              </button>
+            </form>
+
+            <?php if (($bon['mode_paiement'] ?? '') === 'stripe'): ?>
+              <form method="post" data-unique>
+                <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
+                <input type="hidden" name="action" value="relancer_lien">
+                <button type="submit" class="btn btn--contour" style="width:100%;justify-content:center">Renvoyer le lien de paiement</button>
+              </form>
+            <?php elseif (($bon['mode_paiement'] ?? '') === 'virement'): ?>
+              <form method="post" data-unique>
+                <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
+                <input type="hidden" name="action" value="relancer_virement">
+                <button type="submit" class="btn btn--contour" style="width:100%;justify-content:center">Renvoyer le RIB par e-mail</button>
+              </form>
+            <?php endif; ?>
           <?php endif; ?>
 
           <?php if (in_array($bon['statut'], ['en_attente_paiement', 'paye'], true)): ?>
@@ -346,6 +437,8 @@ $gere = peut('bons.gerer');
         <?php if ($bon['statut'] === 'en_attente_paiement'): ?>
           <p style="margin-top:1rem;font-size:.8125rem;color:var(--gris-500)">
             Ce bon n’est pas encore payé : il n’a donc pas de code et n’a pas été envoyé.
+            <?php if (($bon['mode_paiement'] ?? '') === 'virement'): ?> Validez le paiement dès réception du virement
+              (libellé « BON <?= e($bon['reference']) ?> »).<?php endif; ?>
           </p>
         <?php endif; ?>
 

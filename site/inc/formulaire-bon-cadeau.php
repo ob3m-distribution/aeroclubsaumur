@@ -53,7 +53,7 @@ $decrit = static fn(string $c): string => isset($erreurs[$c]) ? ' aria-described
     <div class="champ bon-opt" data-opt="decouverte">
       <label for="nb_passagers">Nombre de personnes</label>
       <select id="nb_passagers" name="nb_passagers">
-        <?php foreach (VOLS_DECOUVERTE as $nb => $c): ?>
+        <?php foreach (vols_decouverte() as $nb => $c): ?>
           <option value="<?= $nb ?>"<?= $nbSel === $nb ? ' selected' : '' ?>><?= $nb ?> personne<?= $nb > 1 ? 's' : '' ?> — <?= e(prix($c)) ?></option>
         <?php endforeach; ?>
       </select>
@@ -75,7 +75,7 @@ $decrit = static fn(string $c): string => isset($erreurs[$c]) ? ' aria-described
     <div class="champ bon-opt" data-opt="initiation">
       <label for="duree_initiation">Durée du vol d’initiation</label>
       <select id="duree_initiation" name="duree_initiation">
-        <?php foreach (VOLS_INITIATION as $dur => $c): ?>
+        <?php foreach (vols_initiation() as $dur => $c): ?>
           <option value="<?= e($dur) ?>"<?= $dureeSel === $dur ? ' selected' : '' ?>><?= e(str_replace('h', ' h ', $dur)) ?> — <?= e(prix($c)) ?></option>
         <?php endforeach; ?>
       </select>
@@ -159,7 +159,7 @@ $decrit = static fn(string $c): string => isset($erreurs[$c]) ? ' aria-described
   <script>
   (function () {
     var f = document.getElementById('formulaire');
-    var PRIX_DEC = <?= json_encode(VOLS_DECOUVERTE) ?>, PRIX_INI = <?= json_encode(VOLS_INITIATION) ?>;
+    var PRIX_DEC = <?= json_encode(vols_decouverte()) ?>, PRIX_INI = <?= json_encode(vols_initiation()) ?>;
     function euros(c){ return (c % 100 ? (c/100).toFixed(2).replace('.', ',') : (c/100)) + ' €'; }
     function type(){ var r=f.querySelector('input[name="type_vol"]:checked'); return r ? r.value : 'decouverte'; }
     function maj(){

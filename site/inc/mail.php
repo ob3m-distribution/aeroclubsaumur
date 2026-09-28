@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/config-local.php';
+require_once __DIR__ . '/tarifs.php';
 
 /**
  * Envoi d'un email texte en UTF-8.
@@ -253,7 +254,8 @@ function email_lien_paiement(string $destinataire, string $prenom, string $mode,
     // récapitulatif du bon cadeau (email_bon_cadeau), pour rester cohérent
     // entre les deux seuls e-mails du site qui affichent un montant à régler.
     $ligneIban = $mode !== 'carte'
-        ? '<tr><td style="padding:6px 0;color:#83888a;">IBAN</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">FR76 —— à compléter par le club ——</td></tr>'
+        ? '<tr><td style="padding:6px 0;color:#83888a;">IBAN</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e(rib_iban_affiche()) . '</td></tr>'
+          . (rib('bic') !== '' ? '<tr><td style="padding:6px 0;color:#83888a;">BIC</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e(rib('bic')) . '</td></tr>' : '')
         : '';
     $encart = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         . 'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 22px;">'
@@ -279,13 +281,14 @@ function email_lien_paiement(string $destinataire, string $prenom, string $mode,
         $sujet = 'Réglez votre cotisation par virement — Saumur Air Club';
         $texte = "{$bonjour}\n\nVotre dossier d'inscription est complet. Il ne reste qu'à régler votre "
             . "cotisation de {$montant} par virement bancaire :\n\n"
-            . "  Bénéficiaire : " . CLUB['nom'] . "\n"
-            . "  IBAN         : FR76 —— à compléter par le club ——\n"
+            . "  Bénéficiaire : " . rib('titulaire') . "\n"
+            . "  IBAN         : " . rib_iban_affiche() . "\n"
+            . (rib('bic') !== '' ? "  BIC          : " . rib('bic') . "\n" : '')
             . "  Référence    : {$reference}\n"
             . "  Montant      : {$montant}\n\n"
             . "Votre adhésion sera activée dès réception du virement.\n\n"
             . "À très bientôt,\nLe Saumur Air Club";
-        $corpsHtml = '<p style="margin:0 0 20px;font-size:15px;line-height:1.6;">' . e($bonjour) . '<br><br>Votre dossier d\'inscription est complet. Il ne reste qu\'à régler votre cotisation par virement bancaire, au bénéficiaire <strong>' . e(CLUB['nom']) . '</strong> :</p>'
+        $corpsHtml = '<p style="margin:0 0 20px;font-size:15px;line-height:1.6;">' . e($bonjour) . '<br><br>Votre dossier d\'inscription est complet. Il ne reste qu\'à régler votre cotisation par virement bancaire, au bénéficiaire <strong>' . e(rib('titulaire')) . '</strong> :</p>'
             . $encart
             . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;">Votre adhésion sera activée dès réception du virement.</p>';
     }
@@ -482,16 +485,16 @@ TXT;
 /** Notification au club : un paiement vient d'aboutir. */
 function email_paiement_recu_club(array $bon): bool
 {
-    $sujet = 'Bon cadeau PAYÉ — ' . $bon['code'];
+    $numero  = (string) ($bon['numero_bon'] ?: $bon['reference']);
+    $sujet   = 'Bon cadeau PAYÉ — ' . $numero;
     $montant = prix((int) $bon['montant_cents']);
-    $expire  = date('d/m/Y', strtotime((string) $bon['expire_le']));
+    $expire  = date('d/m/Y', strtotime((string) ($bon['date_fin_validite'] ?: $bon['expire_le'])));
 
     $texte = <<<TXT
 Un bon cadeau vient d'être payé en ligne.
 
-CODE       : {$bon['code']}
-RÉFÉRENCE  : {$bon['reference']}
-MONTANT    : {$montant}
+CODE DU BON : {$numero}
+MONTANT     : {$montant}
 VALABLE JUSQU'AU : {$expire}
 
 ACHETEUR
@@ -510,8 +513,7 @@ TXT;
         '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;">Un bon cadeau vient d\'être payé en ligne.</p>'
         . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
         .   'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 20px;">'
-        .   '<tr><td style="padding:6px 0;color:#83888a;">Code</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($bon['code']) . '</td></tr>'
-        .   '<tr><td style="padding:6px 0;color:#83888a;">Référence</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($bon['reference']) . '</td></tr>'
+        .   '<tr><td style="padding:6px 0;color:#83888a;">Code du bon</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($numero) . '</td></tr>'
         .   '<tr><td style="padding:6px 0;color:#83888a;">Montant</td><td style="padding:6px 0;text-align:right;font-weight:bold;font-size:18px;color:#14294D;">' . e($montant) . '</td></tr>'
         .   '<tr><td style="padding:6px 0;color:#83888a;">Valable jusqu\'au</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($expire) . '</td></tr>'
         . '</table>'
@@ -521,6 +523,69 @@ TXT;
     $html = email_gabarit('Bon cadeau payé', $corpsHtml);
 
     return envoyer_email_html_pj(EMAIL_CLUB, $sujet, $html, $texte, [], $bon['acheteur_email']);
+}
+
+/** Encart récapitulatif (vol, montant, lignes en plus) commun aux e-mails de règlement d'un bon. */
+function email_encart_bon(array $bon, array $lignes = []): string
+{
+    $html = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        . 'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 22px;">'
+        . '<tr><td style="padding:6px 0;color:#83888a;">Bon cadeau</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e(libelle_vol_bon($bon)) . '</td></tr>'
+        . '<tr><td style="padding:6px 0;color:#83888a;">Montant</td><td style="padding:6px 0;text-align:right;font-weight:bold;font-size:18px;color:#14294D;">' . e(prix((int) $bon['montant_cents'])) . '</td></tr>';
+    foreach ($lignes as $libelle => $valeur) {
+        $html .= '<tr><td style="padding:6px 0;color:#83888a;">' . e($libelle) . '</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($valeur) . '</td></tr>';
+    }
+    return $html . '</table>';
+}
+
+/** Bon saisi au club, réglé en ligne : lien de paiement Stripe personnel. */
+function email_lien_paiement_bon(array $bon, string $lien): bool
+{
+    $prenom  = (string) $bon['acheteur_prenom'];
+    $montant = prix((int) $bon['montant_cents']);
+    $vol     = libelle_vol_bon($bon);
+    $sujet   = 'Réglez votre bon cadeau en ligne — ' . CLUB['nom'];
+    $texte   = "Bonjour {$prenom},\n\nVoici le lien pour régler en ligne, par carte bancaire, votre bon cadeau "
+        . "({$vol}) d'un montant de {$montant} :\n\n{$lien}\n\n"
+        . "Le paiement est sécurisé par Stripe. Dès qu'il est validé, vous recevez votre bon cadeau par e-mail, "
+        . "valable un an.\n\nÀ très bientôt,\nLe Saumur Air Club";
+    $corpsHtml = '<p style="margin:0 0 20px;font-size:15px;line-height:1.6;">Bonjour <strong>' . e($prenom) . '</strong>,<br><br>'
+        . 'voici votre lien pour régler en ligne, par carte bancaire, votre bon cadeau.</p>'
+        . email_encart_bon($bon)
+        . '<p style="margin:0 0 22px;">' . email_bouton($lien, 'Payer ' . $montant) . '</p>'
+        . '<p style="margin:0;font-size:13px;line-height:1.6;color:#78859A;">Paiement sécurisé par Stripe. Dès qu\'il est validé, '
+        . 'vous recevez votre bon cadeau par e-mail, valable un an.</p>';
+    return envoyer_email_html_pj((string) $bon['acheteur_email'], $sujet,
+        email_gabarit('Réglez votre bon cadeau', $corpsHtml), $texte, [], CLUB['email_vols']);
+}
+
+/** Bon saisi au club, réglé par virement : coordonnées bancaires du club. */
+function email_virement_bon(array $bon): bool
+{
+    $prenom  = (string) $bon['acheteur_prenom'];
+    $montant = prix((int) $bon['montant_cents']);
+    $ref     = 'BON ' . $bon['reference'];
+    $lignes  = ['Bénéficiaire' => rib('titulaire'), 'IBAN' => rib_iban_affiche()];
+    if (rib('bic') !== '')    $lignes['BIC'] = rib('bic');
+    if (rib('banque') !== '') $lignes['Banque'] = rib('banque');
+    $lignes['Libellé du virement'] = $ref;
+
+    $sujet = 'Votre bon cadeau — règlement par virement';
+    $texte = "Bonjour {$prenom},\n\nMerci pour votre commande d'un bon cadeau (" . libelle_vol_bon($bon) . ").\n\n"
+        . "Merci d'effectuer un virement de {$montant} :\n";
+    foreach ($lignes as $l => $v) {
+        $texte .= '  ' . $l . str_repeat(' ', max(1, 20 - mb_strlen($l))) . ": {$v}\n";
+    }
+    $texte .= "\nVotre bon cadeau vous sera envoyé par e-mail dès réception du virement, valable un an.\n\n"
+        . "À très bientôt,\nLe Saumur Air Club";
+    $corpsHtml = '<p style="margin:0 0 20px;font-size:15px;line-height:1.6;">Bonjour <strong>' . e($prenom) . '</strong>,<br><br>'
+        . 'merci pour votre commande. Pour régler votre bon cadeau, il vous suffit d\'effectuer un virement '
+        . 'avec les coordonnées ci-dessous, en indiquant bien le libellé.</p>'
+        . email_encart_bon($bon, $lignes)
+        . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;">Votre bon cadeau vous sera envoyé par e-mail '
+        . 'dès réception du virement. Il sera valable un an.</p>';
+    return envoyer_email_html_pj((string) $bon['acheteur_email'], $sujet,
+        email_gabarit('Règlement par virement', $corpsHtml), $texte, [], CLUB['email_vols']);
 }
 
 /** Accusé de réception à l'acheteur. */

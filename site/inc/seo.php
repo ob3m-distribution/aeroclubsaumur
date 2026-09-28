@@ -133,7 +133,7 @@ function donnees_structurees(string $page = 'index'): string
             'offers'      => [
                 '@type'         => 'Offer',
                 'url'           => $base . '/vols-decouvertes',
-                'price'         => number_format(PRIX_BON_CADEAU_CENTIMES / 100, 2, '.', ''),
+                'price'         => number_format(prix_bon_cadeau() / 100, 2, '.', ''),
                 'priceCurrency' => 'EUR',
                 'availability'  => 'https://schema.org/InStock',
                 'seller'        => ['@id' => $base . '/#club'],

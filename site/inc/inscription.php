@@ -72,13 +72,13 @@ function inscription_depuis_post(array $post): array
     $d['type']                   = ($post['type'] ?? 'renouvellement') === 'demande' ? 'demande' : 'renouvellement';
 
     $extras = array_values(array_intersect(
-        array_keys(COTISATION_EXTRAS),
+        array_keys(cotisation_extras()),
         array_map('strval', (array) ($post['extras'] ?? []))
     ));
     $d['extras'] = implode(',', $extras);
 
-    if (!isset(COTISATION_OPTIONS[$d['option_cotisation']])) $d['option_cotisation'] = '';
-    if (!isset(COTISATION_PASSEPORT_BLOCS[$d['passeport_bloc']])) $d['passeport_bloc'] = '';
+    if (!isset(cotisation_options()[$d['option_cotisation']])) $d['option_cotisation'] = '';
+    if (!isset(cotisation_blocs()[$d['passeport_bloc']])) $d['passeport_bloc'] = '';
 
     // Dates : chaîne vide -> null.
     foreach (['date_naissance', 'lapl_date', 'ppl_date', 'validite_licence',
@@ -246,12 +246,12 @@ function inscription_resume_cotisation(array $ins): string
 {
     $parts = [];
     $opt = (string) ($ins['option_cotisation'] ?? '');
-    if (isset(COTISATION_OPTIONS[$opt])) $parts[] = COTISATION_OPTIONS[$opt][0];
+    if (isset(cotisation_options()[$opt])) $parts[] = cotisation_options()[$opt][0];
     if ($opt === 'opt5' && !empty($ins['passeport_bloc'])) {
-        $parts[] = COTISATION_PASSEPORT_BLOCS[$ins['passeport_bloc']][0] ?? '';
+        $parts[] = cotisation_blocs()[$ins['passeport_bloc']][0] ?? '';
     }
     foreach (explode(',', (string) ($ins['extras'] ?? '')) as $e) {
-        if (isset(COTISATION_EXTRAS[$e])) $parts[] = COTISATION_EXTRAS[$e][0];
+        if (isset(cotisation_extras()[$e])) $parts[] = cotisation_extras()[$e][0];
     }
     return $parts ? implode(' · ', array_filter($parts)) : '—';
 }

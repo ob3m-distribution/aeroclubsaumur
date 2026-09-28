@@ -87,6 +87,35 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 : 'L’e-mail n’a pas pu être envoyé. Réessayez plus tard.';
         }
 
+        elseif ($action === 'inviter_groupe') {
+            // Invitation (ou lien mot de passe) à plusieurs membres d'un coup.
+            $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($_POST['ids'] ?? [])))));
+            if (!$ids) {
+                throw new RuntimeException('Aucun membre sélectionné.');
+            }
+            set_time_limit(600);
+            $lire = db()->prepare('SELECT id, prenom, email, derniere_connexion FROM membres WHERE id = ?');
+            $ok = 0;
+            $echecs = [];
+            foreach ($ids as $cible) {
+                $lire->execute([$cible]);
+                $m = $lire->fetch();
+                if (!$m) continue;
+                $lien = lien_mot_de_passe((int) $m['id'], 72);
+                if (email_lien_mot_de_passe($m['email'], (string) $m['prenom'], $lien, empty($m['derniere_connexion']))) {
+                    $ok++;
+                } else {
+                    $echecs[] = $m['email'];
+                }
+            }
+            journaliser('membre.inviter_groupe', 'membres', $ok . ' envoyé(s) / ' . count($ids));
+            $_SESSION['message_succes'] = $ok . ' e-mail' . ($ok > 1 ? 's' : '') . ' d’invitation envoyé' . ($ok > 1 ? 's' : '')
+                . ' (liens valables 72 h).';
+            if ($echecs) {
+                $_SESSION['message_erreur'] = 'Échec d’envoi pour : ' . implode(', ', $echecs) . '.';
+            }
+        }
+
         header('Location: /admin/membres.php', true, 303);
         exit;
     } catch (Throwable $ex) {
@@ -105,17 +134,64 @@ require __DIR__ . '/inc/entete.php';
 
 <div class="bloc">
   <div class="bloc__titre">
-    <h2><?= count($membres) ?> membre<?= count($membres) > 1 ? 's' : '' ?></h2>
+    <h2><span id="nb-visibles"><?= count($membres) ?></span> membre<?= count($membres) > 1 ? 's' : '' ?>
+      <span class="muet" id="nb-total" style="font-weight:400;font-size:.875rem"></span></h2>
   </div>
 
+  <div class="membres-filtres" id="filtres">
+    <div class="champ" style="min-width:14rem">
+      <label for="f-recherche" class="visuellement-cache">Rechercher</label>
+      <input type="search" id="f-recherche" placeholder="Rechercher un nom, un e-mail…">
+    </div>
+    <fieldset>
+      <legend>Rôles</legend>
+      <?php foreach (ROLES as $k => $r): ?>
+        <label><input type="checkbox" data-filtre="role" value="<?= e($k) ?>"> <?= e($k === 'superadmin' ? 'Super admin' : $r['libelle']) ?></label>
+      <?php endforeach; ?>
+    </fieldset>
+    <fieldset>
+      <legend>Accès</legend>
+      <label><input type="checkbox" data-filtre="actif" value="1"> Actif</label>
+      <label><input type="checkbox" data-filtre="actif" value="0"> Suspendu / pas activé</label>
+    </fieldset>
+    <fieldset>
+      <legend>Connexion</legend>
+      <label><input type="checkbox" data-filtre="connecte" value="1"> Déjà connecté</label>
+      <label><input type="checkbox" data-filtre="connecte" value="0"> Jamais connecté</label>
+    </fieldset>
+  </div>
+
+  <form method="post" id="invit-groupe" class="membres-selection">
+    <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
+    <input type="hidden" name="action" value="inviter_groupe">
+    <span><strong id="nb-selection">0</strong> sélectionné(s)</span>
+    <button type="button" class="btn btn--contour btn--petit" id="tout-selectionner">Sélectionner tous les membres affichés</button>
+    <button type="button" class="btn btn--contour btn--petit" id="rien-selectionner">Tout désélectionner</button>
+    <button type="submit" class="btn btn--petit" id="envoyer-invitations" disabled
+            data-confirmer="Envoyer l’e-mail d’invitation (lien pour choisir son mot de passe) aux membres sélectionnés ?">
+      Envoyer l’invitation par e-mail
+    </button>
+  </form>
+
   <div class="tableau">
-    <table>
+    <table id="table-membres">
       <thead>
-        <tr><th>Membre</th><th>Rôles</th><th>Dernière connexion</th><th>Accès</th><th></th></tr>
+        <tr>
+          <th class="col-case"><input type="checkbox" id="case-toutes" aria-label="Sélectionner tous les membres affichés"></th>
+          <th class="triable" data-tri="nom">Membre</th><th>Rôles</th>
+          <th class="triable" data-tri="connexion">Dernière connexion</th>
+          <th class="triable" data-tri="actif">Accès</th><th></th>
+        </tr>
       </thead>
       <tbody>
       <?php foreach ($membres as $m): $estMoi = (int) $m['id'] === (int) $moi['id']; ?>
-        <tr>
+        <tr data-roles="<?= e(implode(' ', roles_du_membre($m))) ?>" data-actif="<?= (int) $m['actif'] ?>"
+            data-connecte="<?= $m['derniere_connexion'] ? 1 : 0 ?>"
+            data-nom="<?= e(mb_strtolower($m['nom'] . ' ' . $m['prenom'])) ?>"
+            data-texte="<?= e(mb_strtolower($m['prenom'] . ' ' . $m['nom'] . ' ' . $m['email'])) ?>"
+            data-connexion="<?= $m['derniere_connexion'] ? strtotime((string) $m['derniere_connexion']) : 0 ?>">
+          <td class="col-case"><input type="checkbox" name="ids[]" value="<?= (int) $m['id'] ?>" form="invit-groupe"
+                                      aria-label="Sélectionner <?= e($m['prenom'] . ' ' . $m['nom']) ?>"></td>
           <td>
             <strong><?= e($m['prenom'] . ' ' . $m['nom']) ?></strong>
             <?php if ($estMoi): ?><span class="etat etat--paye" style="margin-left:.35rem">vous</span><?php endif; ?>
@@ -187,6 +263,81 @@ require __DIR__ . '/inc/entete.php';
     </table>
   </div>
 </div>
+
+<script>
+/* Filtres (cases à cocher), tri par colonne et sélection pour l'envoi groupé.
+   Tout se passe dans la page : aucun rechargement. */
+(function () {
+  var tbody = document.querySelector('#table-membres tbody');
+  var lignes = [].slice.call(tbody.querySelectorAll('tr'));
+  var filtres = document.getElementById('filtres');
+  var recherche = document.getElementById('f-recherche');
+
+  function coches(nom) {
+    return [].map.call(filtres.querySelectorAll('input[data-filtre="' + nom + '"]:checked'), function (c) { return c.value; });
+  }
+  function visible(tr) { return tr.style.display !== 'none'; }
+
+  function filtrer() {
+    var roles = coches('role'), actif = coches('actif'), connecte = coches('connecte');
+    var q = recherche.value.trim().toLowerCase();
+    var n = 0;
+    lignes.forEach(function (tr) {
+      var sesRoles = (tr.dataset.roles || '').split(' ');
+      var ok = (!roles.length || roles.some(function (r) { return sesRoles.indexOf(r) !== -1; }))
+            && (!actif.length || actif.indexOf(tr.dataset.actif) !== -1)
+            && (!connecte.length || connecte.indexOf(tr.dataset.connecte) !== -1)
+            && (!q || tr.dataset.texte.indexOf(q) !== -1);
+      tr.style.display = ok ? '' : 'none';
+      if (ok) n++;
+    });
+    document.getElementById('nb-visibles').textContent = n;
+    document.getElementById('nb-total').textContent = n < lignes.length ? '(sur ' + lignes.length + ')' : '';
+    majSelection();
+  }
+
+  function cases() { return tbody.querySelectorAll('input[name="ids[]"]'); }
+  function majSelection() {
+    var nb = [].filter.call(cases(), function (c) { return c.checked; }).length;
+    document.getElementById('nb-selection').textContent = nb;
+    document.getElementById('envoyer-invitations').disabled = nb === 0;
+    var vis = lignes.filter(visible);
+    document.getElementById('case-toutes').checked = vis.length > 0 && vis.every(function (tr) {
+      return tr.querySelector('input[name="ids[]"]').checked;
+    });
+  }
+  function selectionnerVisibles(etat) {
+    lignes.forEach(function (tr) { if (visible(tr)) tr.querySelector('input[name="ids[]"]').checked = etat; });
+    majSelection();
+  }
+
+  filtres.addEventListener('change', filtrer);
+  recherche.addEventListener('input', filtrer);
+  tbody.addEventListener('change', function (ev) { if (ev.target.name === 'ids[]') majSelection(); });
+  document.getElementById('case-toutes').addEventListener('change', function () { selectionnerVisibles(this.checked); });
+  document.getElementById('tout-selectionner').addEventListener('click', function () { selectionnerVisibles(true); });
+  document.getElementById('rien-selectionner').addEventListener('click', function () {
+    [].forEach.call(cases(), function (c) { c.checked = false; }); majSelection();
+  });
+
+  // Tri : un clic trie, un second inverse.
+  document.querySelectorAll('#table-membres th.triable').forEach(function (th) {
+    th.addEventListener('click', function () {
+      var cle = th.dataset.tri, sens = th.dataset.sens === 'asc' ? 'desc' : 'asc';
+      document.querySelectorAll('#table-membres th.triable').forEach(function (x) { delete x.dataset.sens; });
+      th.dataset.sens = sens;
+      lignes.sort(function (a, b) {
+        var va = a.dataset[cle], vb = b.dataset[cle];
+        var r = (cle === 'nom') ? va.localeCompare(vb, 'fr') : (Number(va) - Number(vb));
+        return sens === 'asc' ? r : -r;
+      });
+      lignes.forEach(function (tr) { tbody.appendChild(tr); });
+    });
+  });
+
+  filtrer();
+})();
+</script>
 
 <div class="bloc">
   <h2>Ce que permet chaque rôle</h2>

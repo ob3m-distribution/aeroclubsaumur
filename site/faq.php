@@ -33,9 +33,10 @@ $faq = [
   ],
   [
     'q' => 'Combien coûte un vol découverte ?',
-    'r' => 'Le vol découverte de 30 minutes est à 130 € pour un passager, 180 € pour deux et '
-         . '240 € pour trois. Le tarif s’entend pour l’ensemble du vol : à trois, cela revient '
-         . 'à 80 € par personne.',
+    'r' => 'Le vol découverte de 30 minutes est à ' . prix(vols_decouverte()[1]) . ' pour un passager, '
+         . prix(vols_decouverte()[2]) . ' pour deux et ' . prix(vols_decouverte()[3]) . ' pour trois. '
+         . 'Le tarif s’entend pour l’ensemble du vol : à trois, cela revient '
+         . 'à ' . prix(intdiv(vols_decouverte()[3], 3)) . ' par personne.',
   ],
   [
     'q' => 'Combien de personnes peuvent embarquer en même temps ?',

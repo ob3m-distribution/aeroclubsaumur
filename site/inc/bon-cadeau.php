@@ -173,7 +173,7 @@ function creer_demande(array $d, string $ip): array
         $d['nb_passagers'] ?? null,
         $d['duree_initiation'] ?? null,
         $d['offert_a'] ?? null,
-        $d['montant_cents'] ?? PRIX_BON_CADEAU_CENTIMES,
+        $d['montant_cents'] ?? prix_bon_cadeau(),
         'en_attente_paiement',
         $bin,
     ]);
@@ -185,15 +185,73 @@ function creer_demande(array $d, string $ip): array
 }
 
 
-/** Les statuts possibles d'un bon, avec leur libelle. */
+/** Les statuts possibles d'un bon (colonne statut), avec leur libelle. */
 const STATUTS_BON = [
     'en_attente_paiement' => ['En attente', 'attente'],
-    'paye'                => ['Payé par Stripe', 'paye'],
+    'paye'                => ['Payé', 'paye'],
     'utilise'             => ['Utilisé', 'utilise'],
     'expire'              => ['Expiré', 'expire'],
     'annule'              => ['Annulé', 'annule'],
     'rembourse'           => ['Remboursé', 'annule'],
 ];
+
+/**
+ * Modes de paiement (colonne mode_paiement). Les trois premiers se règlent
+ * au club : le bon est payé et numéroté dès sa saisie au B.O.
+ * [libellé du mode, libellé « payé », libellé « en attente »].
+ */
+const MODES_PAIEMENT = [
+    'especes'  => ['Espèces (au club)',                     'Payé en espèces',     null],
+    'cheque'   => ['Chèque',                                'Payé en chèque',      null],
+    'cb_club'  => ['Carte bancaire au club (TPE)',          'Payé en CB au club',  null],
+    'virement' => ['Virement bancaire (RIB envoyé par e-mail)', 'Payé par virement', 'En attente virement'],
+    'stripe'   => ['Carte bancaire en ligne (lien Stripe envoyé par e-mail)', 'Payé par Stripe', 'En attente Stripe'],
+];
+
+/** Modes réglés sur place : bon payé et numéroté immédiatement. */
+const MODES_AU_CLUB = ['especes', 'cheque', 'cb_club'];
+
+/**
+ * Libellé et classe d'affichage d'un bon : le statut, précisé par le mode
+ * de paiement (« Payé en espèces », « En attente virement »…).
+ */
+function statut_bon(array $b): array
+{
+    [$lib, $cls] = STATUTS_BON[$b['statut']] ?? [$b['statut'], 'expire'];
+    $mode = (string) ($b['mode_paiement'] ?? '');
+    if ($b['statut'] === 'paye') {
+        $lib = MODES_PAIEMENT[$mode][1] ?? 'Payé par Stripe';   // anciens bons : payés en ligne
+    } elseif ($b['statut'] === 'en_attente_paiement' && isset(MODES_PAIEMENT[$mode][2])) {
+        $lib = MODES_PAIEMENT[$mode][2];
+    }
+    return [$lib, $cls];
+}
+
+/**
+ * Filtres « Statut » de la liste des bons : [libellé, condition SQL fixe].
+ * Les conditions ne contiennent aucune saisie : pas d'injection possible.
+ */
+const FILTRES_STATUT_BON = [
+    'en_attente'        => ['En attente (formulaire du site)', "statut = 'en_attente_paiement' AND mode_paiement IS NULL"],
+    'attente_virement'  => ['En attente virement',             "statut = 'en_attente_paiement' AND mode_paiement = 'virement'"],
+    'attente_stripe'    => ['En attente Stripe',               "statut = 'en_attente_paiement' AND mode_paiement = 'stripe'"],
+    'paye'              => ['Payé (tous modes)',               "statut = 'paye'"],
+    'paye_stripe'       => ['Payé par Stripe',                 "statut = 'paye' AND (mode_paiement = 'stripe' OR mode_paiement IS NULL)"],
+    'paye_especes'      => ['Payé en espèces',                 "statut = 'paye' AND mode_paiement = 'especes'"],
+    'paye_cheque'       => ['Payé en chèque',                  "statut = 'paye' AND mode_paiement = 'cheque'"],
+    'paye_cb_club'      => ['Payé en CB au club',              "statut = 'paye' AND mode_paiement = 'cb_club'"],
+    'paye_virement'     => ['Payé par virement',               "statut = 'paye' AND mode_paiement = 'virement'"],
+    'utilise'           => ['Utilisé',                         "statut = 'utilise'"],
+    'expire'            => ['Expiré',                          "statut = 'expire'"],
+    'annule'            => ['Annulé',                          "statut = 'annule'"],
+    'rembourse'         => ['Remboursé',                       "statut = 'rembourse'"],
+];
+
+/** Numéro affiché d'un bon (celui de la liste), ou null tant qu'il n'est pas payé. */
+function numero_du_bon(array $b): ?string
+{
+    return !empty($b['numero_bon']) ? (string) $b['numero_bon'] : null;
+}
 
 /**
  * Construit la clause de filtrage de la liste des bons.
@@ -209,7 +267,9 @@ function filtre_bons(string $statut, string $recherche): array
     $where = [];
     $args  = [];
 
-    if (isset(STATUTS_BON[$statut])) {
+    if (isset(FILTRES_STATUT_BON[$statut])) {
+        $where[] = '(' . FILTRES_STATUT_BON[$statut][1] . ')';
+    } elseif (isset(STATUTS_BON[$statut])) {        // anciens liens ?statut=paye…
         $where[] = 'statut = ?';
         $args[]  = $statut;
     }
@@ -314,10 +374,13 @@ function code_unique(): string
     return code_aleatoire('BON') . '-' . bin2hex(random_bytes(2));
 }
 
-/** Numéro de bon lisible : WEB-AAAA-MM-JJ-NNN (numérotation par jour). */
-function numero_bon_unique(): string
+/**
+ * Numéro de bon lisible : WEB-AAAA-MM-JJ-NNN (numérotation par jour).
+ * Préfixe CLUB pour les bons réglés au club (espèces, chèque, CB, virement).
+ */
+function numero_bon_unique(string $origine = 'WEB'): string
 {
-    $prefixe = 'WEB-' . date('Y-m-d') . '-';
+    $prefixe = ($origine === 'CLUB' ? 'CLUB' : 'WEB') . '-' . date('Y-m-d') . '-';
     $stmt = db()->prepare('SELECT COUNT(*) FROM bons_cadeaux WHERE numero_bon LIKE ?');
     $stmt->execute([$prefixe . '%']);
     $n = (int) $stmt->fetchColumn() + 1;
@@ -347,10 +410,13 @@ function maj_bon_bo(int $id, ?string $dateRea, ?string $pilote, ?string $offertA
 /**
  * Marque un bon comme paye. IDEMPOTENT : appele deux fois (retour navigateur
  * ET webhook), il ne genere qu'un seul code et ne renvoie qu'un seul email.
+ * $mode : mode de paiement (MODES_PAIEMENT) ; Stripe par défaut (paiement
+ * en ligne, seul appelant historique).
+ * Validité : un an à compter du paiement.
  *
  * Retourne [le bon a jour, true si c'est ce passage qui l'a valide].
  */
-function bon_marquer_paye(int $id): array
+function bon_marquer_paye(int $id, string $mode = 'stripe'): array
 {
     $pdo = db();
     $pdo->beginTransaction();
@@ -371,16 +437,17 @@ function bon_marquer_paye(int $id): array
             return [$bon, false];
         }
 
+        $mode   = isset(MODES_PAIEMENT[$mode]) ? $mode : 'stripe';
         $code   = code_unique();
-        $numero = numero_bon_unique();
+        $numero = numero_bon_unique($mode === 'stripe' ? 'WEB' : 'CLUB');
         $maj = $pdo->prepare(
             'UPDATE bons_cadeaux
-                SET statut = ?, code = ?, numero_bon = ?, paye_le = NOW(),
+                SET statut = ?, code = ?, numero_bon = ?, mode_paiement = ?, paye_le = NOW(),
                     expire_le = DATE_ADD(CURDATE(), INTERVAL 1 YEAR),
-                    date_fin_validite = DATE_ADD(CURDATE(), INTERVAL 6 MONTH)
+                    date_fin_validite = DATE_ADD(CURDATE(), INTERVAL 1 YEAR)
               WHERE id = ?'
         );
-        $maj->execute(['paye', $code, $numero, $id]);
+        $maj->execute(['paye', $code, $numero, $mode, $id]);
 
         $stmt = $pdo->prepare('SELECT * FROM bons_cadeaux WHERE id = ?');
         $stmt->execute([$id]);
@@ -401,4 +468,69 @@ function bon_marquer_envoye(int $id): void
 {
     $stmt = db()->prepare('UPDATE bons_cadeaux SET pdf_envoye_le = NOW() WHERE id = ?');
     $stmt->execute([$id]);
+}
+
+/**
+ * Bon saisi au back-office (bouton « Ajouter un vol »).
+ * - espèces / chèque / CB au club : payé et numéroté tout de suite ;
+ * - virement : en attente, sans numéro (RIB envoyé au client) ;
+ * - stripe : en attente, avec un lien de paiement personnel (jeton).
+ * Retourne le bon tel qu'enregistré.
+ */
+function creer_bon_manuel(array $d, string $mode, int $parMembre): array
+{
+    if (!isset(MODES_PAIEMENT[$mode])) {
+        throw new InvalidArgumentException('Mode de paiement inconnu.');
+    }
+    $jeton = $mode === 'stripe' ? bin2hex(random_bytes(24)) : null;
+
+    $stmt = db()->prepare(
+        'INSERT INTO bons_cadeaux
+            (reference, acheteur_prenom, acheteur_nom, acheteur_email,
+             acheteur_telephone, message, type_vol, nb_passagers, duree_initiation,
+             offert_a, montant_cents, statut, mode_paiement, lien_jeton, cree_par,
+             cgv_acceptees_le, cree_le)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())'
+    );
+    $stmt->execute([
+        reference_unique(),
+        $d['prenom'],
+        $d['nom'],
+        $d['email'],
+        $d['telephone'],
+        $d['message'] !== '' ? $d['message'] : null,
+        $d['type_vol'],
+        $d['nb_passagers'],
+        $d['duree_initiation'],
+        $d['offert_a'],
+        $d['montant_cents'],
+        'en_attente_paiement',
+        $mode,
+        $jeton,
+        $parMembre ?: null,
+    ]);
+    $id = (int) db()->lastInsertId();
+
+    if (in_array($mode, MODES_AU_CLUB, true)) {
+        [$bon] = bon_marquer_paye($id, $mode);
+        return $bon;
+    }
+    return bon_par_id($id);
+}
+
+/** Lien de paiement en ligne personnel d'un bon (mode stripe). */
+function lien_paiement_bon(array $bon): string
+{
+    $hote = $_SERVER['HTTP_HOST'] ?? 'aeroclub-saumur.fr';
+    return 'https://' . $hote . '/paiement?bon=' . (int) $bon['id'] . '&jeton=' . rawurlencode((string) $bon['lien_jeton']);
+}
+
+/** Bon correspondant à un lien de paiement, s'il est valide et encore à régler. */
+function bon_par_lien(int $id, string $jeton): ?array
+{
+    $bon = $id > 0 ? bon_par_id($id) : null;
+    if (!$bon || empty($bon['lien_jeton']) || !hash_equals((string) $bon['lien_jeton'], $jeton)) {
+        return null;
+    }
+    return $bon;
 }

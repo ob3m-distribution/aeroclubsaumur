@@ -34,6 +34,15 @@ const CLUB = [
     'tel_admin'    => '06 27 36 04 46',
 ];
 
+/**
+ * Réseaux sociaux officiels du club (vérifiés le 28/09/2026 : pages liées
+ * depuis la fiche du club sur ot-saumur.fr, même téléphone que le club).
+ */
+const RESEAUX_SOCIAUX = [
+    'facebook'  => ['Facebook',  'https://www.facebook.com/SaumurAirClub/',            'Saumur Air Club'],
+    'instagram' => ['Instagram', 'https://www.instagram.com/aeroclub_saumurairclub/',  '@aeroclub_saumurairclub'],
+];
+
 /** Hebergeur du site — mention legale OBLIGATOIRE. */
 const HEBERGEUR = [
     'nom'     => 'IONOS SARL',
@@ -54,31 +63,28 @@ const REALISATION = [
     'tva'            => 'FR 31 103 916 656',
 ];
 
-/**
- * Prix des vols decouverte, en centimes. Jamais de decimal pour de l'argent.
- * Releves sur saumur-airclub.aero le 17/07/2026 — A FAIRE CONFIRMER par le club.
- */
-const VOLS_DECOUVERTE = [
-    1 => 13000,   // 1 passager  : 130 €
-    2 => 18000,   // 2 passagers : 180 €
-    3 => 24000,   // 3 passagers : 240 €
-];
+/* Prix des vols et des cotisations : voir inc/tarifs.php (catalogue
+   unique, modifiable depuis le back-office « Tarifs et prix »). */
 
-/**
- * Prix du bon cadeau : 130 €, soit le vol decouverte 1 passager.
- * Confirme par Cyrille le 18/07/2026 — un seul passager, pas de version
- * 2 ou 3 places. Un seul produit vendu en ligne.
- */
-const PRIX_BON_CADEAU_CENTIMES = 13000;
+/** Vols découverte : [nb passagers => centimes]. */
+function vols_decouverte(): array
+{
+    require_once __DIR__ . '/tarifs.php';
+    return [1 => tarif('vol.decouverte.1'), 2 => tarif('vol.decouverte.2'), 3 => tarif('vol.decouverte.3')];
+}
 
-/**
- * Prix des vols d'initiation offerts en bon cadeau, en centimes.
- * Repris de la grille tarifs (Passeport FFA) — A CONFIRMER par le club.
- */
-const VOLS_INITIATION = [
-    '1h30' => 32300,   // 323 €
-    '3h'   => 64500,   // 645 €
-];
+/** Prix du bon cadeau « vitrine » : le vol découverte 1 passager. */
+function prix_bon_cadeau(): int
+{
+    return vols_decouverte()[1];
+}
+
+/** Vols d'initiation vendus en bon cadeau : [durée => centimes]. */
+function vols_initiation(): array
+{
+    require_once __DIR__ . '/tarifs.php';
+    return ['1h30' => tarif('vol.initiation.1h30'), '3h' => tarif('vol.initiation.3h')];
+}
 
 /** Pilotes du club (liste déroulante « Pilote » sur les bons cadeaux au B.O.). */
 const PILOTES = [
@@ -94,8 +100,8 @@ const PILOTES = [
 /** Prix d'un bon cadeau selon le type de vol et l'option choisie (en centimes). */
 function prix_bon(string $type, ?int $nb, ?string $duree): int
 {
-    if ($type === 'initiation') return VOLS_INITIATION[$duree] ?? VOLS_INITIATION['1h30'];
-    return VOLS_DECOUVERTE[$nb] ?? VOLS_DECOUVERTE[1];   // découverte
+    if ($type === 'initiation') return vols_initiation()[$duree] ?? vols_initiation()['1h30'];
+    return vols_decouverte()[$nb] ?? vols_decouverte()[1];   // découverte
 }
 
 /* ------------------------------------------------------------------
@@ -103,33 +109,51 @@ function prix_bon(string $type, ?int $nb, ?string $duree): int
    (version 03-10/2025). Montants en centimes.
    ------------------------------------------------------------------ */
 const COTISATION_ANNEE        = 2026;
-const COTISATION_MEMBRE_CLUB  = 1000;   // A — Membre Club, obligatoire (10 €)
 
-/** B — Options (une seule au choix). [libellé, centimes]. */
-const COTISATION_OPTIONS = [
-    'opt1' => ['Pilote', 23000],
-    'opt2' => ['Pilote −25 ans', 11000],
-    'opt3' => ['Pilote de passage (2ᵉ club)', 11000],
-    'opt4' => ['Licence Jeunes Ailes', 1600],
-    'opt5' => ['Passeport FFA', 1600],
-    'opt6' => ['Membre non pilote', 0],
-];
+/** A — Membre Club, obligatoire. */
+function cotisation_membre(): int
+{
+    require_once __DIR__ . '/tarifs.php';
+    return tarif('cotis.membre');
+}
 
-/** Bloc d'heures associé au Passeport FFA (option 5). [libellé, centimes]. */
-const COTISATION_PASSEPORT_BLOCS = [
-    ''     => ['Sans bloc d’heures', 0],
-    '1h30' => ['Bloc 1 h 30', 26400],
-    '3h'   => ['Bloc 3 h 00', 52800],
-];
+/** B — Options (une seule au choix). [clé => [libellé, centimes]]. */
+function cotisation_options(): array
+{
+    require_once __DIR__ . '/tarifs.php';
+    return [
+        'opt1' => ['Pilote', tarif('cotis.opt1')],
+        'opt2' => ['Pilote −25 ans', tarif('cotis.opt2')],
+        'opt3' => ['Pilote de passage (2ᵉ club)', tarif('cotis.opt3')],
+        'opt4' => ['Licence Jeunes Ailes', tarif('cotis.opt4')],
+        'opt5' => ['Passeport FFA', tarif('cotis.opt5')],
+        'opt6' => ['Membre non pilote', tarif('cotis.opt6')],
+    ];
+}
 
-/** C/D/E + caution — cases à cocher indépendantes. [libellé, centimes, groupe]. */
-const COTISATION_EXTRAS = [
-    'info_pilote'   => ['Info Pilote', 4900, 'C'],
-    'licence_ffa'   => ['Licence FFA', 9600, 'D'],
-    'pack_basique'  => ['Pack basique (formation)', 11500, 'E'],
-    'elearning'     => ['Abonnement e-learning « aérogligli » (24 mois)', 5600, 'E'],
-    'caution_badge' => ['Caution badge + clef', 5000, 'B'],
-];
+/** Bloc d'heures associé au Passeport FFA (option 5). [clé => [libellé, centimes]]. */
+function cotisation_blocs(): array
+{
+    require_once __DIR__ . '/tarifs.php';
+    return [
+        ''     => ['Sans bloc d’heures', 0],
+        '1h30' => ['Bloc 1 h 30', tarif('cotis.bloc.1h30')],
+        '3h'   => ['Bloc 3 h 00', tarif('cotis.bloc.3h')],
+    ];
+}
+
+/** C/D/E + caution — cases à cocher indépendantes. [clé => [libellé, centimes, groupe]]. */
+function cotisation_extras(): array
+{
+    require_once __DIR__ . '/tarifs.php';
+    return [
+        'info_pilote'   => ['Info Pilote', tarif('cotis.info_pilote'), 'C'],
+        'licence_ffa'   => ['Licence FFA', tarif('cotis.licence_ffa'), 'D'],
+        'pack_basique'  => ['Pack basique (formation)', tarif('cotis.pack_basique'), 'E'],
+        'elearning'     => ['Abonnement e-learning « aérogligli » (24 mois)', tarif('cotis.elearning'), 'E'],
+        'caution_badge' => ['Caution badge + clef', tarif('cotis.caution_badge'), 'B'],
+    ];
+}
 
 /**
  * Calcule le total d'une inscription (centimes) à partir des choix.
@@ -137,18 +161,20 @@ const COTISATION_EXTRAS = [
  */
 function total_inscription(array $d): int
 {
-    $total = COTISATION_MEMBRE_CLUB;
+    $total = cotisation_membre();
     $opt = (string) ($d['option'] ?? '');
-    if (isset(COTISATION_OPTIONS[$opt])) {
-        $total += COTISATION_OPTIONS[$opt][1];
+    $options = cotisation_options();
+    if (isset($options[$opt])) {
+        $total += $options[$opt][1];
     }
     if ($opt === 'opt5') {
         $bloc = (string) ($d['passeport_bloc'] ?? '');
-        $total += COTISATION_PASSEPORT_BLOCS[$bloc][1] ?? 0;
+        $total += cotisation_blocs()[$bloc][1] ?? 0;
     }
+    $extras = cotisation_extras();
     foreach ((array) ($d['extras'] ?? []) as $cle) {
-        if (isset(COTISATION_EXTRAS[$cle])) {
-            $total += COTISATION_EXTRAS[$cle][1];
+        if (isset($extras[$cle])) {
+            $total += $extras[$cle][1];
         }
     }
     return $total;

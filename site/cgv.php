@@ -51,7 +51,7 @@ require __DIR__ . '/inc/hero.php';
         <p>
           Le site propose un seul produit à la vente en ligne : un bon cadeau donnant droit à
           un <strong>vol découverte de 30 minutes environ, pour un passager</strong>, à bord
-          d’un avion du club, au prix de <?= e(prix(PRIX_BON_CADEAU_CENTIMES)) ?>.
+          d’un avion du club, au prix de <?= e(prix(prix_bon_cadeau())) ?>.
         </p>
         <p>
           Le détail de la formule figure sur la page

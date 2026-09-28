@@ -3,6 +3,7 @@ declare(strict_types=1);
 $page = 'avions';
 $description = 'Découvrez la flotte du Saumur Air Club : Evektor SportStar, Cessna 172 N et Robin DR 400-180, pour vos vols découverte, votre formation et vos sorties en club.';
 require __DIR__ . '/inc/header.php';
+require_once __DIR__ . '/inc/tarifs.php';
 
 $hero = [
   'page'         => true,
@@ -44,7 +45,7 @@ require __DIR__ . '/inc/hero.php';
              loading="lazy">
       </div>
       <div class="panneau__texte">
-        <p class="surtitre"><?= texte('avions.evektor.surtitre', 'Deux appareils · 138 €/h') ?></p>
+        <p class="surtitre"><?= texte('avions.evektor.nombre', 'Deux appareils') ?> · <?= e(tarif_affiche('avion.evektor')) ?></p>
         <h2><?= texte('avions.evektor.titre', 'Evektor SportStar') ?></h2>
         <p><?= texte('avions.evektor.texte1',
           'Le club dispose de deux Evektor SportStar : des biplaces côte à côte, légers '
@@ -62,7 +63,7 @@ require __DIR__ . '/inc/hero.php';
   <div class="conteneur">
     <div class="panneau">
       <div class="panneau__texte">
-        <p class="surtitre"><?= texte('avions.cessna.surtitre', '182 €/h') ?></p>
+        <p class="surtitre"><?= e(tarif_affiche('avion.cessna172')) ?></p>
         <h2><?= texte('avions.cessna.titre', 'Cessna 172 N') ?></h2>
         <p><?= texte('avions.cessna.texte1',
           '« L’avion le plus fabriqué au monde », produit aux États-Unis depuis 1955. '
@@ -118,7 +119,7 @@ require __DIR__ . '/inc/hero.php';
              loading="lazy">
       </div>
       <div class="panneau__texte">
-        <p class="surtitre"><?= texte('avions.dr400.surtitre', '210 €/h') ?></p>
+        <p class="surtitre"><?= e(tarif_affiche('avion.dr400')) ?></p>
         <h2><?= texte('avions.dr400.titre', 'Robin DR 400-180') ?></h2>
         <p><?= texte('avions.dr400.texte1',
           'Le classique des aéro-clubs français. Robuste, tolérant, avec sa verrière '

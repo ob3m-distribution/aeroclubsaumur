@@ -37,7 +37,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         }
         try {
             $bon = creer_demande($d, ip_client());
-            $bon['montant_affiche'] = prix(PRIX_BON_CADEAU_CENTIMES);
+            $bon['montant_affiche'] = prix(prix_bon_cadeau());
 
             $_SESSION['bon_en_cours']  = $bon['id'];
             $_SESSION['derniere_reference'] = $bon['reference'];
@@ -64,7 +64,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 }
 
 $page = 'vols-decouvertes';
-$description = 'Vol découverte au-dessus du Val de Loire : 30 minutes de survol des châteaux et du vignoble, dès 130 €, aux commandes avec un instructeur.';
+require_once __DIR__ . '/inc/tarifs.php';
+$description = 'Vol découverte au-dessus du Val de Loire : 30 minutes de survol des châteaux et du vignoble, dès ' . prix(prix_bon_cadeau()) . ', aux commandes avec un instructeur.';
 require __DIR__ . '/inc/header.php';
 
 $hero = [
@@ -137,12 +138,13 @@ require __DIR__ . '/inc/hero.php';
       <div>
         <p><?= texte('vols.dec.texte',
           'Le vol dure environ 30 minutes, selon la réglementation. Le tarif s’entend '
-          . 'pour l’ensemble du vol, pas par personne : à trois, c’est 80 € chacun.', 'long') ?></p>
+          . 'pour l’ensemble du vol, pas par personne : à trois, c’est '
+          . prix(intdiv(vols_decouverte()[3], 3)) . ' chacun.', 'long') ?></p>
       </div>
     </div>
 
     <ul class="faits">
-      <?php foreach (VOLS_DECOUVERTE as $nb => $centimes): ?>
+      <?php foreach (vols_decouverte() as $nb => $centimes): ?>
         <li>
           <span class="faits__valeur"><?= e(prix($centimes)) ?></span>
           <span class="faits__libelle"><?= $nb ?> passager<?= $nb > 1 ? 's' : '' ?></span>
@@ -189,9 +191,9 @@ require __DIR__ . '/inc/hero.php';
           </tr>
         </thead>
         <tbody>
-          <tr><td><?= texte('vols.init.f1.nom', '30 minutes') ?></td><td><?= texte('vols.init.f1.duree', '30 min') ?></td><td><?= texte('vols.init.f1.prix', '180 €') ?></td></tr>
-          <tr><td><?= texte('vols.init.f2.nom', 'Passeport FFA') ?></td><td><?= texte('vols.init.f2.duree', '1 h 30') ?></td><td><?= texte('vols.init.f2.prix', '323 € + 16 € de licence et assurance') ?></td></tr>
-          <tr><td><?= texte('vols.init.f3.nom', 'Passeport FFA') ?></td><td><?= texte('vols.init.f3.duree', '3 h') ?></td><td><?= texte('vols.init.f3.prix', '645 € + 16 € de licence et assurance') ?></td></tr>
+          <tr><td><?= texte('vols.init.f1.nom', '30 minutes') ?></td><td><?= texte('vols.init.f1.duree', '30 min') ?></td><td><?= e(tarif_affiche('vol.initiation.30min')) ?></td></tr>
+          <tr><td><?= texte('vols.init.f2.nom', 'Passeport FFA') ?></td><td><?= texte('vols.init.f2.duree', '1 h 30') ?></td><td><?= e(tarif_affiche('vol.initiation.1h30') . ' + ' . tarif_affiche('vol.initiation.licence') . ' de licence et assurance') ?></td></tr>
+          <tr><td><?= texte('vols.init.f3.nom', 'Passeport FFA') ?></td><td><?= texte('vols.init.f3.duree', '3 h') ?></td><td><?= e(tarif_affiche('vol.initiation.3h') . ' + ' . tarif_affiche('vol.initiation.licence') . ' de licence et assurance') ?></td></tr>
         </tbody>
       </table>
     </div>
@@ -207,7 +209,7 @@ require __DIR__ . '/inc/hero.php';
       <div>
         <p class="surtitre"><?= texte('vols.bon.surtitre', 'Idée cadeau') ?></p>
         <h2 class="titre-filet"><?= texte('vols.bon.titre', 'Offrez un vol découverte') ?></h2>
-        <p class="prix"><?= e(prix(PRIX_BON_CADEAU_CENTIMES)) ?> <small>pour un passager</small></p>
+        <p class="prix"><?= e(prix(prix_bon_cadeau())) ?> <small>pour un passager</small></p>
         <ul class="liste-check" style="margin-top:1.25rem">
           <li><?= texte('vols.bon.point1', 'Valable un an à compter de l’achat.', 'long') ?></li>
           <li><?= texte('vols.bon.point2', 'Reçu par email en PDF, à imprimer ou à présenter sur téléphone.', 'long') ?></li>

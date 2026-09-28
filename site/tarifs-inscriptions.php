@@ -15,19 +15,22 @@ $hero = [
   'cle_accroche' => 'tarifs.hero.accroche',
 ];
 require __DIR__ . '/inc/hero.php';
+require_once __DIR__ . '/inc/tarifs.php';
 
-/* Grilles tarifaires : chaque ligne est modifiable. */
+/* Grilles tarifaires : les libellés sont modifiables sur la page, les
+   prix depuis le back-office « Tarifs et prix » (inc/tarifs.php).
+   Cotisation = Membre Club (A) + option Pilote (B). */
 $adhesion = [
-  ['tarifs.adhesion1', 'Cotisation — 25 ans et plus',        '240 €'],
-  ['tarifs.adhesion2', 'Cotisation — moins de 25 ans',       '120 €'],
-  ['tarifs.adhesion3', 'Licence fédérale',                   '96 €'],
-  ['tarifs.adhesion4', 'Revue Info Pilote (facultatif)',     '49 €'],
+  ['tarifs.adhesion1', 'Cotisation — 25 ans et plus',    prix(tarif('cotis.membre') + tarif('cotis.opt1'))],
+  ['tarifs.adhesion2', 'Cotisation — moins de 25 ans',   prix(tarif('cotis.membre') + tarif('cotis.opt2'))],
+  ['tarifs.adhesion3', 'Licence fédérale',               tarif_affiche('cotis.licence_ffa')],
+  ['tarifs.adhesion4', 'Revue Info Pilote (facultatif)', tarif_affiche('cotis.info_pilote')],
 ];
 $horaires = [
-  ['tarifs.horaire1', 'Evektor SportStar G3X', '138 €/h'],
-  ['tarifs.horaire2', 'Cessna 172',            '182 €/h'],
-  ['tarifs.horaire3', 'DR 400-180',            '210 €/h'],
-  ['tarifs.horaire4', 'Supplément instruction', '+ 40 €/h'],
+  ['tarifs.horaire1', 'Evektor SportStar G3X',  tarif_affiche('avion.evektor')],
+  ['tarifs.horaire2', 'Cessna 172',             tarif_affiche('avion.cessna172')],
+  ['tarifs.horaire3', 'DR 400-180',             tarif_affiche('avion.dr400')],
+  ['tarifs.horaire4', 'Supplément instruction', '+ ' . tarif_affiche('avion.instruction')],
 ];
 $formations = [
   ['tarifs.formation1', 'PPL',  'Licence de pilote privé avion.'],
@@ -68,7 +71,7 @@ $formations = [
               <?php foreach ($adhesion as [$cle, $libelle, $prix]): ?>
                 <tr>
                   <td><?= texte($cle . '.libelle', $libelle) ?></td>
-                  <td><?= texte($cle . '.prix', $prix) ?></td>
+                  <td><?= e($prix) ?></td>
                 </tr>
               <?php endforeach; ?>
             </tbody>
@@ -86,7 +89,7 @@ $formations = [
               <?php foreach ($horaires as [$cle, $libelle, $prix]): ?>
                 <tr>
                   <td><?= texte($cle . '.libelle', $libelle) ?></td>
-                  <td><?= texte($cle . '.prix', $prix) ?></td>
+                  <td><?= e($prix) ?></td>
                 </tr>
               <?php endforeach; ?>
             </tbody>
