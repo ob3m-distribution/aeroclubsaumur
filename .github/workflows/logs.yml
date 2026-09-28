@@ -33,6 +33,9 @@ jobs:
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_PATH_PROD: ${{ secrets.DEPLOY_PATH_PROD }}
+          LOGS_SFTP_HOST: ${{ secrets.LOGS_SFTP_HOST }}
+          LOGS_SFTP_USER: ${{ secrets.LOGS_SFTP_USER }}
+          LOGS_SFTP_PASSWORD: ${{ secrets.LOGS_SFTP_PASSWORD }}
         run: python logs_ci.py
 
       - name: Archiver les logs (30 jours)

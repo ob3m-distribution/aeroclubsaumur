@@ -163,7 +163,13 @@ connexion SFTP du déploiement :
 - **Logs d'accès Apache** : dossier `logs/` fourni par IONOS (IP
   anonymisées, rotation gérée par IONOS). Les fichiers des 3 derniers
   jours sont rapatriés ; les réponses 5xx de la veille sont comptées.
-  Si le compte SFTP n'a pas accès à ce dossier, le résumé l'indique.
+  Le compte de déploiement, cantonné au dossier du site, ne le voit pas :
+  les logs d'accès sont lus avec un **compte SFTP dédié** ayant la racine
+  de l'espace web (secrets `LOGS_SFTP_USER`, `LOGS_SFTP_PASSWORD`, et
+  `LOGS_SFTP_HOST` s'il diffère de `DEPLOY_HOST`). Sans ces secrets, le
+  résumé indique « logs d'accès introuvables ». Ne pas changer plutôt la
+  racine du compte de déploiement : tous ses chemins relatifs
+  (`DEPLOY_PATH`…) seraient décalés et le déploiement casserait.
 
 Tout est archivé comme artifact `logs-serveur` du workflow (30 jours).
 S'il y a au moins une erreur PHP ou une réponse 5xx, un résumé part par
