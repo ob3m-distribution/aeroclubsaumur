@@ -77,11 +77,17 @@ AddDefaultCharset UTF-8
     # dev.aeroclub-saumur.fr n'est pas visé. taches/ est exclu car appelé
     # en POST par les workflows (un 301 transformerait le POST en GET) ;
     # webhook/ a son propre .htaccess (RewriteEngine Off).
+    # Le chemin est repris de THE_REQUEST (la requête d'origine) : chez
+    # IONOS, REQUEST_URI vaut déjà « /faq.php » à ce stade, ce qui ajoutait
+    # une redirection inutile. On ne capture que le chemin, sans le « ? » :
+    # Apache (>= 2.4.58) refuse un « ? » issu d'une capture (403), et il
+    # recopie de lui-même la query string d'origine.
     RewriteCond %{HTTP_HOST} ^(www\.)?aeroclub-saumur\.fr$ [NC]
-    RewriteCond %{REQUEST_URI} !^/taches/
+    RewriteCond %{THE_REQUEST} !\s/+taches/
     RewriteCond %{HTTP_HOST} ^www\. [NC,OR]
     RewriteCond %{HTTPS} !=on
-    RewriteRule ^ https://aeroclub-saumur.fr%{REQUEST_URI} [R=301,L,NE]
+    RewriteCond %{THE_REQUEST} ^\S+\s+(/[^\s?]*)
+    RewriteRule ^ https://aeroclub-saumur.fr%1 [R=301,L,NE]
 
     # Le dossier inc/ n'est jamais accessible directement
     RewriteRule ^inc/ - [F,L]
