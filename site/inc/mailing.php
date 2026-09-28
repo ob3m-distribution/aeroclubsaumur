@@ -75,7 +75,7 @@ function mailing_filtres_libelle(array $f): string
 {
     $parts = [];
     foreach (MAILING_FILTRES as $cle => $choix) {
-        if (($f[$cle] ?? 'tous') === 'tous') continue;
+        if (in_array($f[$cle] ?? 'tous', ['tous', ''], true)) continue;
         // Anciens envois (avant les rôles cumulables) : « personnel »…
         $parts[] = $choix[$f[$cle]] ?? ['personnel' => 'Équipe / bureau seulement'][$f[$cle]] ?? $f[$cle];
     }

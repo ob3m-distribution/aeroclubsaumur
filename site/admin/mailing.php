@@ -58,7 +58,7 @@ $nbDest = count($destinataires);
 $historique = db()->query(
     'SELECT ml.*, m.prenom, m.nom FROM mailings ml
      LEFT JOIN membres m ON m.id = ml.envoye_par
-     ORDER BY ml.envoye_le DESC LIMIT 50'
+     ORDER BY ml.cree_le DESC LIMIT 50'
 )->fetchAll();
 
 $titre = 'Newsletters';
@@ -136,14 +136,14 @@ require __DIR__ . '/inc/entete.php';
             $par = trim(($h['prenom'] ?? '') . ' ' . ($h['nom'] ?? '')); ?>
           <details class="news-item">
             <summary>
-              <span class="news-item__date"><?= e(date('d/m/Y', strtotime((string) $h['envoye_le']))) ?></span>
+              <span class="news-item__date"><?= e(date('d/m/Y', strtotime((string) $h['cree_le']))) ?></span>
               <span class="news-item__sujet"><?= e($h['sujet']) ?></span>
               <span class="news-item__meta"><?= (int) $h['nb_envoyes'] ?>/<?= (int) $h['nb_destinataires'] ?> destinataires</span>
               <span class="news-item__chev" aria-hidden="true">▾</span>
             </summary>
             <div class="news-item__corps">
               <p class="muet" style="margin:0 0 .6rem;font-size:.78rem">
-                Envoyé le <?= e(date('d/m/Y à H:i', strtotime((string) $h['envoye_le']))) ?>
+                Envoyé le <?= e(date('d/m/Y à H:i', strtotime((string) $h['cree_le']))) ?>
                 · Cible : <?= e($cible) ?><?= $par ? ' · Par ' . e($par) : '' ?>
               </p>
               <div class="news-item__texte"><?= nl2br(e($h['corps'])) ?></div>
