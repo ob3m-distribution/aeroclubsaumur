@@ -1,11 +1,30 @@
 /* Tri + filtre déroulant (cases à cocher) par colonne pour les tableaux du B.O.
    S'applique à chaque <table> dans .tableau (sauf .tableau--matrice).
    - Clic sur le libellé d'un en-tête : trie la colonne (asc puis desc).
-   - Bouton ▾ : ouvre un panneau listant les valeurs de la colonne, à cocher/décocher. */
+   - Bouton ▾ : ouvre un panneau listant les valeurs de la colonne, à cocher/décocher.
+   Une cellule peut porter ses valeurs dans data-valeurs="A|B" (ex. les rôles
+   d'un membre, dont la cellule contient des cases à cocher) : la ligne passe
+   le filtre si l'une de ses valeurs est cochée.
+   Filtre externe (ex. recherche) : attribut data-cache sur la ligne, puis
+   événement « tableau:filtrer » sur la table. Après chaque filtrage, la table
+   émet « tableau:filtre-applique ». */
 (function () {
   'use strict';
 
-  function texte(cell) { return (cell ? cell.textContent : '').replace(/\s+/g, ' ').trim(); }
+  function texte(cell) {
+    if (cell && cell.dataset && cell.dataset.valeurs !== undefined) {
+      return cell.dataset.valeurs.split('|').filter(Boolean).join(', ');
+    }
+    return (cell ? cell.textContent : '').replace(/\s+/g, ' ').trim();
+  }
+  /** Valeurs de filtre d'une cellule (plusieurs si data-valeurs). */
+  function valeurs(cell) {
+    if (cell && cell.dataset && cell.dataset.valeurs !== undefined) {
+      var l = cell.dataset.valeurs.split('|').filter(Boolean);
+      return l.length ? l : [''];
+    }
+    return [texte(cell)];
+  }
 
   function clef(v) {
     var d = v.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
@@ -28,13 +47,15 @@
 
     function appliquer() {
       [].forEach.call(tbody.rows, function (tr) {
-        var ok = true;
+        var ok = !tr.hasAttribute('data-cache');
         for (var i = 0; i < n && ok; i++) {
-          if (filtres[i] && !filtres[i].has(texte(tr.cells[i]))) ok = false;
+          if (filtres[i] && !valeurs(tr.cells[i]).some(function (v) { return filtres[i].has(v); })) ok = false;
         }
         tr.style.display = ok ? '' : 'none';
       });
+      table.dispatchEvent(new CustomEvent('tableau:filtre-applique'));
     }
+    table.addEventListener('tableau:filtrer', appliquer);
 
     function trier(col, th) {
       var asc = th.getAttribute('data-tri') !== 'asc';
@@ -90,8 +111,9 @@
           var vals = [];
           var vus = {};
           [].forEach.call(tbody.rows, function (tr) {
-            var v = texte(tr.cells[col]);
-            if (!(v in vus)) { vus[v] = 1; vals.push(v); }
+            valeurs(tr.cells[col]).forEach(function (v) {
+              if (!(v in vus)) { vus[v] = 1; vals.push(v); }
+            });
           });
           vals.sort(function (a, b) { return comparer(a, b); });
           var f = filtres[col];
