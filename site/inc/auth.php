@@ -60,8 +60,8 @@ const ROLES = [
     ],
     'bureau' => [
         'libelle'     => 'Bureau',
-        'description' => 'Consultent et modifient toute la bibliothèque.',
-        'droits'      => ['biblio.gerer'],
+        'description' => 'Consultent et modifient toute la bibliothèque, et les tarifs et prix du site.',
+        'droits'      => ['biblio.gerer', 'tarifs.gerer'],
         'biblio'      => 'tout',
     ],
     'bons_cadeaux' => [
