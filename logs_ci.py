@@ -21,6 +21,9 @@ Usage :
 
 Variables d'environnement : DEPLOY_HOST, DEPLOY_USER, DEPLOY_PASSWORD,
 DEPLOY_PATH (dev), DEPLOY_PATH_PROD (prod). Un chemin vide est ignore.
+Optionnel : LOGS_SFTP_USER, LOGS_SFTP_PASSWORD (et LOGS_SFTP_HOST si
+different de DEPLOY_HOST) — compte SFTP dedie aux logs d'acces, avec la
+racine de l'espace web.
 """
 import datetime
 import gzip
@@ -174,9 +177,24 @@ def main():
     try:
         php = {env: recuperer_log_php(sftp, env, chemin, horodatage)
                for env, chemin in environnements.items()}
-        fichiers_acces = recuperer_logs_acces(sftp)
+        if not os.environ.get("LOGS_SFTP_USER"):
+            fichiers_acces = recuperer_logs_acces(sftp)
     finally:
         t.close()
+
+    # Le compte de deploiement est cantonne au dossier du site et ne voit
+    # pas logs/ d'IONOS : un compte SFTP dedie, avec la racine de l'espace
+    # web, sert uniquement a lire les logs d'acces. On ne change pas la
+    # racine du compte de deploiement, ce qui decalerait tous ses chemins
+    # (DEPLOY_PATH, sauvegardes/, logs-php/).
+    if os.environ.get("LOGS_SFTP_USER"):
+        t, sftp = connecter(os.environ.get("LOGS_SFTP_HOST") or None,
+                            os.environ["LOGS_SFTP_USER"],
+                            os.environ["LOGS_SFTP_PASSWORD"])
+        try:
+            fichiers_acces = recuperer_logs_acces(sftp)
+        finally:
+            t.close()
 
     e5xx = erreurs_5xx(fichiers_acces or [], hier)
     resume, total_php, total_5xx = construire_resume(php, fichiers_acces, e5xx, hier)

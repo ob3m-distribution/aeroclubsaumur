@@ -100,14 +100,15 @@ def ecrire_sortie_github(cle, valeur):
             f.write(f"{cle}={valeur}\n")
 
 
-def connecter():
+def connecter(host=None, user=None, password=None):
     # Timeout explicite : sans lui, une connexion qui se fige (coupure
     # reseau cote IONOS) bloque le job indefiniment plutot que d'echouer.
-    sock = socket.create_connection((os.environ["DEPLOY_HOST"], 22), timeout=30)
+    sock = socket.create_connection((host or os.environ["DEPLOY_HOST"], 22), timeout=30)
     t = paramiko.Transport(sock)
     t.banner_timeout = 30
     t.auth_timeout = 30
-    t.connect(username=os.environ["DEPLOY_USER"], password=os.environ["DEPLOY_PASSWORD"])
+    t.connect(username=user or os.environ["DEPLOY_USER"],
+              password=password or os.environ["DEPLOY_PASSWORD"])
     sftp = paramiko.SFTPClient.from_transport(t)
     sftp.get_channel().settimeout(60)
     return t, sftp
