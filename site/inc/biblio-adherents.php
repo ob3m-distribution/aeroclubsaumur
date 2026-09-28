@@ -133,18 +133,44 @@ function definir_role_dossiers(string $role, array $ids): void {
 }
 
 /**
- * Accès effectif d'un membre : réglage individuel s'il existe, sinon défaut de
- * son rôle, sinon tout. null = tous les dossiers.
+ * Accès donné par les rôles du membre, sans réglage individuel : l'union des
+ * dossiers de ses rôles. Tout membre connecté a au moins l'accès « adhérent »
+ * (un membre qui n'a que le rôle Bons cadeaux reste un membre du club).
+ * null = tous les dossiers.
+ */
+function dossiers_par_roles(array $membre): ?array {
+    $roles = array_filter(roles_du_membre($membre), fn($r) => (ROLES[$r]['biblio'] ?? null) === 'dossiers');
+    $roles[] = 'adherent';
+    $union = [];
+    foreach (array_unique($roles) as $r) {
+        $a = role_dossiers_autorises($r);
+        if ($a === null) return null;                    // rôle non configuré = tout
+        $union = array_merge($union, $a);
+    }
+    return array_values(array_unique($union));
+}
+
+/**
+ * Accès effectif d'un membre : réglage individuel s'il existe, sinon celui de
+ * ses rôles. null = tous les dossiers.
  */
 function dossiers_effectifs(array $membre): ?array {
     $perso = membre_dossiers_autorises((int) $membre['id']);
     if ($perso !== null) return $perso;                 // override individuel
-    return role_dossiers_autorises((string) ($membre['role'] ?? ''));
+    return dossiers_par_roles($membre);
 }
 
-/** Le membre voit-il tous les dossiers ? (personnel avec droits B.O. = oui) */
+/** Retire le réglage individuel : le membre repasse sur l'accès de ses rôles. */
+function supprimer_membre_dossiers(int $membreId): void {
+    db()->prepare('DELETE FROM membre_dossiers WHERE membre_id = ?')->execute([$membreId]);
+}
+
+/** Le membre voit-il tous les dossiers ? (Bureau, Instructeurs, super admin) */
 function membre_voit_tout(array $membre): bool {
-    return !empty(ROLES[$membre['role']]['droits'] ?? []);
+    foreach (roles_du_membre($membre) as $r) {
+        if ((ROLES[$r]['biblio'] ?? null) === 'tout') return true;
+    }
+    return false;
 }
 
 /* ---- Types de fichiers --------------------------------------------- */

@@ -16,7 +16,7 @@ function lien_mot_de_passe(int $membreId, int $heures): string
 
 $moi = membre_connecte();
 $erreurs = [];
-$saisie = ['prenom' => '', 'nom' => '', 'email' => '', 'role' => 'lecture'];
+$saisie = ['prenom' => '', 'nom' => '', 'email' => '', 'role' => 'adherent'];
 
 /* ---- Actions ------------------------------------------------------------ */
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
@@ -30,25 +30,32 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = (string) ($_POST['action'] ?? '');
 
     try {
-        if ($action === 'role') {
+        if ($action === 'roles') {
             $cible = (int) ($_POST['id'] ?? 0);
-            $role  = (string) ($_POST['role'] ?? '');
-            if (!isset(roles_attribuables()[$role])) {
-                throw new RuntimeException('Vous ne pouvez pas attribuer ce rôle.');
-            }
-            // Seul un super administrateur peut toucher a un autre super administrateur.
             $s = db()->prepare('SELECT role FROM membres WHERE id = ?');
             $s->execute([$cible]);
-            if ($s->fetchColumn() === 'superadmin' && !est_superadmin()) {
+            $roleActuel = $s->fetchColumn();
+            if ($roleActuel === false) {
+                throw new RuntimeException('Membre introuvable.');
+            }
+            // Seul un super administrateur peut toucher a un autre super administrateur.
+            if ($roleActuel === 'superadmin' && !est_superadmin()) {
                 throw new RuntimeException('Seul un super administrateur peut modifier ce compte.');
             }
-            if ($cible === (int) $moi['id']) {
-                throw new RuntimeException('Vous ne pouvez pas modifier votre propre rôle.');
+            $choisis = array_map('strval', (array) ($_POST['roles'] ?? []));
+            definir_roles_membre($cible, $choisis);
+
+            // Super administrateur : reservé aux super administrateurs, et
+            // jamais sur son propre compte (on ne se retire pas la main).
+            if (est_superadmin() && $cible !== (int) $moi['id']) {
+                $super = in_array('superadmin', $choisis, true);
+                if ($super !== ($roleActuel === 'superadmin')) {
+                    db()->prepare('UPDATE membres SET role = ? WHERE id = ?')
+                        ->execute([$super ? 'superadmin' : 'adherent', $cible]);
+                }
             }
-            $s = db()->prepare('UPDATE membres SET role = ? WHERE id = ?');
-            $s->execute([$role, $cible]);
-            journaliser('membre.role', 'membre#' . $cible, $role);
-            $_SESSION['message_succes'] = 'Rôle mis à jour.';
+            journaliser('membre.roles', 'membre#' . $cible, implode(',', $choisis));
+            $_SESSION['message_succes'] = 'Rôles mis à jour.';
         }
 
         elseif ($action === 'activer' || $action === 'desactiver') {
@@ -104,7 +111,7 @@ require __DIR__ . '/inc/entete.php';
   <div class="tableau">
     <table>
       <thead>
-        <tr><th>Membre</th><th>Rôle</th><th>Dernière connexion</th><th>Accès</th><th></th></tr>
+        <tr><th>Membre</th><th>Rôles</th><th>Dernière connexion</th><th>Accès</th><th></th></tr>
       </thead>
       <tbody>
       <?php foreach ($membres as $m): $estMoi = (int) $m['id'] === (int) $moi['id']; ?>
@@ -115,18 +122,24 @@ require __DIR__ . '/inc/entete.php';
             <br><span style="color:var(--gris-500);font-size:.8125rem"><?= e($m['email']) ?></span>
           </td>
           <td>
-            <?php if ($estMoi): ?>
-              <?= e(ROLES[$m['role']]['libelle'] ?? $m['role']) ?>
+            <?php $sesRoles = roles_du_membre($m);
+                  $verrou = $m['role'] === 'superadmin' && !est_superadmin(); ?>
+            <?php if ($verrou): ?>
+              <?= e(libelle_roles($m)) ?>
             <?php else: ?>
-              <form method="post" style="display:flex;gap:.35rem;align-items:center">
+              <form method="post" class="roles-cases">
                 <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
-                <input type="hidden" name="action" value="role">
+                <input type="hidden" name="action" value="roles">
                 <input type="hidden" name="id" value="<?= (int) $m['id'] ?>">
-                <select name="role" style="padding:.3rem .5rem;font-size:.8125rem">
-                  <?php foreach (roles_attribuables() as $k => $r): ?>
-                    <option value="<?= e($k) ?>"<?= $m['role'] === $k ? ' selected' : '' ?>><?= e($r['libelle']) ?></option>
-                  <?php endforeach; ?>
-                </select>
+                <?php foreach (roles_attribuables() as $k => $r):
+                    // On ne retire pas son propre statut de super administrateur.
+                    $fige = $k === 'superadmin' && $estMoi; ?>
+                  <label<?= $k === 'superadmin' ? ' class="roles-cases__super"' : '' ?>>
+                    <input type="checkbox" name="roles[]" value="<?= e($k) ?>"
+                      <?= in_array($k, $sesRoles, true) ? ' checked' : '' ?><?= $fige ? ' disabled' : '' ?>>
+                    <?= e($k === 'superadmin' ? 'Super admin' : $r['libelle']) ?>
+                  </label>
+                <?php endforeach; ?>
                 <button type="submit" class="btn btn--contour btn--petit">OK</button>
               </form>
             <?php endif; ?>
@@ -186,12 +199,16 @@ require __DIR__ . '/inc/entete.php';
           <?php foreach ($r['droits'] as $d): ?>
             <li><?= e(AUTORISATIONS[$d] ?? $d) ?></li>
           <?php endforeach; ?>
-          <?php if (!$r['droits']): ?><li class="muet">Espace adhérent uniquement (aucun accès au B.O.)</li><?php endif; ?>
+          <?php if (!$r['droits']): ?><li class="muet">Aucun accès au back-office</li><?php endif; ?>
         </ul>
       </div>
     <?php endforeach; ?>
   </div>
   <p class="aide" style="margin:.9rem 0 0">
+    Un membre peut cumuler plusieurs rôles : il obtient la somme de leurs accès.
+    Chaque rôle sert aussi de liste de destinataires pour les newsletters.
+  </p>
+  <p class="aide" style="margin:.5rem 0 0">
     Un membre suspendu conserve son compte mais ne peut plus se connecter.
     Sa session en cours est invalidée immédiatement.
   </p>

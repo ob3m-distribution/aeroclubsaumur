@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/biblio-adherents.php';
-exiger_droit('contenus.gerer');
+exiger_droit('biblio.gerer');
 
 const BIB_EXTS = ['pdf','jpg','jpeg','png','gif','webp','mp4','mov','webm',
                   'xlsx','xls','docx','doc','pptx','ppt','zip'];

@@ -94,9 +94,9 @@ if ($membre && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['form'] 
 }
 
 /* Droits B.O. + sections visibles selon les dossiers autorisés du membre. */
-$aAccesBO = $membre !== null && membre_voit_tout($membre);
+$aAccesBO = $membre !== null && a_acces_bo($membre);
 $sectionsVisibles = biblio_arbre();
-if ($membre && !$aAccesBO) {
+if ($membre && !membre_voit_tout($membre)) {
     $autorises = dossiers_effectifs($membre);
     if ($autorises !== null) {
         $sectionsVisibles = array_values(array_filter(

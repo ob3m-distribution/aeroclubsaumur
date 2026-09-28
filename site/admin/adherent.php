@@ -115,6 +115,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $id) {
                                VALUES (?,?,?,?,\'adherent\',0)')
                     ->execute([$dem['prenom'], $dem['nom'], $email, password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT)]);
                 $mid = (int) db()->lastInsertId();
+                try {
+                    definir_roles_membre($mid, ['adherent']);
+                } catch (Throwable $e) {
+                    error_log('Rôles : ' . $e->getMessage());   // table membre_roles absente
+                }
                 $token = creer_token_reset($mid, 72);
                 $lien = 'https://' . ($_SERVER['HTTP_HOST'] ?? 'dev.aeroclub-saumur.fr') . '/reinitialiser-mot-de-passe?token=' . $token;
                 @email_lien_mot_de_passe($email, (string) $dem['prenom'], $lien, true);

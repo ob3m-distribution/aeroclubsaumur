@@ -15,43 +15,64 @@ require_once __DIR__ . '/session.php';
 const AUTORISATIONS = [
     'bons.voir'      => 'Consulter les bons cadeaux',
     'bons.gerer'     => 'Modifier les bons (marquer utilisé, annuler, renvoyer)',
+    'biblio.gerer'   => 'Ajouter, modifier et supprimer les documents de la bibliothèque',
     'contenus.gerer' => 'Modifier les textes et les photos du site',
     'membres.gerer'  => 'Gérer les membres et leurs accès',
     'mailing.gerer'  => 'Envoyer des e-mails groupés aux membres',
 ];
 
+/*
+   Depuis le 28/09/2026, un membre peut cumuler plusieurs rôles (table
+   membre_roles) : ses droits sont l'union de ceux de ses rôles. Seul
+   « superadmin » reste porté par la colonne membres.role.
+
+   'biblio' : accès en lecture à la bibliothèque adhérents.
+     'tout'     => tous les dossiers ;
+     'dossiers' => ceux cochés pour ce rôle dans « Accès bibliothèque »
+                   (table role_dossiers) ;
+     null       => le rôle n'ouvre rien de plus que l'accès adhérent.
+*/
 const ROLES = [
     'superadmin' => [
         'libelle'     => 'Super administrateur',
         'description' => 'Accès total, seul habilité à modifier les textes et les photos du site.',
-        'droits'      => ['bons.voir', 'bons.gerer', 'contenus.gerer', 'membres.gerer', 'mailing.gerer'],
-    ],
-    'administrateur' => [
-        'libelle'     => 'Administrateur',
-        'description' => 'Gère les bons cadeaux, les membres et les envois groupés. Ne touche pas aux contenus du site.',
-        'droits'      => ['bons.voir', 'bons.gerer', 'membres.gerer', 'mailing.gerer'],
-    ],
-    'secretariat' => [
-        'libelle'     => 'Secrétariat',
-        'description' => 'Gère les bons cadeaux.',
-        'droits'      => ['bons.voir', 'bons.gerer'],
-    ],
-    'instructeur' => [
-        'libelle'     => 'Pilote / instructeur',
-        'description' => 'Consulte les bons cadeaux.',
-        'droits'      => ['bons.voir'],
-    ],
-    'lecture' => [
-        'libelle'     => 'Lecture seule',
-        'description' => 'Consulte sans rien modifier.',
-        'droits'      => ['bons.voir'],
+        'droits'      => ['bons.voir', 'bons.gerer', 'biblio.gerer', 'contenus.gerer', 'membres.gerer', 'mailing.gerer'],
+        'biblio'      => 'tout',
     ],
     'adherent' => [
-        'libelle'     => 'Adhérent',
-        'description' => 'Membre du club : accès à l’espace adhérents, aucun accès au back-office.',
+        'libelle'     => 'Adhérents',
+        'description' => 'Consultent la bibliothèque, sauf les dossiers DTO et Conseils d’administration.',
         'droits'      => [],
+        'biblio'      => 'dossiers',
+    ],
+    'administrateur' => [
+        'libelle'     => 'Administrateurs',
+        'description' => 'Consultent toute la bibliothèque, sauf le dossier DTO.',
+        'droits'      => [],
+        'biblio'      => 'dossiers',
+    ],
+    'instructeur' => [
+        'libelle'     => 'Instructeurs',
+        'description' => 'Consultent toute la bibliothèque.',
+        'droits'      => [],
+        'biblio'      => 'tout',
+    ],
+    'bureau' => [
+        'libelle'     => 'Bureau',
+        'description' => 'Consultent et modifient toute la bibliothèque.',
+        'droits'      => ['biblio.gerer'],
+        'biblio'      => 'tout',
+    ],
+    'bons_cadeaux' => [
+        'libelle'     => 'Bons cadeaux',
+        'description' => 'Consultent et gèrent les bons cadeaux.',
+        'droits'      => ['bons.voir', 'bons.gerer'],
+        'biblio'      => null,
     ],
 ];
+
+/** Rôles cumulables, dans l'ordre d'affichage (tous sauf superadmin). */
+const ROLES_CUMULABLES = ['adherent', 'administrateur', 'instructeur', 'bureau', 'bons_cadeaux'];
 
 /* ---------- Session du back-office ---------------------------------- */
 
@@ -90,15 +111,81 @@ function est_connecte(): bool
     return membre_connecte() !== null;
 }
 
+/**
+ * Rôles d'un membre : « superadmin » (colonne membres.role) puis ses
+ * rôles cumulables (table membre_roles), dans l'ordre de ROLES_CUMULABLES.
+ */
+function roles_du_membre(array $m): array
+{
+    static $cache = [];
+    $id = (int) ($m['id'] ?? 0);
+    if (isset($cache[$id])) {
+        return $cache[$id];
+    }
+
+    $lus = [];
+    try {
+        $s = db()->prepare('SELECT role FROM membre_roles WHERE membre_id = ?');
+        $s->execute([$id]);
+        $lus = $s->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Throwable $e) {
+        // Table pas encore créée (migration non passée) : on retombe sur
+        // l'ancien rôle unique, pour ne bloquer personne.
+        error_log('Rôles : ' . $e->getMessage());
+    }
+    if (!$lus && in_array($m['role'] ?? '', ROLES_CUMULABLES, true)) {
+        $lus = [$m['role']];
+    }
+
+    $roles = array_values(array_intersect(ROLES_CUMULABLES, $lus));
+    if (($m['role'] ?? '') === 'superadmin') {
+        array_unshift($roles, 'superadmin');
+    }
+    return $cache[$id] = $roles;
+}
+
+/** Libellés des rôles d'un membre, ex. « Bureau · Instructeurs ». */
+function libelle_roles(array $m): string
+{
+    $l = array_map(fn($r) => ROLES[$r]['libelle'], roles_du_membre($m));
+    return $l ? implode(' · ', $l) : 'Aucun rôle';
+}
+
+/** Autorisations d'un membre : l'union de celles de ses rôles. */
+function droits_du_membre(array $m): array
+{
+    $d = [];
+    foreach (roles_du_membre($m) as $r) {
+        $d = array_merge($d, ROLES[$r]['droits']);
+    }
+    return array_values(array_unique($d));
+}
+
+/** Le membre a-t-il au moins un accès au back-office ? */
+function a_acces_bo(array $m): bool
+{
+    return droits_du_membre($m) !== [];
+}
+
+/**
+ * Remplace les rôles cumulables d'un membre (superadmin n'est pas concerné).
+ * Les valeurs inconnues sont ignorées.
+ */
+function definir_roles_membre(int $membreId, array $roles): void
+{
+    $roles = array_values(array_intersect(ROLES_CUMULABLES, array_map('strval', $roles)));
+    db()->prepare('DELETE FROM membre_roles WHERE membre_id = ?')->execute([$membreId]);
+    $ins = db()->prepare('INSERT INTO membre_roles (membre_id, role) VALUES (?, ?)');
+    foreach ($roles as $r) {
+        $ins->execute([$membreId, $r]);
+    }
+}
+
 /** Le membre courant a-t-il cette autorisation ? */
 function peut(string $droit): bool
 {
     $m = membre_connecte();
-    if (!$m) {
-        return false;
-    }
-    $role = ROLES[$m['role']] ?? null;
-    return $role !== null && in_array($droit, $role['droits'], true);
+    return $m !== null && in_array($droit, droits_du_membre($m), true);
 }
 
 /** Barrière : à appeler en tête de chaque page du back-office. */
@@ -131,9 +218,12 @@ function est_superadmin(): bool
  */
 function roles_attribuables(): array
 {
-    $tous = ROLES;
-    if (!est_superadmin()) {
-        unset($tous['superadmin']);
+    $tous = [];
+    if (est_superadmin()) {
+        $tous['superadmin'] = ROLES['superadmin'];
+    }
+    foreach (ROLES_CUMULABLES as $r) {
+        $tous[$r] = ROLES[$r];
     }
     return $tous;
 }

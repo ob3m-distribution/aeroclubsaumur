@@ -10,10 +10,15 @@ require_once __DIR__ . '/mail.php';
    ================================================================== */
 
 const MAILING_FILTRES = [
+    // Un membre peut cumuler plusieurs rôles : il reçoit l'envoi dès qu'il
+    // a le rôle choisi (table membre_roles).
     'role' => [
-        'tous'      => 'Tous les membres',
-        'adherent'  => 'Adhérents seulement',
-        'personnel' => 'Équipe / bureau seulement',
+        'tous'           => 'Tous les membres',
+        'adherent'       => 'Rôle Adhérents',
+        'administrateur' => 'Rôle Administrateurs',
+        'instructeur'    => 'Rôle Instructeurs',
+        'bureau'         => 'Rôle Bureau',
+        'bons_cadeaux'   => 'Rôle Bons cadeaux',
     ],
     'adhesion' => [
         'tous'     => 'Peu importe l’adhésion',
@@ -47,8 +52,10 @@ function mailing_destinataires(array $f, int $annee): array
              WHERE m.actif = 1 AND m.email <> ?';
     $args = [$annee, ''];
 
-    if ($f['role'] === 'adherent')       $sql .= " AND m.role = 'adherent'";
-    elseif ($f['role'] === 'personnel')  $sql .= " AND m.role <> 'adherent'";
+    if (in_array($f['role'], ROLES_CUMULABLES, true)) {
+        $sql .= ' AND EXISTS (SELECT 1 FROM membre_roles r WHERE r.membre_id = m.id AND r.role = ?)';
+        $args[] = $f['role'];
+    }
 
     if ($f['adhesion'] === 'ajour')      $sql .= " AND i.statut = 'valide'";
     elseif ($f['adhesion'] === 'nonajour') $sql .= " AND (i.id IS NULL OR i.statut <> 'valide')";
@@ -68,7 +75,9 @@ function mailing_filtres_libelle(array $f): string
 {
     $parts = [];
     foreach (MAILING_FILTRES as $cle => $choix) {
-        if (($f[$cle] ?? 'tous') !== 'tous') $parts[] = $choix[$f[$cle]];
+        if (($f[$cle] ?? 'tous') === 'tous') continue;
+        // Anciens envois (avant les rôles cumulables) : « personnel »…
+        $parts[] = $choix[$f[$cle]] ?? ['personnel' => 'Équipe / bureau seulement'][$f[$cle]] ?? $f[$cle];
     }
     return $parts ? implode(' · ', $parts) : 'Tous les membres actifs';
 }

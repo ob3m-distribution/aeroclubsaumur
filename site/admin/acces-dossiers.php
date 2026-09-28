@@ -19,8 +19,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $_SESSION['message_succes'] = 'Accès par rôle enregistrés.';
     } else {
         $acces = (array) ($_POST['acces'] ?? []);
+        $lire  = db()->prepare('SELECT * FROM membres WHERE id = ?');
+        $tops  = array_map('strval', array_keys($dossiers));
         foreach (array_map('intval', (array) ($_POST['membres'] ?? [])) as $mid) {
-            definir_membre_dossiers($mid, array_map('strval', (array) ($acces[$mid] ?? [])));
+            $lire->execute([$mid]);
+            $m = $lire->fetch();
+            if (!$m) continue;
+            $choix = array_values(array_intersect($tops, array_map('strval', (array) ($acces[$mid] ?? []))));
+            // Identique à l'accès de ses rôles : pas de réglage individuel, pour
+            // qu'un changement de rôle (ou d'accès par rôle) s'applique ensuite.
+            $parRoles = dossiers_par_roles($m) ?? $tops;
+            $parRoles = array_values(array_intersect($tops, $parRoles));
+            sort($choix); sort($parRoles);
+            if ($choix === $parRoles) {
+                supprimer_membre_dossiers($mid);
+            } else {
+                definir_membre_dossiers($mid, $choix);
+            }
         }
         journaliser('acces_dossiers.membres');
         $_SESSION['message_succes'] = 'Accès par membre enregistrés.';
@@ -30,11 +45,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 }
 
 // Rôles concernés par les accès documents : ceux qui ne voient pas déjà tout.
-$rolesRestreints = array_filter(ROLES, fn($r) => empty($r['droits']));
+$rolesRestreints = array_filter(ROLES, fn($r) => ($r['biblio'] ?? null) === 'dossiers');
 
-$membres = db()->query(
-    "SELECT id, prenom, nom, email, role FROM membres WHERE role = 'adherent' ORDER BY nom, prenom"
-)->fetchAll();
+// Membres concernés : ceux qu'aucun rôle ne fait déjà tout voir.
+$membres = array_values(array_filter(
+    db()->query('SELECT * FROM membres ORDER BY nom, prenom')->fetchAll(),
+    fn($m) => !membre_voit_tout($m)
+));
 
 $titre = 'Accès bibliothèque';
 $actif = 'acces';
@@ -83,9 +100,10 @@ $matrice = function (array $lignes, callable $idFn, callable $nomFn, callable $s
 <div class="bloc">
   <div class="bloc__titre"><h2>Accès par rôle</h2></div>
   <p class="aide" style="margin:0 0 1rem">
-    Définissez les dossiers visibles par défaut pour chaque rôle. Ces réglages s’appliquent
-    automatiquement à tous les membres du rôle, sauf réglage individuel ci-dessous. (Les rôles
-    de l’équipe qui ont accès au back-office voient toujours tout et n’apparaissent pas ici.)
+    Définissez les dossiers visibles pour chaque rôle. Un membre qui cumule plusieurs rôles voit
+    les dossiers de tous ses rôles ; tout membre a au moins l’accès « Adhérents ». Les rôles
+    Instructeurs et Bureau voient toujours tout et n’apparaissent pas ici.
+    Pensez à cocher ici tout nouveau dossier créé dans la bibliothèque.
   </p>
   <form method="post">
     <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
@@ -105,8 +123,9 @@ $matrice = function (array $lignes, callable $idFn, callable $nomFn, callable $s
 <div class="bloc">
   <div class="bloc__titre"><h2>Accès par membre</h2></div>
   <p class="aide" style="margin:0 0 1rem">
-    Le détail par adhérent. Les cases reflètent l’accès effectif (celui de son rôle par défaut) :
-    ajoutez ou retirez des dossiers pour affiner au cas par cas.
+    Le détail par membre (hors Instructeurs et Bureau, qui voient tout). Les cases reflètent
+    l’accès effectif, celui de ses rôles par défaut : ajoutez ou retirez des dossiers pour
+    affiner au cas par cas.
   </p>
   <?php if (!$membres): ?>
     <p class="vide">Aucun adhérent pour l’instant.</p>
@@ -118,7 +137,7 @@ $matrice = function (array $lignes, callable $idFn, callable $nomFn, callable $s
           $membres,
           fn($m) => (int) $m['id'],
           fn($m) => trim($m['prenom'] . ' ' . $m['nom']),
-          fn($m) => (string) $m['email'],
+          fn($m) => libelle_roles($m) . ' · ' . $m['email'],
           function ($m, $sid) { $a = dossiers_effectifs($m); return $a === null || in_array($sid, $a, true); },
           'membres', 'acces'
       ); ?>

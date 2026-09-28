@@ -31,6 +31,18 @@ CREATE TABLE IF NOT EXISTS membres (
   KEY idx_actif (actif)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Rôles cumulables (28/09/2026) : adherent, administrateur, instructeur,
+-- bureau, bons_cadeaux (ROLES_CUMULABLES dans inc/auth.php). Seul
+-- 'superadmin' reste porté par membres.role.
+CREATE TABLE IF NOT EXISTS membre_roles (
+  membre_id INT UNSIGNED NOT NULL,
+  role      VARCHAR(20)  NOT NULL,
+  PRIMARY KEY (membre_id, role),
+  KEY idx_role (role),
+  CONSTRAINT fk_membre_roles_membre FOREIGN KEY (membre_id)
+    REFERENCES membres(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- Paramètres généraux : clé/valeur. Sert aussi aux contenus éditables.
 CREATE TABLE IF NOT EXISTS parametres (

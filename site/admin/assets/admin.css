@@ -436,6 +436,14 @@ td.nombre { text-align: right; white-space: nowrap; font-variant-numeric: tabula
 .role-carte ul { margin:0; padding-left:1.1rem; font-size:.8125rem; color:var(--gris-700); }
 .role-carte li { margin-bottom:.15rem; }
 
+/* Rôles cumulables d'un membre : une case par rôle. */
+.roles-cases { display:flex; flex-wrap:wrap; gap:.3rem .45rem; align-items:center; max-width:30rem; }
+.roles-cases label { display:inline-flex; align-items:center; gap:.3rem; font-size:.78rem; white-space:nowrap;
+  border:1px solid var(--gris-200); border-radius:999px; padding:.18rem .55rem; background:var(--gris-050); cursor:pointer; }
+.roles-cases label:has(input:checked) { border-color:var(--gris-500); background:#fff; font-weight:600; }
+.roles-cases__super { color:#8a5a00; }
+.roles-cases input { margin:0; }
+
 /* --- Onglets B.O. --- */
 .bo-onglets { display:flex; gap:.25rem; border-bottom:2px solid var(--gris-200); margin-bottom:1.25rem; flex-wrap:wrap; }
 .bo-onglet { padding:.6rem 1.1rem; text-decoration:none; color:var(--gris-500); font-weight:600; font-size:.95rem;

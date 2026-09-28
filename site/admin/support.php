@@ -55,7 +55,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $_SESSION['message_erreur'] = 'Pièces acceptées : images et PDF uniquement.';
         } else {
             $auteur = trim($moi['prenom'] . ' ' . $moi['nom']);
-            $role   = ROLES[$moi['role']]['libelle'] ?? $moi['role'];
+            $role   = libelle_roles($moi);
             db()->prepare('INSERT INTO tickets (membre_id, membre_nom, membre_email, sujet, priorite, message, nb_pieces)
                            VALUES (?,?,?,?,?,?,?)')
                 ->execute([(int) $moi['id'], $auteur, $moi['email'], mb_substr($sujet, 0, 180), $priorite,

@@ -15,7 +15,7 @@ $menu = [
     ['cle' => 'suivi',    'url' => '/admin/suivi-membres.php', 'libelle' => 'Adhérents', 'droit' => 'membres.gerer'],
     ['cle' => 'membres',  'url' => '/admin/membres.php', 'libelle' => 'Membres & accès', 'droit' => 'membres.gerer'],
     ['cle' => 'acces',    'url' => '/admin/acces-dossiers.php', 'libelle' => 'Accès bibliothèque', 'droit' => 'membres.gerer'],
-    ['cle' => 'biblio',   'url' => '/admin/bibliotheque.php','libelle' => 'Bibliothèque adhérents','droit' => 'contenus.gerer'],
+    ['cle' => 'biblio',   'url' => '/admin/bibliotheque.php','libelle' => 'Bibliothèque adhérents','droit' => 'biblio.gerer'],
     ['cle' => 'mailing',  'url' => '/admin/mailing.php', 'libelle' => 'Newsletters', 'droit' => 'mailing.gerer'],
     ['cle' => 'support',  'url' => '/admin/support.php', 'libelle' => 'Support', 'droit' => null],
     ['cle' => 'documentation', 'url' => '/admin/documentation.php', 'libelle' => 'Documentation site', 'droit' => null, 'super' => true],
@@ -34,7 +34,7 @@ unset($_SESSION['message_succes'], $_SESSION['message_erreur']);
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/assets/img/favicon.png" type="image/png">
 <link rel="preload" href="/assets/fonts/Inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/admin/assets/admin.css?v=15">
+<link rel="stylesheet" href="/admin/assets/admin.css?v=16">
 </head>
 <body>
 
@@ -64,7 +64,7 @@ unset($_SESSION['message_succes'], $_SESSION['message_erreur']);
 
     <div class="bo__moi">
       <p class="bo__moi-nom"><?= e($moi['prenom'] . ' ' . $moi['nom']) ?></p>
-      <p class="bo__moi-role"><?= e(ROLES[$moi['role']]['libelle'] ?? $moi['role']) ?></p>
+      <p class="bo__moi-role"><?= e(libelle_roles($moi)) ?></p>
       <a class="bo__deconnexion" href="/admin/deconnexion.php">Se déconnecter</a>
     </div>
   </aside>

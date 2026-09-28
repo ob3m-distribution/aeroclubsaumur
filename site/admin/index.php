@@ -7,6 +7,31 @@ exiger_connexion();
 
 $pdo = db();
 
+/* Les chiffres et les acheteurs des bons ne concernent que le rôle Bons
+   cadeaux (et les super administrateurs) : les autres membres connectés
+   voient seulement leurs raccourcis. */
+$voitBons = peut('bons.voir');
+if (!$voitBons) {
+    $titre = 'Tableau de bord';
+    $actif = 'accueil';
+    require __DIR__ . '/inc/entete.php';
+    ?>
+    <div class="bloc">
+      <h2>Bienvenue <?= e((string) $moi['prenom']) ?></h2>
+      <p>Vos rôles : <strong><?= e(libelle_roles($moi)) ?></strong>.</p>
+      <div class="actions" style="margin-top:1rem">
+        <a class="btn" href="/adherents">Espace adhérents et bibliothèque</a>
+        <?php if (peut('biblio.gerer')): ?>
+          <a class="btn btn--contour" href="/admin/bibliotheque.php">Gérer la bibliothèque</a>
+        <?php endif; ?>
+        <a class="btn btn--contour" href="/admin/support.php">Support</a>
+      </div>
+    </div>
+    <?php
+    require __DIR__ . '/inc/pied.php';
+    exit;
+}
+
 /* Chiffres de tête */
 $stats = [
     'attente'  => (int) $pdo->query("SELECT COUNT(*) FROM bons_cadeaux WHERE statut='en_attente_paiement'")->fetchColumn(),
