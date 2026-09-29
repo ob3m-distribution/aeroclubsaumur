@@ -1512,3 +1512,8 @@ td { color: var(--gris-700); }
 .horaires td.horaires__ferme { font-weight: 400; opacity: .6; }
 .horaires__auj th, .horaires__auj td { color: #B08D2C; }
 .horaires__auj th::after { content: ' · aujourd’hui'; font-size: .8em; font-weight: 400; }
+
+/* --- Formulaires d'inscription : sections A à F de la cotisation --- */
+.cotisation__titre { font-weight: 600; margin: 1rem 0 .35rem; }
+.cotisation__titre:first-of-type { margin-top: .25rem; }
+.cotisation .champ-case { margin-top: .35rem; }

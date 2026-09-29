@@ -116,33 +116,42 @@ function prix_bon(string $type, ?int $nb, ?string $duree): int
 }
 
 /* ------------------------------------------------------------------
-   Grille de cotisations — reprise de la Fiche d'inscription 2026
-   (version 03-10/2025). Montants en centimes.
+   Grille de cotisations — reprise de la Fiche d'inscription 2027
+   (version 08-10/2026). Montants en centimes, modifiables au B.O.
    ------------------------------------------------------------------ */
-const COTISATION_ANNEE        = 2026;
+const COTISATION_ANNEE        = 2027;
 
-/** A — Membre Club, obligatoire. */
+/** A — Membre Club : obligatoire, sauf pour les programmes FFA (E) seuls. */
 function cotisation_membre(): int
 {
     require_once __DIR__ . '/tarifs.php';
     return tarif('cotis.membre');
 }
 
-/** B — Options (une seule au choix). [clé => [libellé, centimes]]. */
+/**
+ * B et E — options (une seule au choix), dans l'ordre de la fiche 2027.
+ * Les clés restent celles des dossiers déjà enregistrés (opt4 = Jeunes
+ * Ailes, opt5 = Passeport, opt6 = Membre non pilote) : seuls les libellés
+ * suivent la nouvelle numérotation de la fiche.
+ * [clé => [libellé, centimes]].
+ */
 function cotisation_options(): array
 {
     require_once __DIR__ . '/tarifs.php';
     return [
-        'opt1' => ['Pilote', tarif('cotis.opt1')],
-        'opt2' => ['Pilote −25 ans', tarif('cotis.opt2')],
-        'opt3' => ['Pilote de passage (2ᵉ club)', tarif('cotis.opt3')],
-        'opt4' => ['Licence Jeunes Ailes', tarif('cotis.opt4')],
-        'opt5' => ['Passeport FFA', tarif('cotis.opt5')],
-        'opt6' => ['Membre non pilote', tarif('cotis.opt6')],
+        'opt1' => ['Option 1 — Pilote', tarif('cotis.opt1')],
+        'opt2' => ['Option 2 — Pilote −25 ans', tarif('cotis.opt2')],
+        'opt3' => ['Option 3 — Pilote de passage (2ᵉ club, licence FFA hors club requise)', tarif('cotis.opt3')],
+        'opt6' => ['Option 4 — Membre non pilote', tarif('cotis.opt6')],
+        'opt4' => ['Option 6 — Licence Jeunes Ailes (programme FFA)', tarif('cotis.opt4')],
+        'opt5' => ['Option 7 — Passeport FFA (programme FFA)', tarif('cotis.opt5')],
     ];
 }
 
-/** Bloc d'heures associé au Passeport FFA (option 5). [clé => [libellé, centimes]]. */
+/** Options « Programmes FFA » (E) : la cotisation Membre Club y est facultative. */
+const COTISATION_PROGRAMMES_FFA = ['opt4', 'opt5'];
+
+/** Bloc d'heures associé au Passeport FFA (option 7). [clé => [libellé, centimes]]. */
 function cotisation_blocs(): array
 {
     require_once __DIR__ . '/tarifs.php';
@@ -153,39 +162,47 @@ function cotisation_blocs(): array
     ];
 }
 
-/** C/D/E + caution — cases à cocher indépendantes. [clé => [libellé, centimes, groupe]]. */
+/**
+ * Suppléments à cocher. [clé => [libellé, centimes, groupe de la fiche]].
+ * Info Pilote papier / numérique : l'un OU l'autre.
+ */
 function cotisation_extras(): array
 {
     require_once __DIR__ . '/tarifs.php';
     return [
-        'info_pilote'   => ['Info Pilote', tarif('cotis.info_pilote'), 'C'],
-        'licence_ffa'   => ['Licence FFA', tarif('cotis.licence_ffa'), 'D'],
-        'pack_basique'  => ['Pack basique (formation)', tarif('cotis.pack_basique'), 'E'],
-        'elearning'     => ['Abonnement e-learning « aérogligli » (24 mois)', tarif('cotis.elearning'), 'E'],
-        'caution_badge' => ['Caution badge + clef', tarif('cotis.caution_badge'), 'B'],
+        'caution_badge'   => ['Option 5 — Caution badge + clef', tarif('cotis.caution_badge'), 'B'],
+        'info_pilote'     => ['Info Pilote (papier)', tarif('cotis.info_pilote'), 'C'],
+        'info_pilote_num' => ['Info Pilote (numérique)', tarif('cotis.info_pilote_num'), 'C'],
+        'licence_ffa'     => ['Licence FFA', tarif('cotis.licence_ffa'), 'D'],
+        'pack_basique'    => ['Pack basique (manuel du pilote, carnet de vol, livret de progression, protège check-list, livret d’accueil)', tarif('cotis.pack_basique'), 'F'],
+        'elearning'       => ['Abonnement e-learning « aérogligli » (24 mois)', tarif('cotis.elearning'), 'F'],
     ];
 }
 
 /**
  * Calcule le total d'une inscription (centimes) à partir des choix.
- * $d : tableau associatif (option, passeport_bloc, extras[] de clés cochées).
+ * $d : option, passeport_bloc, extras[] (clés cochées ; « sans_membre » =
+ * Membre Club non pris, possible seulement avec un programme FFA).
  */
 function total_inscription(array $d): int
 {
-    $total = cotisation_membre();
-    $opt = (string) ($d['option'] ?? '');
+    $opt    = (string) ($d['option'] ?? '');
+    $extras = (array) ($d['extras'] ?? []);
+    $total  = 0;
+    if (!(in_array($opt, COTISATION_PROGRAMMES_FFA, true) && in_array('sans_membre', $extras, true))) {
+        $total += cotisation_membre();
+    }
     $options = cotisation_options();
     if (isset($options[$opt])) {
         $total += $options[$opt][1];
     }
     if ($opt === 'opt5') {
-        $bloc = (string) ($d['passeport_bloc'] ?? '');
-        $total += cotisation_blocs()[$bloc][1] ?? 0;
+        $total += cotisation_blocs()[(string) ($d['passeport_bloc'] ?? '')][1] ?? 0;
     }
-    $extras = cotisation_extras();
-    foreach ((array) ($d['extras'] ?? []) as $cle) {
-        if (isset($extras[$cle])) {
-            $total += $extras[$cle][1];
+    $prix = cotisation_extras();
+    foreach ($extras as $cle) {
+        if (isset($prix[$cle])) {
+            $total += $prix[$cle][1];
         }
     }
     return $total;

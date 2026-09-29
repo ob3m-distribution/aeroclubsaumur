@@ -248,32 +248,7 @@ require __DIR__ . '/inc/header.php';
           <span>J’autorise mon enfant à pratiquer les sports aériens (autorisation parentale jointe).</span></label>
       </fieldset>
 
-      <fieldset class="bloc-form">
-        <legend>Cotisation <?= $annee ?></legend>
-        <p class="aide">A — Membre Club : <?= e(prix(cotisation_membre())) ?> (obligatoire, inclus).</p>
-
-        <p style="font-weight:600;margin:.5rem 0 .25rem">B — Choisissez votre option</p>
-        <div class="cotis-options">
-          <?php foreach (cotisation_options() as $k => [$lib, $c]): ?>
-            <label class="bon-radio"><input type="radio" name="option_cotisation" value="<?= e($k) ?>"<?= ($d['option_cotisation'] ?? '') === $k ? ' checked' : '' ?>>
-              <span><?= e($lib) ?> — <?= e(prix($c)) ?></span></label>
-          <?php endforeach; ?>
-        </div>
-        <div class="champ" id="bloc-passeport"<?= ($d['option_cotisation'] ?? '') === 'opt5' ? '' : ' style="display:none"' ?>>
-          <label for="passeport_bloc">Bloc d’heures (Passeport FFA)</label>
-          <select id="passeport_bloc" name="passeport_bloc">
-            <?php foreach (cotisation_blocs() as $k => [$lib, $c]): ?>
-              <option value="<?= e($k) ?>"<?= ($d['passeport_bloc'] ?? '') === $k ? ' selected' : '' ?>><?= e($lib) ?><?= $c ? ' — ' . e(prix($c)) : '' ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-
-        <p style="font-weight:600;margin:.75rem 0 .25rem">Options complémentaires</p>
-        <?php foreach (cotisation_extras() as $k => [$lib, $c, $g]): ?>
-          <label class="champ-case"><input type="checkbox" name="extras[]" value="<?= e($k) ?>"<?= in_array($k, $extrasChoisis, true) ? ' checked' : '' ?>>
-            <span><?= e($lib) ?> — <?= e(prix($c)) ?></span></label>
-        <?php endforeach; ?>
-      </fieldset>
+      <?php require __DIR__ . '/inc/cotisation-inscription.php'; ?>
 
       <fieldset class="bloc-form">
         <legend>Documents obligatoires</legend>
@@ -323,22 +298,11 @@ require __DIR__ . '/inc/header.php';
 
     <script>
     (function () {
-      var PRIX = <?= json_encode([
-          'membre' => cotisation_membre(),
-          'options' => array_map(fn($o) => $o[1], cotisation_options()),
-          'blocs' => array_map(fn($b) => $b[1], cotisation_blocs()),
-          'extras' => array_map(fn($x) => $x[1], cotisation_extras()),
-      ]) ?>;
+
       var f = document.querySelector('.formulaire');
       function euros(c){ return (c % 100 ? (c/100).toFixed(2).replace('.', ',') : (c/100)) + ' €'; }
       function maj() {
-        var t = PRIX.membre;
-        var opt = (f.querySelector('input[name="option_cotisation"]:checked')||{}).value || '';
-        if (PRIX.options[opt] != null) t += PRIX.options[opt];
-        var pass = document.getElementById('bloc-passeport');
-        pass.style.display = (opt === 'opt5') ? '' : 'none';
-        if (opt === 'opt5') { var b = f.querySelector('#passeport_bloc').value; t += PRIX.blocs[b] || 0; }
-        f.querySelectorAll('input[name="extras[]"]:checked').forEach(function(x){ t += PRIX.extras[x.value] || 0; });
+        var t = window.totalCotisation(f);
         document.getElementById('total-cotis').textContent = euros(t);
         // Bloc mineur selon l'âge.
         var dn = f.querySelector('#date_naissance').value, mineur = false;

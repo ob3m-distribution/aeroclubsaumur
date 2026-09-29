@@ -71,13 +71,20 @@ function inscription_depuis_post(array $post): array
     $d['convocation_ag']         = ($post['convocation_ag'] ?? 'courriel') === 'courrier' ? 'courrier' : 'courriel';
     $d['type']                   = ($post['type'] ?? 'renouvellement') === 'demande' ? 'demande' : 'renouvellement';
 
-    $extras = array_values(array_intersect(
-        array_keys(cotisation_extras()),
-        array_map('strval', (array) ($post['extras'] ?? []))
-    ));
+    if (!isset(cotisation_options()[$d['option_cotisation']])) $d['option_cotisation'] = '';
+
+    $coches = array_map('strval', (array) ($post['extras'] ?? []));
+    $coches[] = (string) ($post['info_pilote'] ?? '');            // C : papier OU numérique
+    $extras = array_values(array_intersect(array_keys(cotisation_extras()), $coches));
+    if (in_array('info_pilote', $extras, true)) {
+        $extras = array_values(array_diff($extras, ['info_pilote_num']));
+    }
+    // A — Membre Club : facultatif seulement avec un programme FFA (E).
+    if (in_array($d['option_cotisation'], COTISATION_PROGRAMMES_FFA, true) && empty($post['membre_club'])) {
+        $extras[] = 'sans_membre';
+    }
     $d['extras'] = implode(',', $extras);
 
-    if (!isset(cotisation_options()[$d['option_cotisation']])) $d['option_cotisation'] = '';
     if (!isset(cotisation_blocs()[$d['passeport_bloc']])) $d['passeport_bloc'] = '';
 
     // Dates : chaîne vide -> null.
@@ -252,6 +259,7 @@ function inscription_resume_cotisation(array $ins): string
     }
     foreach (explode(',', (string) ($ins['extras'] ?? '')) as $e) {
         if (isset(cotisation_extras()[$e])) $parts[] = cotisation_extras()[$e][0];
+        if ($e === 'sans_membre') $parts[] = 'Sans Membre Club';
     }
     return $parts ? implode(' · ', array_filter($parts)) : '—';
 }

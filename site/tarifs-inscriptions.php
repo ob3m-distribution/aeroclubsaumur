@@ -100,7 +100,7 @@ $formations = [
 
     <p class="texte-petit" style="margin-top:1rem">
       <?= texte('tarifs.mention',
-        'Tarifs 2026. Les tarifs horaires s’entendent en solo ; l’instruction s’ajoute au tarif de l’avion.', 'long') ?>
+        'Tarifs ' . COTISATION_ANNEE . '. Les tarifs horaires s’entendent en solo ; l’instruction s’ajoute au tarif de l’avion.', 'long') ?>
     </p>
 
   </div>
