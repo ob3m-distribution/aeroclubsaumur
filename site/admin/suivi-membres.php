@@ -7,7 +7,21 @@ require_once __DIR__ . '/../inc/mail.php';
 exiger_droit('membres.gerer');
 
 $moi   = membre_connecte();
-$annee = COTISATION_ANNEE;
+$campagne = COTISATION_ANNEE;   // année du formulaire de réinscription en cours
+
+/* Année affichée dans la liste des adhésions. Nombre de dossiers par année
+   (hors demandes) ; par défaut, la campagne en cours ou l'année précédente,
+   celle qui a le plus de dossiers : au démarrage d'une campagne, la liste
+   de l'an passé reste affichée tant que peu de membres se sont réinscrits. */
+$parAnnee = [$campagne => 0, $campagne - 1 => 0];
+foreach (db()->query('SELECT annee, COUNT(*) n FROM inscriptions WHERE type <> "demande" GROUP BY annee') as $r) {
+    $parAnnee[(int) $r['annee']] = (int) $r['n'];
+}
+krsort($parAnnee);
+$anneeDemandee = (int) ($_GET['annee'] ?? 0);
+$annee = isset($parAnnee[$anneeDemandee])
+    ? $anneeDemandee
+    : ($parAnnee[$campagne - 1] > $parAnnee[$campagne] ? $campagne - 1 : $campagne);
 
 /** Lien absolu vers un formulaire du site. */
 function lien_formulaire(string $slug): string
@@ -87,7 +101,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
     $ongletRetour = in_array($action, ['lien_preinscription'], true) ? 'nouvelle' : 'reinscription';
     $ancre = $action === 'valider' ? '#i-' . (int) ($_POST['id'] ?? 0) : '';
-    header('Location: /admin/suivi-membres.php?onglet=' . $ongletRetour . $ancre, true, 303);
+    $anneeRetour = (int) ($_POST['annee'] ?? 0);
+    header('Location: /admin/suivi-membres.php?onglet=' . $ongletRetour
+        . ($anneeRetour ? '&annee=' . $anneeRetour : '') . $ancre, true, 303);
     exit;
 }
 
@@ -200,7 +216,7 @@ $ajour = static function (?string $date) use ($fin): string {
 <?php else: ?>
 
 <div class="bloc">
-  <h2>Formulaire de réinscription <?= $annee ?></h2>
+  <h2>Formulaire de réinscription <?= $campagne ?></h2>
   <p class="aide" style="margin:.2rem 0 .9rem">
     Les membres renouvellent leur adhésion en ligne via ce formulaire (accessible depuis leur
     espace adhérent). Vous pouvez l’ouvrir, ou envoyer le lien à une adresse précise.
@@ -219,6 +235,13 @@ $ajour = static function (?string $date) use ($fin): string {
 <div class="bloc">
   <div class="bloc__titre">
     <h2>Adhésions <?= $annee ?> — <?= count($lignes) ?> dossier<?= count($lignes) > 1 ? 's' : '' ?></h2>
+    <div class="actions">
+      <?php foreach ($parAnnee as $an => $nb): ?>
+        <a class="btn btn--petit<?= $an === $annee ? '' : ' btn--contour' ?>"
+           href="/admin/suivi-membres.php?onglet=reinscription&amp;annee=<?= (int) $an ?>"
+           <?= $an === $annee ? 'aria-current="page"' : '' ?>><?= (int) $an ?> (<?= (int) $nb ?>)</a>
+      <?php endforeach; ?>
+    </div>
   </div>
 
   <?php if (!$lignes): ?>
@@ -229,6 +252,7 @@ $ajour = static function (?string $date) use ($fin): string {
       <form id="suivif-<?= (int) $l['id'] ?>" method="post" hidden>
         <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
         <input type="hidden" name="action" value="valider">
+        <input type="hidden" name="annee" value="<?= (int) $annee ?>">
         <input type="hidden" name="id" value="<?= (int) $l['id'] ?>">
       </form>
       <form id="lienf-<?= (int) $l['id'] ?>" method="post" hidden>
