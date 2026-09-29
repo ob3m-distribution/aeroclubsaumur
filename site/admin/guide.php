@@ -235,7 +235,7 @@ require __DIR__ . '/inc/entete.php';
         <div class="g-etape"><div><h4>Ouvrez « Membres &amp; accès »</h4><p>La liste de tous les membres, avec leurs rôles, leur dernière connexion et leur accès.</p></div></div>
         <div class="g-etape"><div><h4>Trouver des membres</h4><p>Tapez un nom dans la <b>recherche</b>, ou cliquez sur la flèche <b>▾</b> d’une colonne : ▾ <b>Rôles</b> → ne cocher que « Bureau », ▾ <b>Dernière connexion</b> → ne garder que « jamais »…</p></div></div>
         <div class="g-etape"><div><h4>Changer les rôles d’un membre</h4><p>Cochez ou décochez ses rôles sur sa ligne, puis <span class="g-btn">OK</span>.</p></div></div>
-        <div class="g-etape"><div><h4>Envoyer les invitations</h4><p>Cochez des membres un par un, ou <b>« Sélectionner tous les membres affichés »</b>, puis <span class="g-btn">Envoyer l’invitation par e-mail</span>. Chacun reçoit un lien pour choisir son mot de passe (valable 72 h).</p></div></div>
+        <div class="g-etape"><div><h4>Envoyer les invitations</h4><p>Cochez des membres un par un, ou <b>« Sélectionner tous les membres affichés »</b>, puis <span class="g-btn">Envoyer l’invitation par e-mail</span>. Chacun reçoit un lien pour choisir son mot de passe (valable 7 jours).</p></div></div>
       </div></div>
 
       <h3 class="g-tache"><span class="g-em">👤</span> Suivre les adhérents</h3>
