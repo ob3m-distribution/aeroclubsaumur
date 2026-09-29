@@ -46,8 +46,10 @@ if (!in_array($bon['statut'], ['paye', 'utilise'], true)) {
 }
 
 $ok = email_paiement_recu_club($bon, true);
-error_log('Renvoi notification bon#' . $bon['id'] . ' : ' . ($ok ? 'envoyé' : 'échec'));
+// Pas d'error_log en cas de succès : le journal d'erreurs PHP est relevé
+// chaque jour et toute ligne y déclenche une alerte.
 if (!$ok) {
+    error_log('Renvoi notification bon#' . $bon['id'] . ' : échec de l\'envoi');
     http_response_code(500);
     exit("mail_failed\n");
 }
