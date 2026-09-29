@@ -116,7 +116,7 @@ require __DIR__ . '/inc/entete.php';
           </tbody>
         </table>
       </div>
-      <?php if ($cat === 'cotisation'): ?>
+      <?php if ($cat === 'inscription'): ?>
         <p class="aide" style="margin:.75rem 0 0">Sur la page Tarifs, « Cotisation 25 ans et plus » = Membre Club + Pilote,
           « moins de 25 ans » = Membre Club + Pilote −25 ans.</p>
       <?php endif; ?>

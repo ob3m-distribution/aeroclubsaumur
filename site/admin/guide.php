@@ -223,7 +223,7 @@ require __DIR__ . '/inc/entete.php';
 
       <h3 class="g-tache"><span class="g-em">💶</span> Modifier les tarifs et prix</h3>
       <div class="g-bloc"><div class="g-etapes">
-        <div class="g-etape"><div><h4>Ouvrez « Tarifs et prix »</h4><p>Tous les prix du site sont rangés par catégorie : vols découverte, initiation, heures de vol, cotisation, Passeport FFA, licence et options. Cliquez sur une catégorie pour l’ouvrir.</p></div></div>
+        <div class="g-etape"><div><h4>Ouvrez « Tarifs et prix »</h4><p>Tous les prix du site sont rangés par catégorie : vols découverte, vols d’initiation, heures de vol, et <b>formulaire d’inscription</b> (toute la cotisation, de A à F, comme sur la fiche papier). Cliquez sur une catégorie pour l’ouvrir.</p></div></div>
         <div class="g-etape"><div><h4>Changez un prix</h4><p>Tapez le montant en euros (<span class="g-ch">130</span> ou <span class="g-ch">130,50</span>). La colonne de droite rappelle la valeur d’origine.</p></div></div>
         <div class="g-etape"><div><h4>Enregistrez</h4><p><span class="g-btn">Enregistrer les tarifs</span> : pages, formulaires et montants à payer sont à jour immédiatement. Les bons déjà achetés gardent leur prix.</p></div></div>
       </div>

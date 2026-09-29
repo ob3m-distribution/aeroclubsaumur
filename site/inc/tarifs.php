@@ -20,9 +20,7 @@ const TARIFS_CATEGORIES = [
     'vols_decouverte' => 'Vols découverte et bon cadeau',
     'vols_initiation' => 'Vols d’initiation',
     'heures_vol'      => 'Heures de vol (location des avions)',
-    'cotisation'      => 'Cotisation annuelle (A et B)',
-    'passeport'       => 'Programmes FFA (E) : Jeunes Ailes, Passeport',
-    'licence_extras'  => 'Info Pilote, licence FFA et formation (C, D, F)',
+    'inscription'     => 'Formulaire d’inscription (cotisation A → F)',
 ];
 
 /** [catégorie, libellé, centimes par défaut, suffixe d'unité]. */
@@ -41,24 +39,22 @@ const TARIFS = [
     'avion.dr400'          => ['heures_vol', 'Robin DR 400-180', 21000, '/h'],
     'avion.instruction'    => ['heures_vol', 'Supplément instruction', 4000, '/h'],
 
-    // Fiche d'inscription 2027 (version 08-10/2026).
-    'cotis.membre'         => ['cotisation', 'A — Membre Club (obligatoire sauf programmes FFA)', 5000, ''],
-    'cotis.opt1'           => ['cotisation', 'B — Option 1 : Pilote', 23000, ''],
-    'cotis.opt2'           => ['cotisation', 'B — Option 2 : Pilote −25 ans', 11000, ''],
-    'cotis.opt3'           => ['cotisation', 'B — Option 3 : Pilote de passage (2ᵉ club)', 11000, ''],
-    'cotis.opt6'           => ['cotisation', 'B — Option 4 : Membre non pilote', 0, ''],
-    'cotis.caution_badge'  => ['cotisation', 'B — Option 5 : Caution badge + clef', 5500, ''],
-
-    'cotis.opt4'           => ['passeport', 'E — Option 6 : Licence Jeunes Ailes', 2700, ''],
-    'cotis.opt5'           => ['passeport', 'E — Option 7 : Passeport FFA', 1600, ''],
-    'cotis.bloc.1h30'      => ['passeport', 'E — Passeport FFA : bloc 1 h 30', 32300, ''],
-    'cotis.bloc.3h'        => ['passeport', 'E — Passeport FFA : bloc 3 h 00', 64500, ''],
-
-    'cotis.info_pilote'    => ['licence_extras', 'C — Info Pilote (papier)', 4900, ''],
-    'cotis.info_pilote_num'=> ['licence_extras', 'C — Info Pilote (numérique)', 3500, ''],
-    'cotis.licence_ffa'    => ['licence_extras', 'D — Licence FFA', 10100, ''],
-    'cotis.pack_basique'   => ['licence_extras', 'F — Pack basique (formation)', 12000, ''],
-    'cotis.elearning'      => ['licence_extras', 'F — Abonnement e-learning « aérogligli » (24 mois)', 5600, ''],
+    // Fiche d'inscription 2027 (version 08-10/2026), dans l'ordre de la fiche.
+    'cotis.membre'         => ['inscription', 'A — Membre Club (obligatoire sauf programmes FFA)', 5000, ''],
+    'cotis.opt1'           => ['inscription', 'B — Option 1 : Pilote', 23000, ''],
+    'cotis.opt2'           => ['inscription', 'B — Option 2 : Pilote −25 ans', 11000, ''],
+    'cotis.opt3'           => ['inscription', 'B — Option 3 : Pilote de passage (2ᵉ club)', 11000, ''],
+    'cotis.opt6'           => ['inscription', 'B — Option 4 : Membre non pilote', 0, ''],
+    'cotis.caution_badge'  => ['inscription', 'B — Option 5 : Caution badge + clef', 5500, ''],
+    'cotis.info_pilote'    => ['inscription', 'C — Info Pilote (papier)', 4900, ''],
+    'cotis.info_pilote_num'=> ['inscription', 'C — Info Pilote (numérique)', 3500, ''],
+    'cotis.licence_ffa'    => ['inscription', 'D — Licence FFA', 10100, ''],
+    'cotis.opt4'           => ['inscription', 'E — Option 6 : Licence Jeunes Ailes', 2700, ''],
+    'cotis.opt5'           => ['inscription', 'E — Option 7 : Passeport FFA', 1600, ''],
+    'cotis.bloc.1h30'      => ['inscription', 'E — Passeport FFA : bloc 1 h 30', 32300, ''],
+    'cotis.bloc.3h'        => ['inscription', 'E — Passeport FFA : bloc 3 h 00', 64500, ''],
+    'cotis.pack_basique'   => ['inscription', 'F — Pack basique (formation)', 12000, ''],
+    'cotis.elearning'      => ['inscription', 'F — Abonnement e-learning « aérogligli » (24 mois)', 5600, ''],
 ];
 
 /** Coordonnées bancaires du club (envoyées pour les virements). */
