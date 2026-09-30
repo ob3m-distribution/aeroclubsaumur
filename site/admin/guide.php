@@ -249,6 +249,7 @@ require __DIR__ . '/inc/entete.php';
       <h3 class="g-tache"><span class="g-em">📁</span> Gérer les documents &amp; les accès</h3>
       <div class="g-bloc"><div class="g-etapes">
         <div class="g-etape"><div><h4>Ranger la bibliothèque</h4><p>Dans <b>« Bibliothèque adhérents »</b> (Bureau, Administrateurs) : créez un dossier, déposez un fichier, et <b>glissez-déposez</b> pour changer l’ordre.</p></div></div>
+        <div class="g-etape"><div><h4>Tout télécharger d’un coup</h4><p>Toujours dans « Bibliothèque adhérents » : <span class="g-btn">⬇️ Tout télécharger (ZIP)</span> récupère toute la bibliothèque en un seul fichier ZIP, avec ses dossiers. Le bouton <span class="g-ch">⬇️ ZIP</span> sur un dossier ne télécharge que celui-ci.</p></div></div>
         <div class="g-etape"><div><h4>Choisir ce que voient les Adhérents</h4><p>Dans <b>« Accès bibliothèque »</b>, cochez les dossiers visibles par le rôle <b>Adhérents</b>, puis membre par membre si besoin. Les Administrateurs, Instructeurs et le Bureau voient déjà tout.</p></div></div>
       </div>
       <div class="g-astuce"><span class="g-em">⚠️</span><div><b>Nouveau dossier créé ?</b> Il reste invisible pour les Adhérents tant qu’il n’est pas coché dans « Accès bibliothèque ». C’est voulu, pour qu’aucun document sensible ne soit visible par erreur.</div></div>

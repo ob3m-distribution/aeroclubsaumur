@@ -192,6 +192,10 @@ require __DIR__ . '/inc/entete.php';
     <?php if ($courant): ?>
       <a class="btn btn--contour" href="#ajouter">⬆️ Ajouter un document</a>
     <?php endif; ?>
+    <a class="btn btn--contour bibx-zip" href="/admin/biblio-zip.php<?= $courant ? '?d=' . $courant : '' ?>"
+       title="Un seul fichier ZIP, avec les dossiers et sous-dossiers">
+      ⬇️ <?= $courant ? 'Télécharger ce dossier (ZIP)' : 'Tout télécharger (ZIP)' ?>
+    </a>
   </div>
 
   <?php if (!$enfants && !$docs): ?>
@@ -211,6 +215,10 @@ require __DIR__ . '/inc/entete.php';
           <span class="bibx-dossier__cpt"><?= $n ?> document<?= $n > 1 ? 's' : '' ?></span>
         </a>
         <div class="bibx-dossier__act">
+          <?php if ($n > 0): ?>
+            <a class="btn btn--contour btn--petit" href="/admin/biblio-zip.php?d=<?= (int) $d['id'] ?>"
+               title="Télécharger ce dossier en ZIP">⬇️ ZIP</a>
+          <?php endif; ?>
           <button type="button" class="btn btn--contour btn--petit"
                   data-renommer="<?= (int) $d['id'] ?>" data-nom="<?= e($d['nom']) ?>">Renommer</button>
           <form method="post" style="display:inline">
