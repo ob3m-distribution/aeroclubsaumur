@@ -1,0 +1,52 @@
+name: Commande root (VPS)
+
+# Exécute n'importe quelle commande shell en root sur le VPS de production
+# (72.62.238.145). Dupliqué dans chaque dépôt qui tourne sur ce VPS pour que
+# n'importe quelle session Claude puisse le déclencher sans dépendre d'un
+# accès croisé à un autre dépôt -- voir CLAUDE.md, section "Infrastructure de
+# déploiement — VPS Hostinger".
+#
+# Root sur un serveur mutualisé entre plusieurs sites de prod = une
+# commande malheureuse peut affecter TOUS ces sites, pas un seul -- d'où
+# la confirmation explicite obligatoire ci-dessous.
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Commande shell à exécuter en root sur le VPS"
+        required: true
+      confirm:
+        description: 'Tapez exactement OUI pour confirmer (root, serveur de production partagé)'
+        required: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CMD: ${{ github.event.inputs.command }}
+      CONFIRM: ${{ github.event.inputs.confirm }}
+      HOST: "72.62.238.145"
+    steps:
+      - name: Vérifier la confirmation
+        run: |
+          if [ "$CONFIRM" != "OUI" ]; then
+            echo "::error::Confirmation manquante ou incorrecte -- tapez exactement OUI dans le champ confirm."
+            exit 1
+          fi
+
+      - name: Charger la clé de déploiement root
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.ROOT_SSH_KEY }}
+
+      - name: Épingler l'empreinte du serveur
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+
+      - name: Exécuter la commande (encodée en base64 -- évite tout bug de guillemets/accents)
+        run: |
+          ENCODED=$(printf '%s' "$CMD" | base64 -w0)
+          ssh "root@$HOST" "echo $ENCODED | base64 -d | bash"
