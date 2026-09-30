@@ -138,6 +138,38 @@ function donnees_structurees(string $page = 'index'): string
                 'priceCurrency' => 'EUR',
                 'availability'  => 'https://schema.org/InStock',
                 'seller'        => ['@id' => $base . '/#club'],
+                // Demandés par Search Console (fiches de marchand). Reflètent
+                // les CGV : bon envoyé par e-mail en PDF dès le paiement
+                // (gratuit, immédiat), rétractation 14 jours remboursée sans
+                // frais. À tenir cohérent avec /cgv si elles changent.
+                'shippingDetails' => [
+                    '@type'        => 'OfferShippingDetails',
+                    'shippingRate' => [
+                        '@type'    => 'MonetaryAmount',
+                        'value'    => '0',
+                        'currency' => 'EUR',
+                    ],
+                    'shippingDestination' => [
+                        '@type'          => 'DefinedRegion',
+                        'addressCountry' => 'FR',
+                    ],
+                    'deliveryTime' => [
+                        '@type'        => 'ShippingDeliveryTime',
+                        'handlingTime' => ['@type' => 'QuantitativeValue', 'minValue' => 0, 'maxValue' => 0, 'unitCode' => 'DAY'],
+                        'transitTime'  => ['@type' => 'QuantitativeValue', 'minValue' => 0, 'maxValue' => 0, 'unitCode' => 'DAY'],
+                    ],
+                ],
+                'hasMerchantReturnPolicy' => [
+                    '@type'                => 'MerchantReturnPolicy',
+                    'applicableCountry'    => 'FR',
+                    'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                    'merchantReturnDays'   => 14,
+                    'returnFees'           => 'https://schema.org/FreeReturn',
+                    'merchantReturnLink'   => $base . '/cgv',
+                ],
+                // Pas de « review » ni d'« aggregateRating » : Google ne les
+                // signale qu'en suggestion, et seuls de vrais avis clients,
+                // affichés sur la page, peuvent y figurer.
             ],
         ];
     }
