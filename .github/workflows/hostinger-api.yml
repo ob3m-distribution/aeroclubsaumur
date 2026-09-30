@@ -1,0 +1,62 @@
+name: Commande API Hostinger
+
+# Appelle n'importe quel endpoint de l'API Hostinger (developers.hostinger.com)
+# avec le jeton du compte -- gestion du VPS depuis l'EXTERIEUR du serveur
+# (redemarrer/eteindre, sauvegardes/snapshots, pare-feu...), utile meme si le
+# serveur ne repond plus en SSH. Voir .github/workflows/run-root-command.yml
+# pour l'equivalent "dans" le serveur.
+#
+# ⚠️ Le jeton HOSTINGER_API_TOKEN n'a pas d'option de portee/scope a la
+# creation (verifie le 30/09) -- il donne potentiellement acces a tout le
+# compte Hostinger, pas seulement ce VPS. D'ou la confirmation obligatoire.
+
+on:
+  workflow_dispatch:
+    inputs:
+      method:
+        description: "Methode HTTP (GET, POST, PUT, DELETE...)"
+        required: true
+        default: "GET"
+      path:
+        description: "Chemin API apres /api/ -- ex: vps/v1/virtual-machines"
+        required: true
+      body:
+        description: "Corps JSON (optionnel, pour POST/PUT/PATCH)"
+        required: false
+      confirm:
+        description: 'Tapez exactement OUI pour confirmer (jeton potentiellement a l''echelle du compte Hostinger entier)'
+        required: true
+
+jobs:
+  call:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      METHOD: ${{ github.event.inputs.method }}
+      APIPATH: ${{ github.event.inputs.path }}
+      BODY: ${{ github.event.inputs.body }}
+      CONFIRM: ${{ github.event.inputs.confirm }}
+    steps:
+      - name: Vérifier la confirmation
+        run: |
+          if [ "$CONFIRM" != "OUI" ]; then
+            echo "::error::Confirmation manquante ou incorrecte -- tapez exactement OUI dans le champ confirm."
+            exit 1
+          fi
+
+      - name: Appeler l'API Hostinger
+        run: |
+          CLEAN_PATH="${APIPATH#/}"
+          URL="https://developers.hostinger.com/api/${CLEAN_PATH}"
+          echo "-> $METHOD $URL"
+          if [ -n "$BODY" ]; then
+            curl -sS -X "$METHOD" "$URL" \
+              -H "Authorization: Bearer ${{ secrets.HOSTINGER_API_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "$BODY" \
+              -w "\n--- HTTP %{http_code} ---\n"
+          else
+            curl -sS -X "$METHOD" "$URL" \
+              -H "Authorization: Bearer ${{ secrets.HOSTINGER_API_TOKEN }}" \
+              -w "\n--- HTTP %{http_code} ---\n"
+          fi
