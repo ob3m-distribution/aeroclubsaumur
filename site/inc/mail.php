@@ -647,3 +647,45 @@ TXT;
 
     return envoyer_email_html_pj($bon['email'], $sujet, $html, $texte);
 }
+
+/**
+ * Notification au secrétariat : une cotisation (adhésion / réadhésion) vient
+ * d'être réglée ou annoncée, pour qu'il la saisisse dans Open Flyer.
+ * $ins : ligne de la table inscriptions. $mode : 'carte' ou 'virement'.
+ */
+function email_cotisation_secretariat(array $ins, string $mode): bool
+{
+    $nom     = trim((string) ($ins['prenom'] ?? '') . ' ' . (string) ($ins['nom'] ?? ''));
+    $annee   = (string) ($ins['annee'] ?? '');
+    $montant = prix((int) ($ins['total_cents'] ?? 0));
+    $modeLib = $mode === 'virement' ? 'Virement bancaire (à vérifier à réception)' : 'Carte bancaire en ligne (Stripe)';
+    $statut  = $mode === 'virement' ? 'virement annoncé' : 'payée';
+    $sujet   = sprintf('Cotisation %s %s — %s', $annee, $statut, $nom);
+    $courriel = (string) ($ins['courriel'] ?? '');
+
+    $texte = "Une cotisation {$annee} vient d'être {$statut} sur le site.\n\n"
+        . "MEMBRE   : {$nom}\n"
+        . ($courriel !== '' ? "COURRIEL : {$courriel}\n" : '')
+        . "MONTANT  : {$montant}\n"
+        . "PAIEMENT : {$modeLib}\n\n"
+        . "À FAIRE : mettre à jour la ré-adhésion de ce membre dans Open Flyer\n"
+        . "(saisir et créditer le montant, type de règlement carte bancaire ou virement).\n"
+        . "Le site ne transmet aucune information à Open Flyer.\n\n"
+        . "--\nMessage automatique du site du Saumur Air Club.";
+
+    $ligne = static fn(string $l, string $v): string =>
+        '<tr><td style="padding:6px 0;color:#83888a;">' . e($l) . '</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">' . e($v) . '</td></tr>';
+    $corpsHtml =
+        '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;">Une cotisation ' . e($annee) . ' vient d\'être ' . e($statut) . ' sur le site.</p>'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        .   'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 20px;">'
+        .   $ligne('Membre', $nom) . ($courriel !== '' ? $ligne('Courriel', $courriel) : '')
+        .   $ligne('Montant', $montant) . $ligne('Paiement', $modeLib)
+        . '</table>'
+        . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;"><strong style="color:#14294D;">À faire :</strong> '
+        .   'mettre à jour la ré-adhésion de ce membre dans Open Flyer (saisir et créditer le montant). '
+        .   'Le site ne transmet aucune information à Open Flyer.</p>';
+    $html = email_gabarit('Cotisation ' . $annee, $corpsHtml);
+
+    return envoyer_email_html_pj(CLUB['email'], $sujet, $html, $texte, [], $courriel !== '' ? $courriel : null);
+}

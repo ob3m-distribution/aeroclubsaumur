@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/inc/inscription.php';
 require_once __DIR__ . '/inc/stripe.php';
+require_once __DIR__ . '/inc/mail.php';
 session_demarrer();
 
 $ins = null;
@@ -23,7 +24,9 @@ if ($pi !== '' && stripe_actif()) {
         }
         if ($ins && $statut === 'succeeded'
             && (int) ($intention['amount_received'] ?? 0) === (int) $ins['total_cents']) {
-            inscription_marquer_paye((int) $ins['id'], 'carte');
+            if (inscription_marquer_paye((int) $ins['id'], 'carte')) {
+                @email_cotisation_secretariat($ins, 'carte');
+            }
             $paye = true;
             unset($_SESSION['inscription_en_cours']);
         } elseif ($ins && in_array($statut, ['processing', 'requires_action'], true)) {
@@ -51,6 +54,12 @@ require __DIR__ . '/inc/header.php';
     <div class="carte-recu">
       <?php if ($paye): ?>
         <h1>Merci, votre cotisation est réglée ✓</h1>
+        <div class="alerte alerte--info" role="note">
+        <strong>À faire maintenant sur Open Flyer :</strong> saisissez et créditez le montant payé pour votre réadhésion
+        dans votre compte pilote, afin que le secrétariat puisse finaliser l’opération.
+        Que vous payiez en ligne, par virement ou au TPE du club, cette saisie reste nécessaire :
+        ce site ne remplace pas Open Flyer et ne lui transmet aucune information.
+      </div>
         <p>Nous avons bien reçu votre paiement de <strong><?= e(prix((int) $ins['total_cents'])) ?></strong>.
           Votre adhésion sera finalisée par le secrétariat.</p>
       <?php elseif ($enAttente): ?>
