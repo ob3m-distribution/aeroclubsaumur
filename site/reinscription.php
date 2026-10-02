@@ -143,6 +143,12 @@ require __DIR__ . '/inc/header.php';
 
     <div class="carte-recu">
       <h2>Merci, votre demande est enregistrée</h2>
+      <div class="alerte alerte--info" role="note">
+        <strong>À faire maintenant sur Open Flyer :</strong> saisissez et créditez le montant payé pour votre réadhésion
+        dans votre compte pilote, afin que le secrétariat puisse finaliser l’opération.
+        Que vous payiez en ligne, par virement ou au TPE du club, cette saisie reste nécessaire :
+        ce site ne remplace pas Open Flyer et ne lui transmet aucune information.
+      </div>
       <p>Vous avez choisi le règlement par <strong>virement bancaire</strong>. Voici les coordonnées :</p>
       <dl class="paire">
         <dt>Bénéficiaire</dt><dd><?= e(CLUB['nom']) ?></dd>
