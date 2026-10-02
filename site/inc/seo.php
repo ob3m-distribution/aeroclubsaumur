@@ -164,6 +164,10 @@ function donnees_structurees(string $page = 'index'): string
                     'applicableCountry'    => 'FR',
                     'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
                     'merchantReturnDays'   => 14,
+                    // Rien à renvoyer physiquement (bon numérique) : la
+                    // rétractation se fait par écrit — valeur la plus proche
+                    // parmi les trois admises (ReturnByMail/InStore/AtKiosk).
+                    'returnMethod'         => 'https://schema.org/ReturnByMail',
                     'returnFees'           => 'https://schema.org/FreeReturn',
                     'merchantReturnLink'   => $base . '/cgv',
                 ],
