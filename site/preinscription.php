@@ -48,9 +48,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $med = $enregistrerDoc('visite_medicale_fichier', 'visite-medicale');
         if (!$erreurs) {
             $erreurs = inscription_manquants($d);
-            // Licence pilote + certificat médical désormais obligatoires.
-            if (!$lic) $erreurs['licence_fichier'] = 'Licence pilote obligatoire (à joindre).';
-            if (!$med) $erreurs['visite_medicale_fichier'] = 'Certificat médical obligatoire (à joindre).';
             if (!$erreurs) {
                 $id = preinscription_creer($annee, $d, $lic, $med);
                 @email_notification_club([
@@ -112,7 +109,7 @@ require __DIR__ . '/inc/header.php';
 <?php else: ?>
 
     <p class="chapo">Renseignez vos informations pour rejoindre le Saumur Air Club :
-      état civil, titres, cotisation souhaitée, et vos documents obligatoires (licence + visite médicale).</p>
+      état civil, titres, cotisation souhaitée, et, si vous en détenez, votre licence pilote et votre certificat médical.</p>
 
     <?php if (isset($erreurs['csrf'])): ?><div class="alerte alerte--erreur" role="alert"><?= e($erreurs['csrf']) ?></div><?php endif; ?>
     <?php if ($erreurs && !isset($erreurs['csrf'])): ?>
@@ -123,7 +120,6 @@ require __DIR__ . '/inc/header.php';
       <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
       <input type="hidden" name="type" value="demande">
       <?php
-        $docsObligatoires = true;
         $labelTotal = 'Total cotisation';
         $boutonsHtml = '<button type="submit" class="bouton">Envoyer ma demande</button>';
         require __DIR__ . '/inc/champs-inscription.php';

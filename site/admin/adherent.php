@@ -301,9 +301,9 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
       </div>
 
       <div class="bloc">
-        <h2>Documents obligatoires</h2>
+        <h2>Documents (si détenteur)</h2>
         <div class="champ">
-          <label for="licence_fichier">Licence pilote (FFA / SEP)
+          <label for="licence_fichier">Licence pilote
             <?php if ($a['licence_fichier']): ?><a href="/admin/doc-inscription.php?i=<?= $id ?>&t=licence" target="_blank" rel="noopener" class="etat etat--paye">voir</a><?php else: ?><span class="muet">non fournie</span><?php endif; ?></label>
           <input type="file" id="licence_fichier" name="licence_fichier" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic">
         </div>
@@ -379,9 +379,9 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
 <?php if ($estDemande):
     $pret = $a['rencontre_ok'] && $a['licence_ok'] && $a['medicale_ok'] && $a['cotisation_ok'];
     $faits = count(array_filter(array_keys(DEMANDE_ETAPES), fn($k) => $a[$k . '_ok']));
-    // Dossier complet = tous les champs requis + les deux documents obligatoires.
+    // Dossier complet = tous les champs requis (documents facultatifs).
     $manqueDossier = inscription_manquants($a);
-    $dossierComplet = !$manqueDossier && $a['licence_fichier'] && $a['visite_medicale_fichier'];
+    $dossierComplet = !$manqueDossier;
 ?>
 <div class="bloc" style="border-left:3px solid var(--or,#b08d2c)">
   <div class="bloc__titre">
@@ -426,7 +426,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
   </div>
   <?php if ($dossierComplet): ?>
     <p class="aide" style="margin:0 0 .8rem">
-      Le dossier est complet (informations + licence + visite médicale). Vous pouvez envoyer au
+      Le dossier est complet (informations obligatoires renseignées). Vous pouvez envoyer au
       futur membre son lien de règlement — cotisation de <strong><?= e(prix((int) $a['total_cents'])) ?></strong>.
     </p>
     <form method="post" class="suivi-lien">
@@ -449,8 +449,6 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
       Le lien de paiement pourra être envoyé une fois le dossier complet :
       <?php $il = [];
         foreach ($manqueDossier as $m) { $il[] = $m; }
-        if (!$a['licence_fichier']) $il[] = 'Licence pilote à joindre.';
-        if (!$a['visite_medicale_fichier']) $il[] = 'Certificat médical à joindre.';
         echo e(implode(' ', $il) ?: 'informations à compléter.');
       ?>
     </p>

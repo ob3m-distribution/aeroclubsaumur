@@ -79,9 +79,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             if (!$erreurs) {
                 if ($action === 'soumettre') {
                     $erreurs = inscription_manquants($d);
-                    // Licence + visite médicale sont obligatoires pour un dossier complet.
-                    if (!$ligneLic) $erreurs['licence_fichier'] = 'Licence pilote obligatoire (à joindre).';
-                    if (!$ligneMed) $erreurs['visite_medicale_fichier'] = 'Visite médicale obligatoire (à joindre).';
                 }
                 $statut = (!$erreurs && $action === 'soumettre') ? 'complet' : 'brouillon';
                 $id = inscription_enregistrer((int) $membre['id'], $annee, $d, $statut);
@@ -251,19 +248,18 @@ require __DIR__ . '/inc/header.php';
       <?php require __DIR__ . '/inc/cotisation-inscription.php'; ?>
 
       <fieldset class="bloc-form">
-        <legend>Documents obligatoires</legend>
-        <p class="aide">Licence pilote <strong>et</strong> visite médicale, à jour au 31/12/<?= $annee ?>.
-          PDF ou photo, 8 Mo maximum. <strong>Obligatoires pour valider et payer</strong> — sans eux,
-          vous pouvez seulement enregistrer un brouillon.</p>
+        <legend>Documents (à transmettre si détenteur)</legend>
+        <p class="aide">Licence pilote et certificat médical, à transmettre uniquement si vous en détenez un.
+          PDF ou photo, 8 Mo maximum. Leur absence ne bloque ni la validation ni le paiement.</p>
         <div class="champs champs--duo">
           <div class="champ<?= $errCls('licence_fichier') ?>">
-            <label for="licence_fichier">Licence pilote (FFA / SEP) <span class="obligatoire" aria-hidden="true">*</span>
+            <label for="licence_fichier">Licence pilote
               <?php if (!empty($d['licence_fichier'])): ?><span class="etat etat--paye">déjà envoyée</span><?php endif; ?></label>
             <input type="file" id="licence_fichier" name="licence_fichier" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic">
             <?php if (isset($erreurs['licence_fichier'])): ?><p class="champ__erreur"><?= e($erreurs['licence_fichier']) ?></p><?php endif; ?>
           </div>
           <div class="champ<?= $errCls('visite_medicale_fichier') ?>">
-            <label for="visite_medicale_fichier">Certificat médical <span class="obligatoire" aria-hidden="true">*</span>
+            <label for="visite_medicale_fichier">Certificat médical
               <?php if (!empty($d['visite_medicale_fichier'])): ?><span class="etat etat--paye">déjà envoyé</span><?php endif; ?></label>
             <input type="file" id="visite_medicale_fichier" name="visite_medicale_fichier" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic">
             <?php if (isset($erreurs['visite_medicale_fichier'])): ?><p class="champ__erreur"><?= e($erreurs['visite_medicale_fichier']) ?></p><?php endif; ?>
