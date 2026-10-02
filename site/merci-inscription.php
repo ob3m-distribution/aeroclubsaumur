@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/inc/inscription.php';
 require_once __DIR__ . '/inc/stripe.php';
+require_once __DIR__ . '/inc/mail.php';
 session_demarrer();
 
 $ins = null;
@@ -23,7 +24,9 @@ if ($pi !== '' && stripe_actif()) {
         }
         if ($ins && $statut === 'succeeded'
             && (int) ($intention['amount_received'] ?? 0) === (int) $ins['total_cents']) {
-            inscription_marquer_paye((int) $ins['id'], 'carte');
+            if (inscription_marquer_paye((int) $ins['id'], 'carte')) {
+                @email_cotisation_secretariat($ins, 'carte');
+            }
             $paye = true;
             unset($_SESSION['inscription_en_cours']);
         } elseif ($ins && in_array($statut, ['processing', 'requires_action'], true)) {

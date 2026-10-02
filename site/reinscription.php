@@ -59,6 +59,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 db()->prepare('UPDATE inscriptions SET mode_paiement = ? WHERE id = ?')
                     ->execute(['virement', (int) $ins['id']]);
                 journaliser('inscription.virement', 'inscription#' . $ins['id']);
+                @email_cotisation_secretariat($ins, 'virement');
                 $etape = 'recu';
                 $d = inscription_annee((int) $membre['id'], $annee);
             } else {

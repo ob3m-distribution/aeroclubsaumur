@@ -237,15 +237,22 @@ function inscription_par_intention(string $pi): ?array
 /**
  * Marque la cotisation d'une inscription comme réglée. Idempotent.
  * Enregistre le mode + la date, et coche « cotisation reçue ».
+ * Retourne true au premier passage uniquement.
  */
-function inscription_marquer_paye(int $id, string $mode): void
+function inscription_marquer_paye(int $id, string $mode): bool
 {
+    // Passage atomique : seul le premier appel (webhook ou page de retour)
+    // pose paye_le et reçoit « true », pour ne notifier le secrétariat qu'une fois.
+    $maj = db()->prepare('UPDATE inscriptions SET paye_le = NOW() WHERE id = ? AND paye_le IS NULL');
+    $maj->execute([$id]);
+    $premier = $maj->rowCount() === 1;
     db()->prepare(
         "UPDATE inscriptions
-            SET mode_paiement = ?, paye_le = COALESCE(paye_le, NOW()),
+            SET mode_paiement = ?,
                 cotisation_ok = 1, cotisation_ok_le = COALESCE(cotisation_ok_le, NOW())
           WHERE id = ?"
     )->execute([$mode, $id]);
+    return $premier;
 }
 
 /** Libellé lisible du niveau de cotisation d'une inscription. */

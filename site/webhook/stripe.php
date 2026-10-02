@@ -60,7 +60,9 @@ try {
                     $ins = $s->fetch() ?: null;
                 }
                 if ($ins && (int) ($objet['amount_received'] ?? 0) === (int) $ins['total_cents']) {
-                    inscription_marquer_paye((int) $ins['id'], 'carte');
+                    if (inscription_marquer_paye((int) $ins['id'], 'carte')) {
+                        @email_cotisation_secretariat($ins, 'carte');
+                    }
                 }
                 exit("OK\n");
             }
