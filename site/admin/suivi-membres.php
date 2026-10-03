@@ -4,7 +4,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/inscription.php';
 require_once __DIR__ . '/../inc/mail.php';
-exiger_droit('membres.gerer');
+exiger_droit('membres.documents');
+$ecriture = peut('membres.gerer');   // sinon : consultation seule (documents, validités)
 
 $moi   = membre_connecte();
 $campagne = COTISATION_ANNEE;   // année du formulaire de réinscription en cours
@@ -32,7 +33,9 @@ function lien_reinscription(): string { return lien_formulaire('reinscription');
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = (string) ($_POST['action'] ?? 'valider');
-    if (!jeton_csrf_valide($_POST['csrf'] ?? null)) {
+    if (!$ecriture) {
+        $_SESSION['message_erreur'] = 'Votre rôle permet la consultation uniquement.';
+    } elseif (!jeton_csrf_valide($_POST['csrf'] ?? null)) {
         $_SESSION['message_erreur'] = 'Session expirée, action non effectuée.';
     } elseif ($action === 'lien_email') {
         // Envoi du lien de réinscription à une adresse saisie librement.
@@ -168,12 +171,14 @@ $ajour = static function (?string $date) use ($fin): string {
   </p>
   <div class="suivi-lien">
     <a class="btn btn--contour" href="/preinscription" target="_blank" rel="noopener">Ouvrir le formulaire ↗</a>
+    <?php if ($ecriture): ?>
     <form method="post" class="suivi-lien__form">
       <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
       <input type="hidden" name="action" value="lien_preinscription">
       <input type="email" name="email" placeholder="adresse@exemple.fr" required>
       <button type="submit" class="btn">Envoyer le lien à cette adresse</button>
     </form>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -195,7 +200,7 @@ $ajour = static function (?string $date) use ($fin): string {
             $pret = $faits === 4; ?>
           <tr>
             <td><?= e(date('d/m/Y', strtotime((string) $dm['cree_le']))) ?></td>
-            <td><a href="/admin/adherent.php?i=<?= (int) $dm['id'] ?>"><?= e($dm['nom']) ?></a></td>
+            <td><?= $ecriture ? '<a href="/admin/adherent.php?i=' . (int) $dm['id'] . '">' . e($dm['nom']) . '</a>' : e($dm['nom']) ?></td>
             <td><?= e($dm['prenom']) ?></td>
             <td style="font-size:.8rem"><?= e($dm['courriel']) ?><br><span class="muet"><?= e($dm['tel_mobile']) ?></span></td>
             <td style="font-size:.8rem"><?= e(inscription_resume_cotisation($dm)) ?></td>
@@ -204,7 +209,7 @@ $ajour = static function (?string $date) use ($fin): string {
               <?= $dm['licence_fichier'] ? '<a href="/admin/doc-inscription.php?i=' . (int) $dm['id'] . '&t=licence" target="_blank" rel="noopener">Licence</a>' : '<span class="muet">licence —</span>' ?><br>
               <?= $dm['visite_medicale_fichier'] ? '<a href="/admin/doc-inscription.php?i=' . (int) $dm['id'] . '&t=medicale" target="_blank" rel="noopener">Médicale</a>' : '<span class="muet">médicale —</span>' ?>
             </td>
-            <td class="nombre"><a class="btn btn--contour btn--petit" href="/admin/adherent.php?i=<?= (int) $dm['id'] ?>">Voir le dossier</a></td>
+            <td class="nombre"><?php if ($ecriture): ?><a class="btn btn--contour btn--petit" href="/admin/adherent.php?i=<?= (int) $dm['id'] ?>">Voir le dossier</a><?php endif; ?></td>
           </tr>
         <?php endforeach; ?>
         </tbody>
@@ -223,12 +228,14 @@ $ajour = static function (?string $date) use ($fin): string {
   </p>
   <div class="suivi-lien">
     <a class="btn btn--contour" href="/reinscription" target="_blank" rel="noopener">Ouvrir le formulaire ↗</a>
+    <?php if ($ecriture): ?>
     <form method="post" class="suivi-lien__form">
       <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
       <input type="hidden" name="action" value="lien_email">
       <input type="email" name="email" placeholder="adresse@exemple.fr" required>
       <button type="submit" class="btn">Envoyer le lien à cette adresse</button>
     </form>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -279,7 +286,8 @@ $ajour = static function (?string $date) use ($fin): string {
         <?php foreach ($lignes as $l): $ff = 'form="suivif-' . (int) $l['id'] . '"'; ?>
           <tr id="i-<?= (int) $l['id'] ?>">
             <td>
-              <strong><a href="/admin/adherent.php?i=<?= (int) $l['id'] ?>"><?= e(trim(($l['m_prenom'] ?? $l['prenom']) . ' ' . ($l['m_nom'] ?? $l['nom']))) ?></a></strong>
+              <?php $nomMembre = e(trim(($l['m_prenom'] ?? $l['prenom']) . ' ' . ($l['m_nom'] ?? $l['nom']))); ?>
+              <strong><?= $ecriture ? '<a href="/admin/adherent.php?i=' . (int) $l['id'] . '">' . $nomMembre . '</a>' : $nomMembre ?></strong>
               <br><span class="muet" style="font-size:.8rem"><?= e($l['m_email'] ?? $l['courriel']) ?></span>
             </td>
             <td style="font-size:.82rem">
@@ -306,14 +314,16 @@ $ajour = static function (?string $date) use ($fin): string {
               <?php foreach (['cotisation' => 'Cotisation reçue', 'licence' => 'Licence à jour', 'medicale' => 'Médicale à jour'] as $cle => $lib):
                   $tr = inscription_trace($l, $cle, $nomsValideurs); ?>
                 <label style="display:flex;gap:.4rem;align-items:flex-start">
-                  <input type="checkbox" name="<?= $cle ?>_ok" value="1" <?= $ff ?> <?= $l[$cle . '_ok'] ? 'checked' : '' ?>>
+                  <input type="checkbox" name="<?= $cle ?>_ok" value="1" <?= $ff ?> <?= $l[$cle . '_ok'] ? 'checked' : '' ?> <?= $ecriture ? '' : 'disabled' ?>>
                   <span><?= $lib ?><?php if ($tr): ?><br><span class="muet" style="font-size:.72rem"><?= e($tr) ?></span><?php endif; ?></span>
                 </label>
               <?php endforeach; ?>
             </td>
             <td class="nombre" style="white-space:nowrap">
+              <?php if ($ecriture): ?>
               <button type="submit" <?= $ff ?> class="btn btn--petit">Enregistrer</button>
-              <?php if ($l['m_email'] ?: $l['courriel']): ?>
+              <?php endif; ?>
+              <?php if ($ecriture && ($l['m_email'] ?: $l['courriel'])): ?>
                 <button type="submit" form="lienf-<?= (int) $l['id'] ?>" class="btn btn--contour btn--petit"
                         data-confirmer="Envoyer le lien de réinscription à <?= e((string) ($l['m_email'] ?: $l['courriel'])) ?> ?">Envoyer le lien</button>
               <?php endif; ?>

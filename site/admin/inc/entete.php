@@ -13,7 +13,7 @@ $menu = [
     ['cle' => 'bons',     'url' => '/admin/bons.php',    'libelle' => 'Bons cadeaux',    'droit' => 'bons.voir'],
     ['cle' => 'contenus', 'url' => '/admin/contenus.php','libelle' => 'Contenus du site','droit' => 'contenus.gerer'],
     ['cle' => 'tarifs',   'url' => '/admin/tarifs.php',  'libelle' => 'Tarifs et prix',  'droit' => 'tarifs.gerer'],
-    ['cle' => 'suivi',    'url' => '/admin/suivi-membres.php', 'libelle' => 'Adhérents', 'droit' => 'membres.gerer'],
+    ['cle' => 'suivi',    'url' => '/admin/suivi-membres.php', 'libelle' => 'Adhérents', 'droit' => 'membres.documents'],
     ['cle' => 'membres',  'url' => '/admin/membres.php', 'libelle' => 'Membres & accès', 'droit' => 'membres.gerer'],
     ['cle' => 'acces',    'url' => '/admin/acces-dossiers.php', 'libelle' => 'Accès bibliothèque', 'droit' => 'membres.gerer'],
     ['cle' => 'biblio',   'url' => '/admin/bibliotheque.php','libelle' => 'Bibliothèque adhérents','droit' => 'biblio.gerer'],

@@ -19,6 +19,7 @@ const AUTORISATIONS = [
     'contenus.gerer' => 'Modifier les textes et les photos du site',
     'tarifs.gerer'   => 'Modifier les tarifs et prix du site',
     'membres.gerer'  => 'Gérer les membres et leurs accès',
+    'membres.documents' => 'Consulter le suivi des adhérents et leurs documents (lecture seule)',
     'mailing.gerer'  => 'Envoyer des e-mails groupés aux membres',
 ];
 
@@ -37,7 +38,7 @@ const ROLES = [
     'superadmin' => [
         'libelle'     => 'Super administrateur',
         'description' => 'Accès total, seul habilité à modifier les textes et les photos du site.',
-        'droits'      => ['bons.voir', 'bons.gerer', 'biblio.gerer', 'contenus.gerer', 'tarifs.gerer', 'membres.gerer', 'mailing.gerer'],
+        'droits'      => ['bons.voir', 'bons.gerer', 'biblio.gerer', 'contenus.gerer', 'tarifs.gerer', 'membres.gerer', 'membres.documents', 'mailing.gerer'],
         'biblio'      => 'tout',
     ],
     'adherent' => [
@@ -60,8 +61,8 @@ const ROLES = [
     ],
     'bureau' => [
         'libelle'     => 'Bureau',
-        'description' => 'Consultent et modifient toute la bibliothèque, et les tarifs et prix du site.',
-        'droits'      => ['biblio.gerer', 'tarifs.gerer'],
+        'description' => 'Consultent et modifient toute la bibliothèque et les tarifs et prix du site, et consultent le suivi des adhérents et leurs documents (lecture seule).',
+        'droits'      => ['biblio.gerer', 'tarifs.gerer', 'membres.documents'],
         'biblio'      => 'tout',
     ],
     'bons_cadeaux' => [
