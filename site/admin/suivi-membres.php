@@ -5,7 +5,8 @@ require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/inscription.php';
 require_once __DIR__ . '/../inc/mail.php';
 exiger_droit('membres.documents');
-$ecriture = peut('membres.gerer');   // sinon : consultation seule (documents, validités)
+$ecriture = peut('membres.gerer');   // validation des dossiers ; sinon consultation seule
+$peutEnvoyer = $ecriture || peut('membres.relancer');   // envoi des liens de réinscription
 
 $moi   = membre_connecte();
 $campagne = COTISATION_ANNEE;   // année du formulaire de réinscription en cours
@@ -33,8 +34,9 @@ function lien_reinscription(): string { return lien_formulaire('reinscription');
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $action = (string) ($_POST['action'] ?? 'valider');
-    if (!$ecriture) {
-        $_SESSION['message_erreur'] = 'Votre rôle permet la consultation uniquement.';
+    $actionEnvoi = in_array($action, ['lien_email', 'lien_preinscription', 'lien_membre', 'lien_groupe'], true);
+    if (!($actionEnvoi ? $peutEnvoyer : $ecriture)) {
+        $_SESSION['message_erreur'] = 'Votre rôle ne permet pas cette action.';
     } elseif (!jeton_csrf_valide($_POST['csrf'] ?? null)) {
         $_SESSION['message_erreur'] = 'Session expirée, action non effectuée.';
     } elseif ($action === 'lien_email') {
@@ -73,6 +75,36 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $_SESSION['message_succes'] = $ok
                 ? 'Lien de réinscription envoyé à ' . $email . '.'
                 : 'L’e-mail n’a pas pu être envoyé.';
+        }
+    } elseif ($action === 'lien_groupe') {
+        // Envoi du lien de réinscription aux dossiers cochés (une adresse = un seul envoi).
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($_POST['ids'] ?? [])))));
+        if (!$ids) {
+            $_SESSION['message_erreur'] = 'Aucun adhérent sélectionné.';
+        } else {
+            set_time_limit(600);
+            $lire = db()->prepare(
+                'SELECT COALESCE(NULLIF(m.email, ""), i.courriel) AS email, COALESCE(NULLIF(m.prenom, ""), i.prenom) AS prenom
+                   FROM inscriptions i LEFT JOIN membres m ON m.id = i.membre_id WHERE i.id = ?'
+            );
+            $deja = [];
+            $ok = 0;
+            $echecs = [];
+            foreach ($ids as $idIns) {
+                $lire->execute([$idIns]);
+                $r = $lire->fetch();
+                $email = mb_strtolower(trim((string) ($r['email'] ?? '')));
+                if (!$r || isset($deja[$email])) continue;
+                $deja[$email] = true;
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { $echecs[] = $email !== '' ? $email : 'adresse manquante (dossier ' . $idIns . ')'; continue; }
+                if (email_lien_reinscription($email, (string) $r['prenom'], lien_reinscription())) $ok++;
+                else $echecs[] = $email;
+            }
+            journaliser('reinscription.lien_groupe', 'inscriptions', $ok . ' envoyé(s) / ' . count($ids));
+            $_SESSION['message_succes'] = $ok . ' lien' . ($ok > 1 ? 's' : '') . ' de réinscription envoyé' . ($ok > 1 ? 's' : '') . '.';
+            if ($echecs) {
+                $_SESSION['message_erreur'] = 'Échec d’envoi pour : ' . implode(', ', $echecs) . '.';
+            }
         }
     } else {
         // Validation manuelle (cotisation / licence / médicale) tracée.
@@ -171,7 +203,7 @@ $ajour = static function (?string $date) use ($fin): string {
   </p>
   <div class="suivi-lien">
     <a class="btn btn--contour" href="/preinscription" target="_blank" rel="noopener">Ouvrir le formulaire ↗</a>
-    <?php if ($ecriture): ?>
+    <?php if ($peutEnvoyer): ?>
     <form method="post" class="suivi-lien__form">
       <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
       <input type="hidden" name="action" value="lien_preinscription">
@@ -228,7 +260,7 @@ $ajour = static function (?string $date) use ($fin): string {
   </p>
   <div class="suivi-lien">
     <a class="btn btn--contour" href="/reinscription" target="_blank" rel="noopener">Ouvrir le formulaire ↗</a>
-    <?php if ($ecriture): ?>
+    <?php if ($peutEnvoyer): ?>
     <form method="post" class="suivi-lien__form">
       <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
       <input type="hidden" name="action" value="lien_email">
@@ -270,10 +302,26 @@ $ajour = static function (?string $date) use ($fin): string {
       </form>
     <?php endforeach; ?>
 
+    <?php if ($peutEnvoyer): ?>
+    <form method="post" id="lien-groupe" class="membres-selection">
+      <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
+      <input type="hidden" name="action" value="lien_groupe">
+      <input type="hidden" name="annee" value="<?= (int) $annee ?>">
+      <span><strong id="nb-selection">0</strong> sélectionné(s)</span>
+      <button type="button" class="btn btn--contour btn--petit" id="tout-selectionner">Sélectionner tous les adhérents affichés</button>
+      <button type="button" class="btn btn--contour btn--petit" id="rien-selectionner">Tout désélectionner</button>
+      <button type="submit" class="btn btn--petit" id="envoyer-liens" disabled
+              data-confirmer="Envoyer le lien de réinscription aux adhérents sélectionnés ?">
+        Envoyer le lien de réinscription
+      </button>
+    </form>
+    <?php endif; ?>
+
     <div class="tableau tableau--suivi tableau--filtrable">
-      <table>
+      <table id="table-suivi">
         <thead>
           <tr>
+            <?php if ($peutEnvoyer): ?><th class="col-case"><input type="checkbox" id="case-toutes" aria-label="Sélectionner tous les adhérents affichés"></th><?php endif; ?>
             <th>Membre</th>
             <th>Cotisation</th>
             <th>Licence</th>
@@ -285,6 +333,7 @@ $ajour = static function (?string $date) use ($fin): string {
         <tbody>
         <?php foreach ($lignes as $l): $ff = 'form="suivif-' . (int) $l['id'] . '"'; ?>
           <tr id="i-<?= (int) $l['id'] ?>">
+            <?php if ($peutEnvoyer): ?><td class="col-case"><input type="checkbox" name="ids[]" value="<?= (int) $l['id'] ?>" form="lien-groupe" aria-label="Sélectionner ce dossier"></td><?php endif; ?>
             <td>
               <?php $nomMembre = e(trim(($l['m_prenom'] ?? $l['prenom']) . ' ' . ($l['m_nom'] ?? $l['nom']))); ?>
               <strong><?= $ecriture ? '<a href="/admin/adherent.php?i=' . (int) $l['id'] . '">' . $nomMembre . '</a>' : $nomMembre ?></strong>
@@ -323,7 +372,7 @@ $ajour = static function (?string $date) use ($fin): string {
               <?php if ($ecriture): ?>
               <button type="submit" <?= $ff ?> class="btn btn--petit">Enregistrer</button>
               <?php endif; ?>
-              <?php if ($ecriture && ($l['m_email'] ?: $l['courriel'])): ?>
+              <?php if ($peutEnvoyer && ($l['m_email'] ?: $l['courriel'])): ?>
                 <button type="submit" form="lienf-<?= (int) $l['id'] ?>" class="btn btn--contour btn--petit"
                         data-confirmer="Envoyer le lien de réinscription à <?= e((string) ($l['m_email'] ?: $l['courriel'])) ?> ?">Envoyer le lien</button>
               <?php endif; ?>
@@ -337,5 +386,42 @@ $ajour = static function (?string $date) use ($fin): string {
 </div>
 
 <?php endif; /* onglet */ ?>
+
+<?php if ($peutEnvoyer && $onglet === 'reinscription' && $lignes): ?>
+<script>
+(function () {
+  var table = document.getElementById('table-suivi');
+  if (!table) return;
+  var tbody = table.tBodies[0];
+  var lignes = [].slice.call(tbody.rows);
+  function visible(tr) { return tr.style.display !== 'none' && !tr.hasAttribute('data-cache'); }
+  function cases() { return tbody.querySelectorAll('input[name="ids[]"]'); }
+  function maj() {
+    var nb = [].filter.call(cases(), function (c) { return c.checked; }).length;
+    document.getElementById('nb-selection').textContent = nb;
+    document.getElementById('envoyer-liens').disabled = nb === 0;
+    var vis = lignes.filter(visible);
+    document.getElementById('case-toutes').checked = vis.length > 0 && vis.every(function (tr) {
+      var c = tr.querySelector('input[name="ids[]"]'); return c && c.checked;
+    });
+  }
+  function selectionner(etat) {
+    lignes.forEach(function (tr) {
+      var c = tr.querySelector('input[name="ids[]"]');
+      if (c && visible(tr)) c.checked = etat;
+    });
+    maj();
+  }
+  tbody.addEventListener('change', function (ev) { if (ev.target.name === 'ids[]') maj(); });
+  table.addEventListener('tableau:filtre-applique', maj);
+  document.getElementById('case-toutes').addEventListener('change', function () { selectionner(this.checked); });
+  document.getElementById('tout-selectionner').addEventListener('click', function () { selectionner(true); });
+  document.getElementById('rien-selectionner').addEventListener('click', function () {
+    [].forEach.call(cases(), function (c) { c.checked = false; }); maj();
+  });
+  maj();
+})();
+</script>
+<?php endif; ?>
 
 <?php require __DIR__ . '/inc/pied.php'; ?>
