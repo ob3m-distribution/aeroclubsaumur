@@ -57,6 +57,7 @@ require __DIR__ . '/inc/header.php';
         <div class="alerte alerte--info" role="note">
         <strong>À faire maintenant sur Open Flyer :</strong> saisissez et créditez le montant payé pour votre réadhésion
         dans votre compte pilote, afin que le secrétariat puisse finaliser l’opération.
+        Type de règlement à choisir : « Carte Bancaire (Paiement en ligne via site club) ».
         Que vous payiez en ligne, par virement ou au TPE du club, cette saisie reste nécessaire :
         ce site ne remplace pas Open Flyer et ne lui transmet aucune information.
       </div>
