@@ -234,13 +234,13 @@ function email_lien_reinscription(string $destinataire, string $prenom, string $
         . "adhésion en ligne, en quelques minutes, à l'adresse suivante :\n\n"
         . $lien . "\n\n"
         . "Connectez-vous à votre espace adhérent : vos informations de l'an dernier sont "
-        . "déjà pré-remplies, il ne vous reste qu'à les vérifier, joindre votre licence et "
-        . "votre visite médicale, puis régler la cotisation.\n\n"
+        . "déjà pré-remplies, il ne vous reste qu'à les vérifier, joindre votre licence pilote et "
+        . "votre certificat médical si vous en détenez, puis régler la cotisation.\n\n"
         . "À très bientôt,\nLe Saumur Air Club";
     $corpsHtml = '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;">' . e($bonjour) . '<br><br>'
         . "La campagne d'adhésion <strong>{$annee}</strong> est ouverte. Vous pouvez renouveler votre adhésion en ligne, en quelques minutes.</p>"
         . '<p style="margin:0 0 22px;">' . email_bouton($lien, 'Renouveler mon adhésion') . '</p>'
-        . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;">Connectez-vous à votre espace adhérent : vos informations de l\'an dernier sont déjà pré-remplies, il ne vous reste qu\'à les vérifier, joindre votre licence et votre visite médicale, puis régler la cotisation.</p>';
+        . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;">Connectez-vous à votre espace adhérent : vos informations de l\'an dernier sont déjà pré-remplies, il ne vous reste qu\'à les vérifier, joindre votre licence pilote et votre certificat médical si vous en détenez, puis régler la cotisation.</p>';
     $html = email_gabarit('Renouvellement d\'adhésion ' . $annee, $corpsHtml);
     return envoyer_email_html_pj($destinataire, $sujet, $html, $texte);
 }
