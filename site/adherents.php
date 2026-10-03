@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/inc/auth.php';
 require_once __DIR__ . '/inc/mail.php';
 require_once __DIR__ . '/inc/biblio-adherents.php';
+require_once __DIR__ . '/inc/documents-membre.php';
 session_demarrer();
 
 $page = 'adherents';
@@ -32,6 +33,32 @@ if (!$membre && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['form']
     } else {
         [$m, $erreur] = tenter_connexion($email, $mdp);
         if ($m) { header('Location: ' . url('adherents'), true, 303); exit; }
+    }
+}
+
+/* ---- Mise à jour de documents (licence, certificat médical) --------- */
+$docsOk = false;
+$docsErreurs = [];
+if ($membre && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['form'] ?? '') === 'documents') {
+    if (!jeton_csrf_valide($_POST['csrf'] ?? null)) {
+        $docsErreurs[] = 'Votre session a expiré. Merci de renvoyer le formulaire.';
+    } else {
+        $deposes = [];
+        foreach (MEMBRE_DOCS_TYPES as $type => $libelle) {
+            $f = $_FILES['doc_' . $type] ?? null;
+            if (!$f || ($f['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) continue;   // champ laissé vide
+            [$idDoc, $err] = membre_doc_enregistrer((int) $membre['id'], $type, $f, trim((string) ($_POST['validite_' . $type] ?? '')));
+            if ($err !== null) { $docsErreurs[] = $libelle . ' : ' . $err; continue; }
+            $deposes[] = ['libelle' => $libelle, 'validite' => trim((string) $_POST['validite_' . $type])];
+            journaliser('membre.doc_maj', 'membre#' . (int) $membre['id'], $type);
+        }
+        if (!$deposes && !$docsErreurs) {
+            $docsErreurs[] = 'Choisissez au moins un fichier à envoyer.';
+        }
+        if ($deposes) {
+            @email_maj_documents($membre, $deposes);
+            $docsOk = true;
+        }
     }
 }
 
@@ -214,6 +241,34 @@ require __DIR__ . '/inc/header.php';
     </div>
     <p class="bib-vide" id="bib-vide" hidden>Aucun document ne correspond à votre recherche.</p>
     <?php endif; ?>
+
+    <!-- Mise à jour de mes documents -->
+    <form class="bib-partage" method="post" enctype="multipart/form-data" novalidate id="mes-documents">
+      <input type="hidden" name="form" value="documents">
+      <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
+      <h2>Mettre à jour mes documents</h2>
+      <p class="bib-partage__sub">Votre licence pilote ou votre certificat médical a été renouvelé ? Déposez-le ici avec sa nouvelle date de validité : le secrétariat et le président sont prévenus.</p>
+
+      <?php if ($docsOk): ?>
+        <p class="bib-ok" role="status">Merci ! Vos documents sont enregistrés et le club a été prévenu.</p>
+      <?php endif; ?>
+      <?php foreach ($docsErreurs as $err): ?>
+        <p class="connexion__erreur" role="alert"><?= e($err) ?></p>
+      <?php endforeach; ?>
+
+      <?php foreach (MEMBRE_DOCS_TYPES as $type => $libelle): ?>
+      <div class="champ">
+        <label for="doc-<?= e($type) ?>"><?= e($libelle) ?> (PDF ou photo, 8 Mo max)</label>
+        <input id="doc-<?= e($type) ?>" type="file" name="doc_<?= e($type) ?>" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic">
+      </div>
+      <div class="champ">
+        <label for="validite-<?= e($type) ?>">Valable jusqu’au</label>
+        <input id="validite-<?= e($type) ?>" type="date" name="validite_<?= e($type) ?>">
+      </div>
+      <?php endforeach; ?>
+      <p class="bib-partage__sub">Laissez vide le document que vous ne mettez pas à jour.</p>
+      <div class="bib-envoi"><button class="bouton" type="submit">Envoyer mes documents</button></div>
+    </form>
 
     <!-- Formulaire de partage -->
     <form class="bib-partage" method="post" enctype="multipart/form-data" novalidate>

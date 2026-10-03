@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/inscription.php';
 require_once __DIR__ . '/../inc/mail.php';
+require_once __DIR__ . '/../inc/documents-membre.php';
 exiger_droit('membres.documents');
 $ecriture = peut('membres.gerer');   // validation des dossiers ; sinon consultation seule
 $peutEnvoyer = $ecriture || peut('membres.relancer');   // envoi des liens de réinscription
@@ -165,6 +166,16 @@ $demandes->execute();
 $demandes = $demandes->fetchAll();
 
 $fin = mktime(0, 0, 0, 12, 31, $annee); // 31/12 de l'année
+$majsDocs = membre_docs_derniers();     // dernières mises à jour déposées par les membres
+
+/** Mention « mis à jour le … » avec lien vers le dernier fichier déposé par le membre. */
+$majDoc = static function (?int $membreId, string $type) use ($majsDocs): string {
+    $d = $membreId ? ($majsDocs[$membreId][$type] ?? null) : null;
+    if (!$d) return '';
+    return '<br><span class="etat etat--planifie">mis à jour le ' . e(date('d/m/Y', strtotime((string) $d['cree_le']))) . '</span>'
+        . '<br><span class="muet" style="font-size:.72rem">valable jusqu’au ' . e(date('d/m/Y', strtotime((string) $d['validite']))) . ' · '
+        . '<a href="/admin/doc-inscription.php?m=' . (int) $d['id'] . '" target="_blank" rel="noopener">voir le fichier</a></span>';
+};
 
 // Noms des membres ayant validé une étape (pour la traçabilité).
 $idsValideurs = [];
@@ -348,13 +359,13 @@ $ajour = static function (?string $date) use ($fin): string {
               <span class="etat etat--<?= e($st[1]) ?>"><?= e($st[0]) ?></span>
             </td>
             <td style="font-size:.8rem">
-              <?= $ajour($l['validite_licence']) ?>
+              <?= $ajour($l['validite_licence']) ?><?= $majDoc((int) $l['membre_id'], 'licence') ?>
               <?php if ($l['licence_fichier']): ?>
                 <br><a href="/admin/doc-inscription.php?i=<?= (int) $l['id'] ?>&t=licence" target="_blank" rel="noopener">Voir le fichier</a>
               <?php endif; ?>
             </td>
             <td style="font-size:.8rem">
-              <?= $ajour($l['validite_visite_medicale']) ?>
+              <?= $ajour($l['validite_visite_medicale']) ?><?= $majDoc((int) $l['membre_id'], 'medicale') ?>
               <?php if ($l['visite_medicale_fichier']): ?>
                 <br><a href="/admin/doc-inscription.php?i=<?= (int) $l['id'] ?>&t=medicale" target="_blank" rel="noopener">Voir le fichier</a>
               <?php endif; ?>
