@@ -80,6 +80,7 @@ if ($membre && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['form'] 
         }
     }
 }
+$ouvert = static fn(string $f): bool => ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['form'] ?? '') === $f;
 $ficheCoord = $membre ? membre_fiche_recente((int) $membre['id']) : null;
 
 /* ---- Formulaire de partage (membre connecté) ----------------------- */
@@ -263,10 +264,11 @@ require __DIR__ . '/inc/header.php';
     <?php endif; ?>
 
     <!-- Mes coordonnées -->
-    <form class="bib-partage" method="post" novalidate id="mes-coordonnees">
+    <details class="bib-partage bib-acc" id="mes-coordonnees"<?= $ouvert('coordonnees') ? ' open' : '' ?>>
+      <summary><h2>Mettre à jour mes coordonnées</h2><svg class="bib-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+    <form method="post" novalidate action="#mes-coordonnees">
       <input type="hidden" name="form" value="coordonnees">
       <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
-      <h2>Mes coordonnées</h2>
       <p class="bib-partage__sub">Vous avez changé d’adresse ou de numéro ? Mettez-le à jour ici : le secrétariat et le président sont prévenus. Pour changer l’adresse e-mail de connexion, contactez le secrétariat.</p>
 
       <?php if ($coordOk): ?>
@@ -290,12 +292,14 @@ require __DIR__ . '/inc/header.php';
       <div class="bib-envoi"><button class="bouton" type="submit">Enregistrer mes coordonnées</button></div>
       <?php endif; ?>
     </form>
+    </details>
 
     <!-- Mise à jour de mes documents -->
-    <form class="bib-partage" method="post" enctype="multipart/form-data" novalidate id="mes-documents">
+    <details class="bib-partage bib-acc" id="mes-documents"<?= $ouvert('documents') ? ' open' : '' ?>>
+      <summary><h2>Mettre à jour mes documents</h2><svg class="bib-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+    <form method="post" enctype="multipart/form-data" novalidate action="#mes-documents">
       <input type="hidden" name="form" value="documents">
       <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
-      <h2>Mettre à jour mes documents</h2>
       <p class="bib-partage__sub">Votre licence pilote ou votre certificat médical a été renouvelé ? Déposez-le ici avec sa nouvelle date de validité : le secrétariat et le président sont prévenus.</p>
 
       <?php if ($docsOk): ?>
@@ -318,12 +322,14 @@ require __DIR__ . '/inc/header.php';
       <p class="bib-partage__sub">Laissez vide le document que vous ne mettez pas à jour.</p>
       <div class="bib-envoi"><button class="bouton" type="submit">Envoyer mes documents</button></div>
     </form>
+    </details>
 
     <!-- Formulaire de partage -->
-    <form class="bib-partage" method="post" enctype="multipart/form-data" novalidate>
+    <details class="bib-partage bib-acc" id="partage-club"<?= $ouvert('partage') ? ' open' : '' ?>>
+      <summary><h2>Partager avec le club</h2><svg class="bib-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+    <form method="post" enctype="multipart/form-data" novalidate action="#partage-club">
       <input type="hidden" name="form" value="partage">
       <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
-      <h2>Partager avec le club</h2>
       <p class="bib-partage__sub">Un commentaire, une photo de vol, un document à faire remonter au bureau ? Déposez-le ici, le secrétariat le recevra.</p>
 
       <?php if ($partageOk): ?>
@@ -347,6 +353,7 @@ require __DIR__ . '/inc/header.php';
       </div>
       <div class="bib-envoi"><button class="bouton" type="submit">Envoyer au club</button></div>
     </form>
+    </details>
   </div>
 </section>
 
