@@ -4,6 +4,7 @@ require_once __DIR__ . '/inc/auth.php';
 require_once __DIR__ . '/inc/mail.php';
 require_once __DIR__ . '/inc/biblio-adherents.php';
 require_once __DIR__ . '/inc/documents-membre.php';
+require_once __DIR__ . '/inc/coordonnees-membre.php';
 session_demarrer();
 
 $page = 'adherents';
@@ -61,6 +62,25 @@ if ($membre && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['form'] 
         }
     }
 }
+
+/* ---- Mes coordonnées ------------------------------------------------ */
+$coordOk = false;
+$coordErreurs = [];
+if ($membre && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['form'] ?? '') === 'coordonnees') {
+    if (!jeton_csrf_valide($_POST['csrf'] ?? null)) {
+        $coordErreurs[] = 'Votre session a expiré. Merci de renvoyer le formulaire.';
+    } else {
+        [$changements, $coordErreurs] = membre_coordonnees_enregistrer((int) $membre['id'], $_POST);
+        if (!$coordErreurs) {
+            if ($changements) {
+                @email_maj_coordonnees($membre, $changements);
+                journaliser('membre.coordonnees_maj', 'membre#' . (int) $membre['id'], implode(',', array_column($changements, 'champ')));
+            }
+            $coordOk = true;
+        }
+    }
+}
+$ficheCoord = $membre ? membre_fiche_recente((int) $membre['id']) : null;
 
 /* ---- Formulaire de partage (membre connecté) ----------------------- */
 if ($membre && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['form'] ?? '') === 'partage') {
@@ -241,6 +261,35 @@ require __DIR__ . '/inc/header.php';
     </div>
     <p class="bib-vide" id="bib-vide" hidden>Aucun document ne correspond à votre recherche.</p>
     <?php endif; ?>
+
+    <!-- Mes coordonnées -->
+    <form class="bib-partage" method="post" novalidate id="mes-coordonnees">
+      <input type="hidden" name="form" value="coordonnees">
+      <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
+      <h2>Mes coordonnées</h2>
+      <p class="bib-partage__sub">Vous avez changé d’adresse ou de numéro ? Mettez-le à jour ici : le secrétariat et le président sont prévenus. Pour changer l’adresse e-mail de connexion, contactez le secrétariat.</p>
+
+      <?php if ($coordOk): ?>
+        <p class="bib-ok" role="status"><?= !empty($changements) ? 'Merci ! Vos coordonnées sont enregistrées et le club a été prévenu.' : 'Aucun changement à enregistrer.' ?></p>
+      <?php endif; ?>
+      <?php foreach ($coordErreurs as $err): ?>
+        <p class="connexion__erreur" role="alert"><?= e($err) ?></p>
+      <?php endforeach; ?>
+
+      <?php if (!$ficheCoord): ?>
+        <p class="bib-partage__sub">Aucune fiche d’adhérent n’est rattachée à votre compte pour le moment. Contactez le secrétariat.</p>
+      <?php else: foreach (MEMBRE_COORDONNEES as $champ => [$libelle, $max]):
+          $val = $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'coordonnees' && $coordErreurs
+              ? (string) ($_POST[$champ] ?? '') : (string) ($ficheCoord[$champ] ?? ''); ?>
+      <div class="champ">
+        <label for="coord-<?= e($champ) ?>"><?= e($libelle) ?></label>
+        <input id="coord-<?= e($champ) ?>" type="<?= $champ === 'courriel' ? 'email' : (str_starts_with($champ, 'tel_') ? 'tel' : 'text') ?>"
+               name="<?= e($champ) ?>" value="<?= e($val) ?>" maxlength="<?= (int) $max ?>">
+      </div>
+      <?php endforeach; ?>
+      <div class="bib-envoi"><button class="bouton" type="submit">Enregistrer mes coordonnées</button></div>
+      <?php endif; ?>
+    </form>
 
     <!-- Mise à jour de mes documents -->
     <form class="bib-partage" method="post" enctype="multipart/form-data" novalidate id="mes-documents">

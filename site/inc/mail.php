@@ -729,3 +729,37 @@ function email_maj_documents(array $membre, array $deposes): bool
     return $ok;
 }
 
+/**
+ * Prévient le secrétariat et le président qu'un membre a modifié ses
+ * coordonnées depuis son espace adhérents. $changements : liste de
+ * ['libelle', 'avant', 'apres'].
+ */
+function email_maj_coordonnees(array $membre, array $changements): bool
+{
+    $nom   = trim((string) $membre['prenom'] . ' ' . (string) $membre['nom']);
+    $sujet = 'Coordonnées modifiées — ' . $nom;
+    $v = static fn(string $x): string => $x === '' ? '(vide)' : $x;
+    $texte = "{$nom} vient de modifier ses coordonnées depuis son espace adhérents.\n\n";
+    $lignesHtml = '';
+    foreach ($changements as $c) {
+        $texte .= "- {$c['libelle']} : " . $v($c['avant']) . ' → ' . $v($c['apres']) . "\n";
+        $lignesHtml .= '<tr><td style="padding:6px 0;color:#83888a;vertical-align:top;">' . e($c['libelle']) . '</td>'
+            . '<td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">'
+            . '<span style="color:#83888a;font-weight:normal;text-decoration:line-through;">' . e($v($c['avant'])) . '</span><br>' . e($v($c['apres'])) . '</td></tr>';
+    }
+    $texte .= "\nÀ FAIRE : mettre à jour la fiche de ce membre dans Open Flyer.\n\n--\nMessage automatique du site du Saumur Air Club.";
+    $corpsHtml =
+        '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;"><strong>' . e($nom) . '</strong> vient de modifier ses coordonnées depuis son espace adhérents.</p>'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        .   'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 20px;">' . $lignesHtml . '</table>'
+        . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;"><strong style="color:#14294D;">À faire :</strong> mettre à jour la fiche de ce membre dans Open Flyer.</p>';
+    $html = email_gabarit('Coordonnées modifiées', $corpsHtml);
+
+    $reponse = filter_var((string) ($membre['email'] ?? ''), FILTER_VALIDATE_EMAIL) ? (string) $membre['email'] : null;
+    $ok = false;
+    foreach (array_unique([CLUB['email'], CLUB['email_president']]) as $dest) {
+        $ok = envoyer_email_html_pj($dest, $sujet, $html, $texte, [], $reponse) || $ok;
+    }
+    return $ok;
+}
+
