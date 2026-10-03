@@ -1221,6 +1221,8 @@ a:hover { color: var(--bleu-encre); }
 .bib-acc[open] > summary .bib-chev { transform: rotate(180deg); }
 .bib-acc > form { padding: 0 1.5rem 1.5rem; }
 .bib-acc + .bib-acc { margin-top: 1rem; }
+.bib-acc__txt { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.bib-acc__desc { font-size: .88rem; color: var(--gris-700); line-height: 1.4; }
 @media (max-width: 560px) { .bib-hero__in { align-items: flex-start; } }
 /* Mobile/tablette : dégager le haut du bandeau adhérents pour ne pas passer
    sous le burger fixe (coin haut-droit). Placé après la base .bib-hero pour
