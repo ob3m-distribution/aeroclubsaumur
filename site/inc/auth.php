@@ -62,8 +62,8 @@ const ROLES = [
     ],
     'bureau' => [
         'libelle'     => 'Bureau',
-        'description' => 'Consultent et modifient toute la bibliothèque et les tarifs et prix du site, consultent le suivi des adhérents et leurs documents (lecture seule), et envoient les liens de réinscription.',
-        'droits'      => ['biblio.gerer', 'tarifs.gerer', 'membres.documents', 'membres.relancer'],
+        'description' => 'Consultent et modifient toute la bibliothèque et les tarifs et prix du site, gèrent les membres (validation des dossiers, rôles et accès, hors super administrateur) et envoient les liens de réinscription.',
+        'droits'      => ['biblio.gerer', 'tarifs.gerer', 'membres.gerer', 'membres.documents', 'membres.relancer'],
         'biblio'      => 'tout',
     ],
     'bons_cadeaux' => [
