@@ -658,7 +658,7 @@ function email_cotisation_secretariat(array $ins, string $mode): bool
     $nom     = trim((string) ($ins['prenom'] ?? '') . ' ' . (string) ($ins['nom'] ?? ''));
     $annee   = (string) ($ins['annee'] ?? '');
     $montant = prix((int) ($ins['total_cents'] ?? 0));
-    $modeLib = $mode === 'virement' ? 'Virement bancaire (à vérifier à réception)' : 'Carte bancaire en ligne (Stripe)';
+    $modeLib = $mode === 'virement' ? 'Virement bancaire (à vérifier à réception)' : 'Carte Bancaire (Paiement en ligne via site club)';
     $statut  = $mode === 'virement' ? 'virement annoncé' : 'payée';
     $sujet   = sprintf('Cotisation %s %s — %s', $annee, $statut, $nom);
     $courriel = (string) ($ins['courriel'] ?? '');
@@ -669,7 +669,7 @@ function email_cotisation_secretariat(array $ins, string $mode): bool
         . "MONTANT  : {$montant}\n"
         . "PAIEMENT : {$modeLib}\n\n"
         . "À FAIRE : mettre à jour la ré-adhésion de ce membre dans Open Flyer\n"
-        . "(saisir et créditer le montant, type de règlement carte bancaire ou virement).\n"
+        . "(saisir et créditer le montant, type de règlement « Carte Bancaire (Paiement en ligne via site club) » ou « Virement »).\n"
         . "Le site ne transmet aucune information à Open Flyer.\n\n"
         . "--\nMessage automatique du site du Saumur Air Club.";
 
