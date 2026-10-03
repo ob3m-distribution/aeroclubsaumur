@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/inscription.php';
-exiger_droit('membres.gerer');
+exiger_droit('membres.documents');
 
 $id  = (int) ($_GET['i'] ?? 0);
 $docId = (int) ($_GET['d'] ?? 0);
