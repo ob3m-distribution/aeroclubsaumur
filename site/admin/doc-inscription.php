@@ -8,7 +8,14 @@ exiger_droit('membres.documents');
 $id  = (int) ($_GET['i'] ?? 0);
 $docId = (int) ($_GET['d'] ?? 0);
 
-if ($docId > 0) {
+$mdoc = (int) ($_GET['m'] ?? 0);
+
+if ($mdoc > 0) {
+    // Mise à jour déposée par le membre (table membre_documents).
+    $s = db()->prepare('SELECT fichier FROM membre_documents WHERE id = ?');
+    $s->execute([$mdoc]);
+    $rel = (string) ($s->fetchColumn() ?: '');
+} elseif ($docId > 0) {
     // Document additionnel (table inscription_documents).
     $s = db()->prepare('SELECT fichier FROM inscription_documents WHERE id = ?');
     $s->execute([$docId]);

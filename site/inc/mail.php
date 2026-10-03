@@ -689,3 +689,43 @@ function email_cotisation_secretariat(array $ins, string $mode): bool
 
     return envoyer_email_html_pj(CLUB['email'], $sujet, $html, $texte, [], $courriel !== '' ? $courriel : null);
 }
+
+/**
+ * Prévient le secrétariat et le président qu'un membre a mis à jour un ou
+ * deux documents (licence, certificat médical) depuis son espace adhérents.
+ * $deposes : liste de ['libelle', 'validite' (AAAA-MM-JJ)].
+ */
+function email_maj_documents(array $membre, array $deposes): bool
+{
+    $nom   = trim((string) $membre['prenom'] . ' ' . (string) $membre['nom']);
+    $lien  = 'https://' . ($_SERVER['HTTP_HOST'] ?? 'aeroclub-saumur.fr') . '/admin/suivi-membres.php';
+    $sujet = 'Documents mis à jour — ' . $nom;
+    $lignesTxt = '';
+    $lignesHtml = '';
+    foreach ($deposes as $d) {
+        $date = date('d/m/Y', strtotime((string) $d['validite']));
+        $lignesTxt .= "- {$d['libelle']} : valable jusqu'au {$date}\n";
+        $lignesHtml .= '<tr><td style="padding:6px 0;color:#83888a;">' . e($d['libelle']) . '</td>'
+            . '<td style="padding:6px 0;text-align:right;font-weight:bold;color:#14294D;">jusqu\'au ' . e($date) . '</td></tr>';
+    }
+    $texte = "{$nom} vient de mettre à jour ses documents depuis son espace adhérents.\n\n"
+        . $lignesTxt . "\n"
+        . "Les fichiers sont à consulter ici (menu Adhérents) :\n{$lien}\n\n"
+        . "À FAIRE : vérifier le document et mettre à jour les validités dans Open Flyer.\n\n"
+        . "--\nMessage automatique du site du Saumur Air Club.";
+    $corpsHtml =
+        '<p style="margin:0 0 18px;font-size:15px;line-height:1.6;"><strong>' . e($nom) . '</strong> vient de mettre à jour ses documents depuis son espace adhérents.</p>'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        .   'style="border:2px solid #B08D2C;border-radius:10px;padding:6px 20px;margin:0 0 20px;">' . $lignesHtml . '</table>'
+        . '<p style="margin:0 0 22px;">' . email_bouton($lien, 'Voir les documents') . '</p>'
+        . '<p style="margin:0;font-size:14px;line-height:1.6;color:#4C596B;"><strong style="color:#14294D;">À faire :</strong> vérifier le document et mettre à jour les validités dans Open Flyer.</p>';
+    $html = email_gabarit('Documents mis à jour', $corpsHtml);
+
+    $reponse = filter_var((string) ($membre['email'] ?? ''), FILTER_VALIDATE_EMAIL) ? (string) $membre['email'] : null;
+    $ok = false;
+    foreach (array_unique([CLUB['email'], CLUB['email_president']]) as $dest) {
+        $ok = envoyer_email_html_pj($dest, $sujet, $html, $texte, [], $reponse) || $ok;
+    }
+    return $ok;
+}
+

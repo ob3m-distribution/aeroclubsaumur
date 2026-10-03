@@ -17,6 +17,7 @@ const CLUB = [
     'adresse_2'    => 'Route de Marson, 49400 SAUMUR',
     'email'        => 'secretaire-general@saumurairclub.fr',
     'email_vols'   => 'voler@saumurairclub.fr',
+    'email_president' => 'president@saumurairclub.fr',
     'tel_mobile'   => '06 27 36 04 46',
     'tel_fixe'     => '02 41 50 20 27',
     'lat'          => '47.25848000',
