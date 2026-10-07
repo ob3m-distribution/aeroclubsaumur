@@ -98,7 +98,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $id) {
         $dem = db()->prepare('SELECT * FROM inscriptions WHERE id = ? AND type = "demande"');
         $dem->execute([$id]);
         $dem = $dem->fetch();
-        $manque = $dem ? array_filter(array_keys(DEMANDE_ETAPES), fn($k) => !$dem[$k . '_ok']) : ['*'];
+        $manque = $dem ? array_filter(demande_etapes_requises($dem), fn($k) => !$dem[$k . '_ok']) : ['*'];
         if (!$dem) {
             $_SESSION['message_erreur'] = 'Demande introuvable.';
         } elseif ($manque) {
@@ -192,6 +192,43 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $id) {
     db()->prepare('UPDATE inscriptions SET ' . implode(', ', $set) . ' WHERE id = ?')->execute($vals);
     journaliser('inscription.dossier_maj', 'inscription#' . $id);
     if (empty($_SESSION['message_erreur'])) $_SESSION['message_succes'] = 'Dossier enregistré.';
+
+    // Le nom, le prénom et le courriel de la fiche alimentent aussi le compte du
+    // membre (liste « Adhérents », envoi des liens, connexion) : sans cela, une
+    // correction faite ici n'était pas prise en compte ailleurs.
+    $lienCompte = db()->prepare('SELECT m.id, m.nom, m.prenom, m.email, m.role
+                                   FROM inscriptions i JOIN membres m ON m.id = i.membre_id WHERE i.id = ?');
+    $lienCompte->execute([$id]);
+    if ($cpt = $lienCompte->fetch()) {
+        if ($cpt['role'] === 'superadmin' && !est_superadmin()) {
+            $_SESSION['message_erreur'] = 'Dossier enregistré, mais le compte d’un super administrateur ne peut être modifié que par un super administrateur.';
+        } else {
+            $nvNom = trim((string) ($_POST['nom'] ?? ''));
+            $nvPrenom = trim((string) ($_POST['prenom'] ?? ''));
+            $nvMail = mb_strtolower(trim((string) ($_POST['courriel'] ?? '')));
+            $notes = [];
+            if ($nvNom !== '' && $nvPrenom !== '' && ($nvNom !== $cpt['nom'] || $nvPrenom !== $cpt['prenom'])) {
+                db()->prepare('UPDATE membres SET nom = ?, prenom = ? WHERE id = ?')->execute([$nvNom, $nvPrenom, (int) $cpt['id']]);
+                $notes[] = 'nom et prénom';
+            }
+            if ($nvMail !== '' && $nvMail !== mb_strtolower((string) $cpt['email'])) {
+                $pris = db()->prepare('SELECT COUNT(*) FROM membres WHERE email = ? AND id <> ?');
+                $pris->execute([$nvMail, (int) $cpt['id']]);
+                if (!filter_var($nvMail, FILTER_VALIDATE_EMAIL)) {
+                    $_SESSION['message_erreur'] = 'Courriel non reporté sur le compte : adresse invalide.';
+                } elseif ((int) $pris->fetchColumn() > 0) {
+                    $_SESSION['message_erreur'] = 'Courriel non reporté sur le compte : cette adresse est déjà utilisée par un autre compte.';
+                } else {
+                    db()->prepare('UPDATE membres SET email = ? WHERE id = ?')->execute([$nvMail, (int) $cpt['id']]);
+                    $notes[] = 'courriel de connexion';
+                    journaliser('membre.email_maj', 'membre#' . (int) $cpt['id']);
+                }
+            }
+            if ($notes && empty($_SESSION['message_erreur'])) {
+                $_SESSION['message_succes'] = 'Dossier enregistré. Compte du membre mis à jour : ' . implode(' et ', $notes) . '.';
+            }
+        }
+    }
     header('Location: /admin/adherent.php?i=' . $id, true, 303);
     exit;
 }
@@ -377,8 +414,9 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
 </div>
 
 <?php if ($estDemande):
-    $pret = $a['rencontre_ok'] && $a['licence_ok'] && $a['medicale_ok'] && $a['cotisation_ok'];
-    $faits = count(array_filter(array_keys(DEMANDE_ETAPES), fn($k) => $a[$k . '_ok']));
+    $requises = demande_etapes_requises($a);
+    $faits = count(array_filter($requises, fn($k) => $a[$k . '_ok']));
+    $pret = $faits === count($requises);
     // Dossier complet = tous les champs requis (documents facultatifs).
     $manqueDossier = inscription_manquants($a);
     $dossierComplet = !$manqueDossier;
@@ -386,7 +424,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
 <div class="bloc" style="border-left:3px solid var(--or,#b08d2c)">
   <div class="bloc__titre">
     <h2>Traitement de la demande</h2>
-    <span class="etat etat--<?= $pret ? 'paye">Prête à valider' : 'planifie">' . $faits . '/4 étape' . ($faits > 1 ? 's' : '') ?></span>
+    <span class="etat etat--<?= $pret ? 'paye">Prête à valider' : 'planifie">' . $faits . '/' . count($requises) . ' étape' . ($faits > 1 ? 's' : '') ?></span>
   </div>
   <p class="aide" style="margin:0 0 .8rem">
     Un membre du bureau contacte la personne, la reçoit, vérifie son dossier et ses documents,
@@ -399,7 +437,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
     <?php foreach (DEMANDE_ETAPES as $cle => $lib): $tr = inscription_trace($a, $cle, $nomsValideurs); ?>
       <label style="display:flex;gap:.5rem;align-items:flex-start;padding:.3rem 0">
         <input type="checkbox" name="<?= $cle ?>_ok" value="1"<?= $a[$cle . '_ok'] ? ' checked' : '' ?>>
-        <span><?= e($lib) ?><?php if ($tr): ?><br><span class="muet" style="font-size:.75rem"><?= e($tr) ?></span><?php endif; ?></span>
+        <span><?= e($lib) ?><?php if (!in_array($cle, $requises, true)): ?> <span class="muet" style="font-size:.75rem">(sans objet : aucun document déposé)</span><?php endif; ?><?php if ($tr): ?><br><span class="muet" style="font-size:.75rem"><?= e($tr) ?></span><?php endif; ?></span>
       </label>
     <?php endforeach; ?>
     <div class="actions" style="margin-top:.8rem">
@@ -415,7 +453,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
       <button type="submit" class="btn">✓ Valider et convertir en membre officiel</button>
     </form>
   <?php else: ?>
-    <p class="muet" style="margin:0">La conversion en membre sera possible une fois les 4 étapes cochées.</p>
+    <p class="muet" style="margin:0">La conversion en membre sera possible une fois les <?= count($requises) ?> étapes requises cochées.</p>
   <?php endif; ?>
 </div>
 

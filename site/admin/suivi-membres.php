@@ -239,15 +239,16 @@ $ajour = static function (?string $date) use ($fin): string {
         </thead>
         <tbody>
         <?php foreach ($demandes as $dm):
-            $faits = (int) $dm['rencontre_ok'] + (int) $dm['licence_ok'] + (int) $dm['medicale_ok'] + (int) $dm['cotisation_ok'];
-            $pret = $faits === 4; ?>
+            $requises = demande_etapes_requises($dm);
+            $faits = count(array_filter($requises, fn($k) => !empty($dm[$k . '_ok'])));
+            $pret = $faits === count($requises); ?>
           <tr>
             <td><?= e(date('d/m/Y', strtotime((string) $dm['cree_le']))) ?></td>
             <td><?= $ecriture ? '<a href="/admin/adherent.php?i=' . (int) $dm['id'] . '">' . e($dm['nom']) . '</a>' : e($dm['nom']) ?></td>
             <td><?= e($dm['prenom']) ?></td>
             <td style="font-size:.8rem"><?= e($dm['courriel']) ?><br><span class="muet"><?= e($dm['tel_mobile']) ?></span></td>
             <td style="font-size:.8rem"><?= e(inscription_resume_cotisation($dm)) ?></td>
-            <td><span class="etat etat--<?= $pret ? 'paye">Prête à valider' : ($faits ? 'planifie">En cours ' . $faits . '/4' : 'attente">Reçue') ?></span></td>
+            <td><span class="etat etat--<?= $pret ? 'paye">Prête à valider' : ($faits ? 'planifie">En cours ' . $faits . '/' . count($requises) : 'attente">Reçue') ?></span></td>
             <td style="font-size:.8rem">
               <?= $dm['licence_fichier'] ? '<a href="/admin/doc-inscription.php?i=' . (int) $dm['id'] . '&t=licence" target="_blank" rel="noopener">Licence</a>' : '<span class="muet">licence —</span>' ?><br>
               <?= $dm['visite_medicale_fichier'] ? '<a href="/admin/doc-inscription.php?i=' . (int) $dm['id'] . '&t=medicale" target="_blank" rel="noopener">Médicale</a>' : '<span class="muet">médicale —</span>' ?>

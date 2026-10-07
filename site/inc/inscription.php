@@ -79,6 +79,10 @@ function inscription_depuis_post(array $post): array
     if (in_array('info_pilote', $extras, true)) {
         $extras = array_values(array_diff($extras, ['info_pilote_num']));
     }
+    // D : une seule licence FFA (la version Post BIA l'emporte).
+    if (in_array('licence_ffa_bia', $extras, true)) {
+        $extras = array_values(array_diff($extras, ['licence_ffa']));
+    }
     // A — Membre Club : facultatif seulement avec un programme FFA (E).
     if (in_array($d['option_cotisation'], COTISATION_PROGRAMMES_FFA, true) && empty($post['membre_club'])) {
         $extras[] = 'sans_membre';
@@ -270,3 +274,22 @@ function inscription_resume_cotisation(array $ins): string
     }
     return $parts ? implode(' · ', array_filter($parts)) : '—';
 }
+
+/**
+ * Étapes de traitement réellement requises pour une demande de pré-inscription.
+ * Licence pilote et visite médicale ne sont à valider que si la personne en
+ * détient un (document déposé, validité ou n° de titre renseignés) : un jeune
+ * titulaire du BIA, par exemple, n'a ni l'un ni l'autre.
+ */
+function demande_etapes_requises(array $d): array
+{
+    $requises = ['rencontre', 'cotisation'];
+    if (!empty($d['licence_fichier']) || !empty($d['validite_licence']) || !empty($d['lapl_num']) || !empty($d['ppl_num'])) {
+        $requises[] = 'licence';
+    }
+    if (!empty($d['visite_medicale_fichier']) || !empty($d['validite_visite_medicale'])) {
+        $requises[] = 'medicale';
+    }
+    return $requises;
+}
+
