@@ -132,7 +132,8 @@ function cotisation_membre(): int
 /**
  * B et E — options (une seule au choix), dans l'ordre de la fiche 2027.
  * Les clés restent celles des dossiers déjà enregistrés (opt4 = Jeunes
- * Ailes, opt5 = Passeport, opt6 = Membre non pilote) : seuls les libellés
+ * Ailes, opt5 = Passeport, opt6 = Membre non pilote, opt7 = Membre Jeunes
+ * Ailes / Post BIA, ajouté le 07/10/2026) : seuls les libellés
  * suivent la nouvelle numérotation de la fiche.
  * [clé => [libellé, centimes]].
  */
@@ -144,15 +145,16 @@ function cotisation_options(): array
         'opt2' => ['Option 2 — Pilote −25 ans', tarif('cotis.opt2')],
         'opt3' => ['Option 3 — Pilote de passage (2ᵉ club, licence FFA hors club requise)', tarif('cotis.opt3')],
         'opt6' => ['Option 4 — Membre non pilote', tarif('cotis.opt6')],
-        'opt4' => ['Option 6 — Licence Jeunes Ailes (programme FFA)', tarif('cotis.opt4')],
-        'opt5' => ['Option 7 — Passeport FFA (programme FFA)', tarif('cotis.opt5')],
+        'opt7' => ['Option 5 — Membre Jeunes Ailes / Post BIA', tarif('cotis.opt7')],
+        'opt4' => ['Option 7 — Licence Jeunes Ailes (programme FFA)', tarif('cotis.opt4')],
+        'opt5' => ['Option 8 — Passeport FFA (programme FFA)', tarif('cotis.opt5')],
     ];
 }
 
 /** Options « Programmes FFA » (E) : la cotisation Membre Club y est facultative. */
 const COTISATION_PROGRAMMES_FFA = ['opt4', 'opt5'];
 
-/** Bloc d'heures associé au Passeport FFA (option 7). [clé => [libellé, centimes]]. */
+/** Bloc d'heures associé au Passeport FFA (option 8). [clé => [libellé, centimes]]. */
 function cotisation_blocs(): array
 {
     require_once __DIR__ . '/tarifs.php';
@@ -171,10 +173,11 @@ function cotisation_extras(): array
 {
     require_once __DIR__ . '/tarifs.php';
     return [
-        'caution_badge'   => ['Option 5 — Caution badge + clef', tarif('cotis.caution_badge'), 'B'],
+        'caution_badge'   => ['Option 6 — Caution badge + clef', tarif('cotis.caution_badge'), 'B'],
         'info_pilote'     => ['Info Pilote (papier)', tarif('cotis.info_pilote'), 'C'],
         'info_pilote_num' => ['Info Pilote (numérique)', tarif('cotis.info_pilote_num'), 'C'],
         'licence_ffa'     => ['Licence FFA', tarif('cotis.licence_ffa'), 'D'],
+        'licence_ffa_bia' => ['Licence FFA Post BIA / Jeunes Ailes', tarif('cotis.licence_ffa_bia'), 'D'],
         'pack_basique'    => ['Pack basique (manuel du pilote, carnet de vol, livret de progression, protège check-list, livret d’accueil)', tarif('cotis.pack_basique'), 'F'],
         'elearning'       => ['Abonnement e-learning « aérogligli » (24 mois)', tarif('cotis.elearning'), 'F'],
     ];

@@ -34,7 +34,7 @@ $options = cotisation_options();
 
         <p class="cotisation__titre">B — Choisissez votre option</p>
         <div class="cotis-options">
-          <?php foreach (['opt1', 'opt2', 'opt3', 'opt6'] as $k): [$lib, $c] = $options[$k]; ?>
+          <?php foreach (['opt1', 'opt2', 'opt3', 'opt6', 'opt7'] as $k): [$lib, $c] = $options[$k]; ?>
             <label class="bon-radio"><input type="radio" name="option_cotisation" value="<?= e($k) ?>"<?= $optCourante === $k ? ' checked' : '' ?>>
               <span><?= e($lib) ?> — <?= e(prix($c)) ?></span></label>
           <?php endforeach; ?>
@@ -51,6 +51,7 @@ $options = cotisation_options();
 
         <p class="cotisation__titre">D — Licence</p>
         <?= $case('licence_ffa') ?>
+        <?= $case('licence_ffa_bia') ?>
 
         <p class="cotisation__titre">E — Programmes FFA <span class="aide">(sans inscription Membre Club : A facultative)</span></p>
         <div class="cotis-options">
@@ -75,6 +76,13 @@ $options = cotisation_options();
 
       <script>
       /* Total de la cotisation : même calcul que total_inscription() (config.php). */
+      /* D : une seule des deux licences FFA à la fois. */
+      document.addEventListener('change', function (ev) {
+        var t = ev.target;
+        if (!t || t.name !== 'extras[]' || (t.value !== 'licence_ffa' && t.value !== 'licence_ffa_bia') || !t.checked) return;
+        var autre = t.form.querySelector('input[name="extras[]"][value="' + (t.value === 'licence_ffa' ? 'licence_ffa_bia' : 'licence_ffa') + '"]');
+        if (autre) autre.checked = false;
+      });
       window.totalCotisation = function (f) {
         var P = <?= json_encode([
             'membre'     => cotisation_membre(),

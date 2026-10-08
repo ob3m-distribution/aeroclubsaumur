@@ -98,7 +98,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $id) {
         $dem = db()->prepare('SELECT * FROM inscriptions WHERE id = ? AND type = "demande"');
         $dem->execute([$id]);
         $dem = $dem->fetch();
-        $manque = $dem ? array_filter(array_keys(DEMANDE_ETAPES), fn($k) => !$dem[$k . '_ok']) : ['*'];
+        $manque = $dem ? array_filter(demande_etapes_requises($dem), fn($k) => !$dem[$k . '_ok']) : ['*'];
         if (!$dem) {
             $_SESSION['message_erreur'] = 'Demande introuvable.';
         } elseif ($manque) {
@@ -188,10 +188,61 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $id) {
     if ($lic = $uploadFichier('licence_fichier', 'licence'))          { $set[] = 'licence_fichier = ?';          $vals[] = $lic; }
     if ($med = $uploadFichier('visite_medicale_fichier', 'medicale')) { $set[] = 'visite_medicale_fichier = ?'; $vals[] = $med; }
 
+    // Cotisation (options, extras, total) corrigée depuis la fiche.
+    if (!empty($_POST['cotisation_modifiee'])) {
+        $ancienTotal = (int) (db()->query('SELECT total_cents FROM inscriptions WHERE id = ' . (int) $id)->fetchColumn() ?: 0);
+        $dc = inscription_depuis_post($_POST);
+        $set[]  = 'option_cotisation = ?'; $vals[] = $dc['option_cotisation'];
+        $set[]  = 'passeport_bloc = ?';    $vals[] = $dc['passeport_bloc'];
+        $set[]  = 'extras = ?';            $vals[] = $dc['extras'];
+        $nouveauTotal = inscription_total($dc);
+        $set[]  = 'total_cents = ?';       $vals[] = $nouveauTotal;
+        if ($nouveauTotal !== $ancienTotal) {
+            journaliser('inscription.cotisation_modifiee', 'inscription#' . $id, ($ancienTotal / 100) . ' € → ' . ($nouveauTotal / 100) . ' €');
+        }
+    }
+
     $vals[] = $id;
     db()->prepare('UPDATE inscriptions SET ' . implode(', ', $set) . ' WHERE id = ?')->execute($vals);
     journaliser('inscription.dossier_maj', 'inscription#' . $id);
     if (empty($_SESSION['message_erreur'])) $_SESSION['message_succes'] = 'Dossier enregistré.';
+
+    // Le nom, le prénom et le courriel de la fiche alimentent aussi le compte du
+    // membre (liste « Adhérents », envoi des liens, connexion) : sans cela, une
+    // correction faite ici n'était pas prise en compte ailleurs.
+    $lienCompte = db()->prepare('SELECT m.id, m.nom, m.prenom, m.email, m.role
+                                   FROM inscriptions i JOIN membres m ON m.id = i.membre_id WHERE i.id = ?');
+    $lienCompte->execute([$id]);
+    if ($cpt = $lienCompte->fetch()) {
+        if ($cpt['role'] === 'superadmin' && !est_superadmin()) {
+            $_SESSION['message_erreur'] = 'Dossier enregistré, mais le compte d’un super administrateur ne peut être modifié que par un super administrateur.';
+        } else {
+            $nvNom = trim((string) ($_POST['nom'] ?? ''));
+            $nvPrenom = trim((string) ($_POST['prenom'] ?? ''));
+            $nvMail = mb_strtolower(trim((string) ($_POST['courriel'] ?? '')));
+            $notes = [];
+            if ($nvNom !== '' && $nvPrenom !== '' && ($nvNom !== $cpt['nom'] || $nvPrenom !== $cpt['prenom'])) {
+                db()->prepare('UPDATE membres SET nom = ?, prenom = ? WHERE id = ?')->execute([$nvNom, $nvPrenom, (int) $cpt['id']]);
+                $notes[] = 'nom et prénom';
+            }
+            if ($nvMail !== '' && $nvMail !== mb_strtolower((string) $cpt['email'])) {
+                $pris = db()->prepare('SELECT COUNT(*) FROM membres WHERE email = ? AND id <> ?');
+                $pris->execute([$nvMail, (int) $cpt['id']]);
+                if (!filter_var($nvMail, FILTER_VALIDATE_EMAIL)) {
+                    $_SESSION['message_erreur'] = 'Courriel non reporté sur le compte : adresse invalide.';
+                } elseif ((int) $pris->fetchColumn() > 0) {
+                    $_SESSION['message_erreur'] = 'Courriel non reporté sur le compte : cette adresse est déjà utilisée par un autre compte.';
+                } else {
+                    db()->prepare('UPDATE membres SET email = ? WHERE id = ?')->execute([$nvMail, (int) $cpt['id']]);
+                    $notes[] = 'courriel de connexion';
+                    journaliser('membre.email_maj', 'membre#' . (int) $cpt['id']);
+                }
+            }
+            if ($notes && empty($_SESSION['message_erreur'])) {
+                $_SESSION['message_succes'] = 'Dossier enregistré. Compte du membre mis à jour : ' . implode(' et ', $notes) . '.';
+            }
+        }
+    }
     header('Location: /admin/adherent.php?i=' . $id, true, 303);
     exit;
 }
@@ -292,13 +343,94 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
         </div>
       </div>
 
-      <div class="bloc">
+      <?php
+        $optsCot = cotisation_options();
+        $extrasCot = cotisation_extras();
+        $extrasCoches = array_filter(explode(',', (string) $a['extras']));
+        $optCour = (string) $a['option_cotisation'];
+        $estProg = in_array($optCour, COTISATION_PROGRAMMES_FFA, true);
+        $infoCour = in_array('info_pilote', $extrasCoches, true) ? 'info_pilote' : (in_array('info_pilote_num', $extrasCoches, true) ? 'info_pilote_num' : '');
+        $caseCot = static function (string $cle) use ($extrasCot, $extrasCoches): string {
+            return '<label style="display:flex;gap:.5rem;align-items:flex-start;padding:.15rem 0"><input type="checkbox" name="extras[]" value="' . e($cle) . '"'
+                . (in_array($cle, $extrasCoches, true) ? ' checked' : '') . '><span>' . e($extrasCot[$cle][0]) . ' — ' . e(prix($extrasCot[$cle][1])) . '</span></label>';
+        };
+      ?>
+      <div class="bloc" id="bloc-cotisation">
         <h2>Cotisation <?= (int) $a['annee'] ?></h2>
-        <p><?= e(inscription_resume_cotisation($a)) ?></p>
-        <p class="recap-total" style="margin:.4rem 0 0">Total <strong><?= e(prix((int) $a['total_cents'])) ?></strong>
+        <input type="hidden" name="cotisation_modifiee" value="1">
+        <p class="aide" style="margin:0 0 .6rem">Corrigez ici les choix saisis par le membre. Le total se recalcule ; un paiement déjà reçu n’est pas modifié.</p>
+
+        <label style="display:flex;gap:.5rem;padding:.15rem 0"><input type="checkbox" name="membre_club" value="1" id="cot-membre"<?= !($estProg && in_array('sans_membre', $extrasCoches, true)) ? ' checked' : '' ?>>
+          <span>A — Membre Club — <?= e(prix(cotisation_membre())) ?> <span class="muet">(facultatif avec un programme FFA)</span></span></label>
+
+        <p style="margin:.7rem 0 .2rem;font-weight:600">B / E — Option</p>
+        <label style="display:flex;gap:.5rem;padding:.15rem 0"><input type="radio" name="option_cotisation" value=""<?= $optCour === '' ? ' checked' : '' ?>><span>Aucune</span></label>
+        <?php foreach (['opt1', 'opt2', 'opt3', 'opt6', 'opt7', 'opt4', 'opt5'] as $k): ?>
+          <label style="display:flex;gap:.5rem;padding:.15rem 0"><input type="radio" name="option_cotisation" value="<?= e($k) ?>"<?= $optCour === $k ? ' checked' : '' ?>>
+            <span><?= e($optsCot[$k][0]) ?> — <?= e(prix($optsCot[$k][1])) ?></span></label>
+        <?php endforeach; ?>
+        <div class="champ" id="cot-bloc-passeport" style="margin:.4rem 0 0<?= $optCour === 'opt5' ? '' : ';display:none' ?>">
+          <label for="passeport_bloc">Bloc d’heures (Passeport FFA)</label>
+          <select id="passeport_bloc" name="passeport_bloc">
+            <?php foreach (cotisation_blocs() as $k => [$lib, $c]): ?>
+              <option value="<?= e($k) ?>"<?= (string) $a['passeport_bloc'] === (string) $k ? ' selected' : '' ?>><?= e($lib) ?><?= $c ? ' — ' . e(prix($c)) : '' ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <p style="margin:.7rem 0 .2rem;font-weight:600">Options complémentaires</p>
+        <?= $caseCot('caution_badge') ?>
+        <?= $caseCot('licence_ffa') ?>
+        <?= $caseCot('licence_ffa_bia') ?>
+        <?= $caseCot('pack_basique') ?>
+        <?= $caseCot('elearning') ?>
+        <p style="margin:.5rem 0 .2rem;font-weight:600">C — Info Pilote</p>
+        <label style="display:flex;gap:.5rem;padding:.15rem 0"><input type="radio" name="info_pilote" value=""<?= $infoCour === '' ? ' checked' : '' ?>><span>Sans abonnement</span></label>
+        <?php foreach (['info_pilote' => 'Papier', 'info_pilote_num' => 'Numérique'] as $k => $lib): ?>
+          <label style="display:flex;gap:.5rem;padding:.15rem 0"><input type="radio" name="info_pilote" value="<?= e($k) ?>"<?= $infoCour === $k ? ' checked' : '' ?>><span><?= e($lib) ?> — <?= e(prix($extrasCot[$k][1])) ?></span></label>
+        <?php endforeach; ?>
+
+        <p class="recap-total" style="margin:.8rem 0 0">Total <strong id="cot-total"><?= e(prix((int) $a['total_cents'])) ?></strong>
           <?php if ($a['mode_paiement']): ?><span class="muet"> · <?= e($a['mode_paiement']) ?></span><?php endif; ?></p>
+        <p class="aide" style="margin:.3rem 0 0">Choix enregistrés : <?= e(inscription_resume_cotisation($a)) ?></p>
         <p style="margin:.5rem 0 0"><span class="etat etat--<?= e($stCls) ?>"><?= e($stLib) ?></span></p>
       </div>
+      <script>
+      (function () {
+        var f = document.getElementById('bloc-cotisation').closest('form');
+        var P = <?= json_encode([
+            'membre'     => cotisation_membre(),
+            'options'    => array_map(fn($o) => $o[1], $optsCot),
+            'blocs'      => array_map(fn($b) => $b[1], cotisation_blocs()),
+            'extras'     => array_map(fn($x) => $x[1], $extrasCot),
+            'programmes' => COTISATION_PROGRAMMES_FFA,
+        ]) ?>;
+        function euros(c) { return (c % 100 ? (c / 100).toFixed(2).replace('.', ',') : (c / 100)) + ' €'; }
+        function maj() {
+          var opt = (f.querySelector('input[name="option_cotisation"]:checked') || {}).value || '';
+          var prog = P.programmes.indexOf(opt) !== -1, membre = f.querySelector('#cot-membre');
+          if (!prog) membre.checked = true;
+          membre.disabled = !prog;
+          var t = membre.checked ? P.membre : 0;
+          if (P.options[opt] != null) t += P.options[opt];
+          document.getElementById('cot-bloc-passeport').style.display = opt === 'opt5' ? '' : 'none';
+          if (opt === 'opt5') t += P.blocs[f.querySelector('#passeport_bloc').value] || 0;
+          f.querySelectorAll('#bloc-cotisation input[name="extras[]"]:checked').forEach(function (x) { t += P.extras[x.value] || 0; });
+          var ip = (f.querySelector('input[name="info_pilote"]:checked') || {}).value || '';
+          if (ip) t += P.extras[ip] || 0;
+          document.getElementById('cot-total').textContent = euros(t);
+        }
+        f.addEventListener('change', function (ev) {
+          var t = ev.target;
+          if (t && t.name === 'extras[]' && t.checked && (t.value === 'licence_ffa' || t.value === 'licence_ffa_bia')) {
+            var autre = f.querySelector('input[name="extras[]"][value="' + (t.value === 'licence_ffa' ? 'licence_ffa_bia' : 'licence_ffa') + '"]');
+            if (autre) autre.checked = false;
+          }
+          maj();
+        });
+        maj();
+      })();
+      </script>
 
       <div class="bloc">
         <h2>Documents (si détenteur)</h2>
@@ -377,8 +509,9 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
 </div>
 
 <?php if ($estDemande):
-    $pret = $a['rencontre_ok'] && $a['licence_ok'] && $a['medicale_ok'] && $a['cotisation_ok'];
-    $faits = count(array_filter(array_keys(DEMANDE_ETAPES), fn($k) => $a[$k . '_ok']));
+    $requises = demande_etapes_requises($a);
+    $faits = count(array_filter($requises, fn($k) => $a[$k . '_ok']));
+    $pret = $faits === count($requises);
     // Dossier complet = tous les champs requis (documents facultatifs).
     $manqueDossier = inscription_manquants($a);
     $dossierComplet = !$manqueDossier;
@@ -386,7 +519,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
 <div class="bloc" style="border-left:3px solid var(--or,#b08d2c)">
   <div class="bloc__titre">
     <h2>Traitement de la demande</h2>
-    <span class="etat etat--<?= $pret ? 'paye">Prête à valider' : 'planifie">' . $faits . '/4 étape' . ($faits > 1 ? 's' : '') ?></span>
+    <span class="etat etat--<?= $pret ? 'paye">Prête à valider' : 'planifie">' . $faits . '/' . count($requises) . ' étape' . ($faits > 1 ? 's' : '') ?></span>
   </div>
   <p class="aide" style="margin:0 0 .8rem">
     Un membre du bureau contacte la personne, la reçoit, vérifie son dossier et ses documents,
@@ -399,7 +532,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
     <?php foreach (DEMANDE_ETAPES as $cle => $lib): $tr = inscription_trace($a, $cle, $nomsValideurs); ?>
       <label style="display:flex;gap:.5rem;align-items:flex-start;padding:.3rem 0">
         <input type="checkbox" name="<?= $cle ?>_ok" value="1"<?= $a[$cle . '_ok'] ? ' checked' : '' ?>>
-        <span><?= e($lib) ?><?php if ($tr): ?><br><span class="muet" style="font-size:.75rem"><?= e($tr) ?></span><?php endif; ?></span>
+        <span><?= e($lib) ?><?php if (!in_array($cle, $requises, true)): ?> <span class="muet" style="font-size:.75rem">(sans objet : aucun document déposé)</span><?php endif; ?><?php if ($tr): ?><br><span class="muet" style="font-size:.75rem"><?= e($tr) ?></span><?php endif; ?></span>
       </label>
     <?php endforeach; ?>
     <div class="actions" style="margin-top:.8rem">
@@ -415,7 +548,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
       <button type="submit" class="btn">✓ Valider et convertir en membre officiel</button>
     </form>
   <?php else: ?>
-    <p class="muet" style="margin:0">La conversion en membre sera possible une fois les 4 étapes cochées.</p>
+    <p class="muet" style="margin:0">La conversion en membre sera possible une fois les <?= count($requises) ?> étapes requises cochées.</p>
   <?php endif; ?>
 </div>
 
