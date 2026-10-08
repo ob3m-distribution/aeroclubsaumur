@@ -188,6 +188,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $id) {
     if ($lic = $uploadFichier('licence_fichier', 'licence'))          { $set[] = 'licence_fichier = ?';          $vals[] = $lic; }
     if ($med = $uploadFichier('visite_medicale_fichier', 'medicale')) { $set[] = 'visite_medicale_fichier = ?'; $vals[] = $med; }
 
+    // Cotisation (options, extras, total) corrigée depuis la fiche.
+    if (!empty($_POST['cotisation_modifiee'])) {
+        $ancienTotal = (int) (db()->query('SELECT total_cents FROM inscriptions WHERE id = ' . (int) $id)->fetchColumn() ?: 0);
+        $dc = inscription_depuis_post($_POST);
+        $set[]  = 'option_cotisation = ?'; $vals[] = $dc['option_cotisation'];
+        $set[]  = 'passeport_bloc = ?';    $vals[] = $dc['passeport_bloc'];
+        $set[]  = 'extras = ?';            $vals[] = $dc['extras'];
+        $nouveauTotal = inscription_total($dc);
+        $set[]  = 'total_cents = ?';       $vals[] = $nouveauTotal;
+        if ($nouveauTotal !== $ancienTotal) {
+            journaliser('inscription.cotisation_modifiee', 'inscription#' . $id, ($ancienTotal / 100) . ' € → ' . ($nouveauTotal / 100) . ' €');
+        }
+    }
+
     $vals[] = $id;
     db()->prepare('UPDATE inscriptions SET ' . implode(', ', $set) . ' WHERE id = ?')->execute($vals);
     journaliser('inscription.dossier_maj', 'inscription#' . $id);
@@ -329,13 +343,94 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
         </div>
       </div>
 
-      <div class="bloc">
+      <?php
+        $optsCot = cotisation_options();
+        $extrasCot = cotisation_extras();
+        $extrasCoches = array_filter(explode(',', (string) $a['extras']));
+        $optCour = (string) $a['option_cotisation'];
+        $estProg = in_array($optCour, COTISATION_PROGRAMMES_FFA, true);
+        $infoCour = in_array('info_pilote', $extrasCoches, true) ? 'info_pilote' : (in_array('info_pilote_num', $extrasCoches, true) ? 'info_pilote_num' : '');
+        $caseCot = static function (string $cle) use ($extrasCot, $extrasCoches): string {
+            return '<label style="display:flex;gap:.5rem;align-items:flex-start;padding:.15rem 0"><input type="checkbox" name="extras[]" value="' . e($cle) . '"'
+                . (in_array($cle, $extrasCoches, true) ? ' checked' : '') . '><span>' . e($extrasCot[$cle][0]) . ' — ' . e(prix($extrasCot[$cle][1])) . '</span></label>';
+        };
+      ?>
+      <div class="bloc" id="bloc-cotisation">
         <h2>Cotisation <?= (int) $a['annee'] ?></h2>
-        <p><?= e(inscription_resume_cotisation($a)) ?></p>
-        <p class="recap-total" style="margin:.4rem 0 0">Total <strong><?= e(prix((int) $a['total_cents'])) ?></strong>
+        <input type="hidden" name="cotisation_modifiee" value="1">
+        <p class="aide" style="margin:0 0 .6rem">Corrigez ici les choix saisis par le membre. Le total se recalcule ; un paiement déjà reçu n’est pas modifié.</p>
+
+        <label style="display:flex;gap:.5rem;padding:.15rem 0"><input type="checkbox" name="membre_club" value="1" id="cot-membre"<?= !($estProg && in_array('sans_membre', $extrasCoches, true)) ? ' checked' : '' ?>>
+          <span>A — Membre Club — <?= e(prix(cotisation_membre())) ?> <span class="muet">(facultatif avec un programme FFA)</span></span></label>
+
+        <p style="margin:.7rem 0 .2rem;font-weight:600">B / E — Option</p>
+        <label style="display:flex;gap:.5rem;padding:.15rem 0"><input type="radio" name="option_cotisation" value=""<?= $optCour === '' ? ' checked' : '' ?>><span>Aucune</span></label>
+        <?php foreach (['opt1', 'opt2', 'opt3', 'opt6', 'opt7', 'opt4', 'opt5'] as $k): ?>
+          <label style="display:flex;gap:.5rem;padding:.15rem 0"><input type="radio" name="option_cotisation" value="<?= e($k) ?>"<?= $optCour === $k ? ' checked' : '' ?>>
+            <span><?= e($optsCot[$k][0]) ?> — <?= e(prix($optsCot[$k][1])) ?></span></label>
+        <?php endforeach; ?>
+        <div class="champ" id="cot-bloc-passeport" style="margin:.4rem 0 0<?= $optCour === 'opt5' ? '' : ';display:none' ?>">
+          <label for="passeport_bloc">Bloc d’heures (Passeport FFA)</label>
+          <select id="passeport_bloc" name="passeport_bloc">
+            <?php foreach (cotisation_blocs() as $k => [$lib, $c]): ?>
+              <option value="<?= e($k) ?>"<?= (string) $a['passeport_bloc'] === (string) $k ? ' selected' : '' ?>><?= e($lib) ?><?= $c ? ' — ' . e(prix($c)) : '' ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+
+        <p style="margin:.7rem 0 .2rem;font-weight:600">Options complémentaires</p>
+        <?= $caseCot('caution_badge') ?>
+        <?= $caseCot('licence_ffa') ?>
+        <?= $caseCot('licence_ffa_bia') ?>
+        <?= $caseCot('pack_basique') ?>
+        <?= $caseCot('elearning') ?>
+        <p style="margin:.5rem 0 .2rem;font-weight:600">C — Info Pilote</p>
+        <label style="display:flex;gap:.5rem;padding:.15rem 0"><input type="radio" name="info_pilote" value=""<?= $infoCour === '' ? ' checked' : '' ?>><span>Sans abonnement</span></label>
+        <?php foreach (['info_pilote' => 'Papier', 'info_pilote_num' => 'Numérique'] as $k => $lib): ?>
+          <label style="display:flex;gap:.5rem;padding:.15rem 0"><input type="radio" name="info_pilote" value="<?= e($k) ?>"<?= $infoCour === $k ? ' checked' : '' ?>><span><?= e($lib) ?> — <?= e(prix($extrasCot[$k][1])) ?></span></label>
+        <?php endforeach; ?>
+
+        <p class="recap-total" style="margin:.8rem 0 0">Total <strong id="cot-total"><?= e(prix((int) $a['total_cents'])) ?></strong>
           <?php if ($a['mode_paiement']): ?><span class="muet"> · <?= e($a['mode_paiement']) ?></span><?php endif; ?></p>
+        <p class="aide" style="margin:.3rem 0 0">Choix enregistrés : <?= e(inscription_resume_cotisation($a)) ?></p>
         <p style="margin:.5rem 0 0"><span class="etat etat--<?= e($stCls) ?>"><?= e($stLib) ?></span></p>
       </div>
+      <script>
+      (function () {
+        var f = document.getElementById('bloc-cotisation').closest('form');
+        var P = <?= json_encode([
+            'membre'     => cotisation_membre(),
+            'options'    => array_map(fn($o) => $o[1], $optsCot),
+            'blocs'      => array_map(fn($b) => $b[1], cotisation_blocs()),
+            'extras'     => array_map(fn($x) => $x[1], $extrasCot),
+            'programmes' => COTISATION_PROGRAMMES_FFA,
+        ]) ?>;
+        function euros(c) { return (c % 100 ? (c / 100).toFixed(2).replace('.', ',') : (c / 100)) + ' €'; }
+        function maj() {
+          var opt = (f.querySelector('input[name="option_cotisation"]:checked') || {}).value || '';
+          var prog = P.programmes.indexOf(opt) !== -1, membre = f.querySelector('#cot-membre');
+          if (!prog) membre.checked = true;
+          membre.disabled = !prog;
+          var t = membre.checked ? P.membre : 0;
+          if (P.options[opt] != null) t += P.options[opt];
+          document.getElementById('cot-bloc-passeport').style.display = opt === 'opt5' ? '' : 'none';
+          if (opt === 'opt5') t += P.blocs[f.querySelector('#passeport_bloc').value] || 0;
+          f.querySelectorAll('#bloc-cotisation input[name="extras[]"]:checked').forEach(function (x) { t += P.extras[x.value] || 0; });
+          var ip = (f.querySelector('input[name="info_pilote"]:checked') || {}).value || '';
+          if (ip) t += P.extras[ip] || 0;
+          document.getElementById('cot-total').textContent = euros(t);
+        }
+        f.addEventListener('change', function (ev) {
+          var t = ev.target;
+          if (t && t.name === 'extras[]' && t.checked && (t.value === 'licence_ffa' || t.value === 'licence_ffa_bia')) {
+            var autre = f.querySelector('input[name="extras[]"][value="' + (t.value === 'licence_ffa' ? 'licence_ffa_bia' : 'licence_ffa') + '"]');
+            if (autre) autre.checked = false;
+          }
+          maj();
+        });
+        maj();
+      })();
+      </script>
 
       <div class="bloc">
         <h2>Documents (si détenteur)</h2>
