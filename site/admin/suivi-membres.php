@@ -77,6 +77,35 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 ? 'Lien de réinscription envoyé à ' . $email . '.'
                 : 'L’e-mail n’a pas pu être envoyé.';
         }
+    } elseif ($action === 'creer_dossier') {
+        // Réinscription faite par le bureau : dossier de l'année en cours créé à partir de celui de l'an dernier.
+        if (!$ecriture) {
+            $_SESSION['message_erreur'] = 'Votre rôle ne permet pas cette action.';
+        } else {
+            $src = db()->prepare('SELECT membre_id FROM inscriptions WHERE id = ?');
+            $src->execute([(int) ($_POST['id'] ?? 0)]);
+            $mid = (int) ($src->fetchColumn() ?: 0);
+            $mb = db()->prepare('SELECT * FROM membres WHERE id = ?');
+            $mb->execute([$mid]);
+            $membre = $mid ? $mb->fetch() : false;
+            if (!$membre) {
+                $_SESSION['message_erreur'] = 'Ce dossier n’est pas rattaché à un compte membre.';
+            } else {
+                $existant = inscription_annee($mid, $campagne);
+                if ($existant) {
+                    $nouvelId = (int) $existant['id'];
+                } else {
+                    $dNouveau = inscription_prefill($membre, $campagne);
+                    $manque = inscription_manquants($dNouveau);
+                    $nouvelId = inscription_enregistrer($mid, $campagne, $dNouveau, $manque ? 'brouillon' : 'complet');
+                    journaliser('inscription.creee_par_bureau', 'inscription#' . $nouvelId, 'membre#' . $mid);
+                    $_SESSION['message_succes'] = 'Dossier ' . $campagne . ' créé à partir de celui de l’an dernier.'
+                        . ($manque ? ' Il manque : ' . implode(' ', $manque) . ' Complétez la fiche.' : ' Vérifiez la fiche, puis validez la cotisation dans la liste.');
+                }
+                header('Location: /admin/adherent.php?i=' . $nouvelId, true, 303);
+                exit;
+            }
+        }
     } elseif ($action === 'lien_groupe') {
         // Envoi du lien de réinscription aux dossiers cochés (une adresse = un seul envoi).
         $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($_POST['ids'] ?? [])))));
@@ -124,6 +153,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     WHERE id = ?";
             db()->prepare($sql)->execute([$v, $v, $v, $moiId, $id]);
         }
+        $modeChoisi = (string) ($_POST['mode_paiement'] ?? '');
+        if ($flags['cotisation'] && isset(MODES_PAIEMENT_INSCRIPTION[$modeChoisi])) {
+            db()->prepare('UPDATE inscriptions SET mode_paiement = ? WHERE id = ?')->execute([$modeChoisi, $id]);
+        }
         if ($flags['cotisation']) {
             db()->prepare("UPDATE inscriptions SET statut = 'valide', valide_le = COALESCE(valide_le, NOW()),
                            valide_par = COALESCE(valide_par, ?) WHERE id = ? AND statut IN ('complet','paye')")
@@ -165,6 +198,10 @@ $demandes = db()->prepare(
 $demandes->execute();
 $demandes = $demandes->fetchAll();
 
+$dossiersCampagne = [];   // membre_id => id du dossier de l'année en cours
+foreach (db()->query('SELECT id, membre_id FROM inscriptions WHERE annee = ' . (int) $campagne . ' AND membre_id IS NOT NULL') as $rc) {
+    $dossiersCampagne[(int) $rc['membre_id']] = (int) $rc['id'];
+}
 $fin = mktime(0, 0, 0, 12, 31, $annee); // 31/12 de l'année
 $majsDocs = membre_docs_derniers();     // dernières mises à jour déposées par les membres
 
@@ -271,7 +308,7 @@ $ajour = static function (?string $date) use ($fin): string {
     espace adhérent). Vous pouvez l’ouvrir, ou envoyer le lien à une adresse précise.
   </p>
   <div class="suivi-lien">
-    <a class="btn btn--contour" href="/reinscription" target="_blank" rel="noopener">Ouvrir le formulaire ↗</a>
+    <a class="btn btn--contour" href="/reinscription" target="_blank" rel="noopener">Voir le formulaire vu par les adhérents ↗</a>
     <?php if ($peutEnvoyer): ?>
     <form method="post" class="suivi-lien__form">
       <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
@@ -304,6 +341,11 @@ $ajour = static function (?string $date) use ($fin): string {
         <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
         <input type="hidden" name="action" value="valider">
         <input type="hidden" name="annee" value="<?= (int) $annee ?>">
+        <input type="hidden" name="id" value="<?= (int) $l['id'] ?>">
+      </form>
+      <form id="reinf-<?= (int) $l['id'] ?>" method="post" hidden>
+        <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
+        <input type="hidden" name="action" value="creer_dossier">
         <input type="hidden" name="id" value="<?= (int) $l['id'] ?>">
       </form>
       <form id="lienf-<?= (int) $l['id'] ?>" method="post" hidden>
@@ -354,7 +396,7 @@ $ajour = static function (?string $date) use ($fin): string {
             <td style="font-size:.82rem">
               <?= e(inscription_resume_cotisation($l)) ?><br>
               <strong><?= e(prix((int) $l['total_cents'])) ?></strong>
-              <?php if ($l['mode_paiement']): ?><span class="muet"> · <?= e($l['mode_paiement']) ?></span><?php endif; ?>
+              <?php if ($l['mode_paiement']): ?><span class="muet"> · <?= e(inscription_mode_libelle($l['mode_paiement'])) ?></span><?php endif; ?>
               <br>
               <?php $st = ['brouillon'=>['Brouillon','attente'],'complet'=>['Complet','planifie'],'paye'=>['Payé','paye'],'valide'=>['Validé','paye']][$l['statut']] ?? [$l['statut'],'attente']; ?>
               <span class="etat etat--<?= e($st[1]) ?>"><?= e($st[0]) ?></span>
@@ -379,10 +421,22 @@ $ajour = static function (?string $date) use ($fin): string {
                   <span><?= $lib ?><?php if ($tr): ?><br><span class="muet" style="font-size:.72rem"><?= e($tr) ?></span><?php endif; ?></span>
                 </label>
               <?php endforeach; ?>
+              <?php if ($ecriture): ?>
+                <select name="mode_paiement" <?= $ff ?> aria-label="Mode de paiement" style="margin-top:.35rem;max-width:11rem;font-family:inherit;font-size:.78rem;padding:.25rem .3rem">
+                  <option value="">Mode de paiement…</option>
+                  <?php foreach (MODES_PAIEMENT_INSCRIPTION as $k => $lib): ?>
+                    <option value="<?= e($k) ?>"<?= (string) $l['mode_paiement'] === $k ? ' selected' : '' ?>><?= e($lib) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              <?php endif; ?>
             </td>
             <td class="nombre" style="white-space:nowrap">
               <?php if ($ecriture): ?>
               <button type="submit" <?= $ff ?> class="btn btn--petit">Enregistrer</button>
+              <?php endif; ?>
+              <?php if ($ecriture && $annee < $campagne && !empty($l['membre_id'])): ?>
+                <button type="submit" form="reinf-<?= (int) $l['id'] ?>" class="btn btn--petit"
+                        title="Crée le dossier <?= (int) $campagne ?> à partir de celui-ci et ouvre la fiche"><?= isset($dossiersCampagne[(int) $l['membre_id']]) ? 'Ouvrir le dossier ' . (int) $campagne : 'Réinscrire en ' . (int) $campagne ?></button>
               <?php endif; ?>
               <?php if ($peutEnvoyer && ($l['m_email'] ?: $l['courriel'])): ?>
                 <button type="submit" form="lienf-<?= (int) $l['id'] ?>" class="btn btn--contour btn--petit"

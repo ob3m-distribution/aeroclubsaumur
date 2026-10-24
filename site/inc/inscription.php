@@ -293,3 +293,19 @@ function demande_etapes_requises(array $d): array
     return $requises;
 }
 
+/** Modes de règlement saisis à la main par le bureau (hors paiement en ligne). */
+const MODES_PAIEMENT_INSCRIPTION = [
+    'tpe_club' => 'TPE du club',
+    'virement' => 'Virement',
+    'cheque'   => 'Chèque',
+    'especes'  => 'Espèces',
+];
+
+/** Libellé lisible d'un mode de paiement enregistré (y compris « carte » en ligne). */
+function inscription_mode_libelle(?string $mode): string
+{
+    $mode = (string) $mode;
+    if ($mode === 'carte') return 'Carte en ligne';
+    return MODES_PAIEMENT_INSCRIPTION[$mode] ?? $mode;
+}
+

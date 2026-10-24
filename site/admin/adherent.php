@@ -281,7 +281,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
 };
 ?>
 
-<p><a href="/admin/suivi-membres.php?onglet=<?= $estDemande ? 'nouvelle' : 'reinscription' ?>">← Retour à la liste</a></p>
+<p><a href="/admin/suivi-membres.php?onglet=<?= $estDemande ? 'nouvelle' : 'reinscription' ?>&amp;annee=<?= (int) $a['annee'] ?>">← Retour à la liste</a></p>
 
 <form method="post" enctype="multipart/form-data">
   <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
@@ -391,7 +391,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
         <?php endforeach; ?>
 
         <p class="recap-total" style="margin:.8rem 0 0">Total <strong id="cot-total"><?= e(prix((int) $a['total_cents'])) ?></strong>
-          <?php if ($a['mode_paiement']): ?><span class="muet"> · <?= e($a['mode_paiement']) ?></span><?php endif; ?></p>
+          <?php if ($a['mode_paiement']): ?><span class="muet"> · <?= e(inscription_mode_libelle($a['mode_paiement'])) ?></span><?php endif; ?></p>
         <p class="aide" style="margin:.3rem 0 0">Choix enregistrés : <?= e(inscription_resume_cotisation($a)) ?></p>
         <p style="margin:.5rem 0 0"><span class="etat etat--<?= e($stCls) ?>"><?= e($stLib) ?></span></p>
       </div>
@@ -457,7 +457,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
             <dd><?= $a[$cle . '_ok'] ? 'Oui' . ($tr ? ' <span class="muet" style="font-size:.8rem">' . e($tr) . '</span>' : '') : '<span class="muet">Non</span>' ?></dd>
           <?php endforeach; ?>
         </dl>
-        <p style="margin:.5rem 0 0"><a class="btn btn--contour btn--petit" href="/admin/suivi-membres.php?onglet=reinscription#i-<?= $id ?>">Modifier la validation →</a></p>
+        <p style="margin:.5rem 0 0"><a class="btn btn--contour btn--petit" href="/admin/suivi-membres.php?onglet=reinscription&amp;annee=<?= (int) $a['annee'] ?>#i-<?= $id ?>">Modifier la validation →</a></p>
       </div>
       <?php endif; ?>
 
