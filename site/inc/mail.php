@@ -198,11 +198,11 @@ function email_lien_mot_de_passe(string $destinataire, string $prenom, string $l
             . "Un compte vient d’être créé pour vous sur l’espace adhérents du Saumur Air Club.\n"
             . "Pour l’activer, cliquez sur le lien ci-dessous et choisissez votre mot de passe :\n\n"
             . $lien . "\n\n"
-            . "Ce lien est valable 7 jours.\n\n"
+            . "Ce lien est valable 30 jours.\n\n"
             . "À bientôt,\nLe Saumur Air Club";
         $intro = 'Un compte vient d\'être créé pour vous sur l\'espace adhérents du club. Pour l\'activer, choisissez votre mot de passe en cliquant ci-dessous :';
         $texteBouton = 'Activer mon compte';
-        $validite = 'Ce lien est valable 7 jours.';
+        $validite = 'Ce lien est valable 30 jours.';
     } else {
         $sujet = 'Réinitialisation de votre mot de passe — Saumur Air Club';
         $texte = "{$bonjour}\n\n"
