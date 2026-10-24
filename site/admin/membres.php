@@ -79,12 +79,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 throw new RuntimeException('Membre introuvable.');
             }
             $invitation = empty($m['derniere_connexion']); // jamais connecté = invitation
-            // Invitation : 7 jours, comme l'annonce l'e-mail ; lien mot de passe : 72 h.
-            $lien = lien_mot_de_passe($cible, $invitation ? 168 : 72);
+            // Invitation : 30 jours (720 h), comme l'annonce l'e-mail ; lien mot de passe : 72 h.
+            $lien = lien_mot_de_passe($cible, $invitation ? 720 : 72);
             $envoi = email_lien_mot_de_passe($m['email'], (string) $m['prenom'], $lien, $invitation);
             journaliser('membre.inviter', 'membre#' . $cible, $m['email']);
             $_SESSION['message_succes'] = $envoi
-                ? 'Lien envoyé à ' . $m['email'] . ($invitation ? ' (valable 7 jours).' : ' (valable 72 h).')
+                ? 'Lien envoyé à ' . $m['email'] . ($invitation ? ' (valable 30 jours).' : ' (valable 72 h).')
                 : 'L’e-mail n’a pas pu être envoyé. Réessayez plus tard.';
         }
 
@@ -103,7 +103,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $m = $lire->fetch();
                 if (!$m) continue;
                 $invit = empty($m['derniere_connexion']);
-                $lien = lien_mot_de_passe((int) $m['id'], $invit ? 168 : 72);
+                $lien = lien_mot_de_passe((int) $m['id'], $invit ? 720 : 72);
                 if (email_lien_mot_de_passe($m['email'], (string) $m['prenom'], $lien, $invit)) {
                     $ok++;
                 } else {
@@ -112,7 +112,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             }
             journaliser('membre.inviter_groupe', 'membres', $ok . ' envoyé(s) / ' . count($ids));
             $_SESSION['message_succes'] = $ok . ' e-mail' . ($ok > 1 ? 's' : '') . ' d’invitation envoyé' . ($ok > 1 ? 's' : '')
-                . ' (invitations valables 7 jours).';
+                . ' (invitations valables 30 jours).';
             if ($echecs) {
                 $_SESSION['message_erreur'] = 'Échec d’envoi pour : ' . implode(', ', $echecs) . '.';
             }

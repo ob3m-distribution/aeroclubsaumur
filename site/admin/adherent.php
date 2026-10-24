@@ -120,7 +120,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $id) {
                 } catch (Throwable $e) {
                     error_log('Rôles : ' . $e->getMessage());   // table membre_roles absente
                 }
-                $token = creer_token_reset($mid, 72);
+                $token = creer_token_reset($mid, 720);   // invitation : 30 jours, comme l'annonce l'e-mail
                 $lien = 'https://' . ($_SERVER['HTTP_HOST'] ?? 'dev.aeroclub-saumur.fr') . '/reinitialiser-mot-de-passe?token=' . $token;
                 @email_lien_mot_de_passe($email, (string) $dem['prenom'], $lien, true);
             }
