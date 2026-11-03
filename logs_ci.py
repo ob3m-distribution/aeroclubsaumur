@@ -128,6 +128,10 @@ def erreurs_5xx(fichiers, jour):
     return compte
 
 
+# Nombre de reponses 5xx sur des pages du site (par jour) a partir duquel
+# on envoie l'email d'alerte.
+SEUIL_ALERTE_5XX = 3
+
 # Reecritures de site/.htaccess qui ne correspondent pas a un fichier
 # du meme nom.
 ROUTES_REECRITES = {"/robots.txt", "/sitemap.xml"}
@@ -230,7 +234,10 @@ def main():
     with open(os.path.join(SORTIE, "resume.html"), "w", encoding="utf-8") as f:
         f.write(resume)
 
-    alerte = total_php > 0 or total_5xx > 0
+    # Un 503 isole est un a-coup normal de l'hebergement mutualise : il reste
+    # liste dans le resume, mais ne declenche l'email qu'a partir de
+    # SEUIL_ALERTE_5XX reponses 5xx (ou a la moindre erreur PHP).
+    alerte = total_php > 0 or total_5xx >= SEUIL_ALERTE_5XX
     print(f"Erreurs PHP : {total_php} — reponses 5xx hier : {total_5xx} — alerte : {alerte}")
     ecrire_sortie_github("alerte", "true" if alerte else "false")
 
