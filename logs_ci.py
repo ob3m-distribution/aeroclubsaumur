@@ -49,6 +49,11 @@ MAX_LIGNES_EMAIL = 30         # lignes d'erreur PHP reprises dans l'email
 MOIS_APACHE = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 # Format Apache "combined" : ... [24/Sep/2026:10:00:00 +0200] "GET /x HTTP/1.1" 500 ...
+# Heure (et fuseau) d'une ligne de log d'acces, pour dater les 5xx.
+RE_HEURE = re.compile(r'\[\d{2}/\w{3}/\d{4}:(\d{2}:\d{2}:\d{2}) ?([^\]]*)\]')
+# Heures des reponses 5xx du jour, par (code, URL) : alimente le resume.
+HEURES_5XX = {}
+
 RE_ACCES = re.compile(r'\[(\d{2}/\w{3}/\d{4}):[^\]]*\] "(?:\S+) (\S+)[^"]*" (\d{3}) ')
 
 
@@ -125,6 +130,9 @@ def erreurs_5xx(fichiers, jour):
             if m and m.group(1) == cle_jour and m.group(3).startswith("5"):
                 cle = (m.group(3), m.group(2)[:150])
                 compte[cle] = compte.get(cle, 0) + 1
+                h = RE_HEURE.search(ligne)
+                if h:
+                    HEURES_5XX.setdefault(cle, []).append(f"{h.group(1)} {h.group(2)}".strip())
     return compte
 
 
@@ -182,9 +190,10 @@ def construire_resume(php, fichiers_acces, e5xx_tout, hier):
                      + html.escape("\n".join(extrait)) + "</pre>")
     if e5xx:
         c.append("<h3>Réponses 5xx sur des pages du site (veille)</h3><table border='1' cellpadding='4' cellspacing='0'>"
-                 "<tr><th>Code</th><th>URL</th><th>Nombre</th></tr>")
+                 "<tr><th>Code</th><th>URL</th><th>Nombre</th><th>Heure(s)</th></tr>")
         for (code, url), n in sorted(e5xx.items(), key=lambda x: -x[1])[:20]:
-            c.append(f"<tr><td>{code}</td><td>{html.escape(url)}</td><td>{n}</td></tr>")
+            c.append(f"<tr><td>{code}</td><td>{html.escape(url)}</td><td>{n}</td>"
+                     f"<td>{html.escape(', '.join(HEURES_5XX.get((code, url), [])[:10]))}</td></tr>")
         c.append("</table>")
     c.append("<p>Logs complets : artifact « logs-serveur » du workflow GitHub Actions (30 jours).</p>")
     return "\n".join(c), total_php, total_5xx
