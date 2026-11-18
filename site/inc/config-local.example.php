@@ -25,8 +25,12 @@ const EMAIL_CLUB = 'voler@saumurairclub.fr';
 const EMAIL_EXPEDITEUR = 'noreply@aeroclub-saumur.fr';
 const EMAIL_EXPEDITEUR_NOM = 'Saumur Air Club';
 
-/** Clés Stripe. Utiliser les clés TEST en dev, les clés LIVE en production.
- *  Renseigner les vraies valeurs dans config-local.php (jamais ici). */
-const STRIPE_CLE_PUBLIQUE   = 'VOTRE_CLE_PUBLIQUE_STRIPE';
-const STRIPE_CLE_SECRETE    = 'VOTRE_CLE_SECRETE_STRIPE';
-const STRIPE_WEBHOOK_SECRET = 'VOTRE_SECRET_WEBHOOK_STRIPE';
+/** Paiement en ligne HelloAsso (API v5). Clés d'API : espace HelloAsso de
+ *  l'association > Mon compte > Intégrations et API. L'identifiant de
+ *  l'association (« slug ») est la fin de l'adresse de sa page HelloAsso.
+ *  Mettre HELLOASSO_SANDBOX à true avec des clés de l'environnement de test
+ *  (helloasso-sandbox.com). Renseigner les vraies valeurs dans config-local.php. */
+const HELLOASSO_CLIENT_ID     = 'VOTRE_CLIENT_ID_HELLOASSO';
+const HELLOASSO_CLIENT_SECRET = 'VOTRE_CLIENT_SECRET_HELLOASSO';
+const HELLOASSO_ORG_SLUG      = 'SLUG_DE_L_ASSOCIATION';
+const HELLOASSO_SANDBOX       = false;

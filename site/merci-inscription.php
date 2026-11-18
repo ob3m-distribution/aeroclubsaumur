@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/inc/inscription.php';
-require_once __DIR__ . '/inc/stripe.php';
+require_once __DIR__ . '/inc/helloasso.php';
 require_once __DIR__ . '/inc/mail.php';
 session_demarrer();
 
@@ -10,30 +10,32 @@ $ins = null;
 $paye = false;
 $enAttente = false;
 
-/* Retour de Stripe : ?payment_intent=pi_xxx. On interroge l'API (jamais l'URL). */
-$pi = (string) ($_GET['payment_intent'] ?? '');
-if ($pi !== '' && stripe_actif()) {
+/* Retour de HelloAsso : ?checkoutIntentId=…&code=succeeded&orderId=…
+   Ces paramètres ne prouvent RIEN (n'importe qui peut les écrire dans la
+   barre d'adresse) : on s'en sert seulement pour retrouver l'inscription,
+   puis on interroge l'API HelloAsso (ha_rapprocher). */
+$checkoutId = (int) ($_GET['checkoutIntentId'] ?? 0);
+if ($checkoutId > 0 && ha_actif()) {
     try {
-        $intention = stripe_lire_intention($pi);
-        $statut = (string) ($intention['status'] ?? '');
-        $ins = inscription_par_intention($pi);
-        if (!$ins && !empty($intention['metadata']['inscription_id'])) {
+        $cible = ha_cible_du_checkout($checkoutId);
+        if ($cible && $cible[0] === 'inscription') {
             $s = db()->prepare('SELECT * FROM inscriptions WHERE id = ?');
-            $s->execute([(int) $intention['metadata']['inscription_id']]);
+            $s->execute([$cible[1]]);
             $ins = $s->fetch() ?: null;
-        }
-        if ($ins && $statut === 'succeeded'
-            && (int) ($intention['amount_received'] ?? 0) === (int) $ins['total_cents']) {
-            if (inscription_marquer_paye((int) $ins['id'], 'carte')) {
-                @email_cotisation_secretariat($ins, 'carte');
+            if ($ins) {
+                ha_rapprocher('inscription', (int) $ins['id']);
+                $s->execute([$cible[1]]);
+                $ins = $s->fetch() ?: $ins;
+                if (!empty($ins['paye_le'])) {
+                    $paye = true;
+                    unset($_SESSION['inscription_en_cours']);
+                } elseif ((string) ($_GET['code'] ?? '') === 'succeeded') {
+                    $enAttente = true;   // payé chez HelloAsso, confirmation en route
+                }
             }
-            $paye = true;
-            unset($_SESSION['inscription_en_cours']);
-        } elseif ($ins && in_array($statut, ['processing', 'requires_action'], true)) {
-            $enAttente = true;
         }
     } catch (Throwable $e) {
-        error_log('Retour Stripe inscription : ' . $e->getMessage());
+        error_log('Retour HelloAsso inscription : ' . $e->getMessage());
     }
 }
 
@@ -43,6 +45,22 @@ if (!$ins && ($_SESSION['inscription_en_cours'] ?? 0)) {
     $ins = $s->fetch() ?: null;
 }
 if (!$ins) { header('Location: /reinscription', true, 302); exit; }
+
+// Retour sans adresse complète (onglet rouvert, notification arrivée avant) : on revérifie.
+if (!$paye && empty($ins['paye_le']) && ha_actif()) {
+    try {
+        ha_rapprocher('inscription', (int) $ins['id']);
+        $s = db()->prepare('SELECT * FROM inscriptions WHERE id = ?');
+        $s->execute([(int) $ins['id']]);
+        $ins = $s->fetch() ?: $ins;
+    } catch (Throwable $e) {
+        error_log('Retour HelloAsso inscription (revérification) : ' . $e->getMessage());
+    }
+}
+if (!$paye && !empty($ins['paye_le'])) {
+    $paye = true;
+    unset($_SESSION['inscription_en_cours']);
+}
 
 $page = 'merci';
 $titre = $paye ? 'Paiement confirmé' : 'Paiement en cours';

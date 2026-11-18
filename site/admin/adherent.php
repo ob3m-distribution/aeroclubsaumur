@@ -569,7 +569,7 @@ $champ = static function (string $c, string $label, string $type = 'text') use (
         <span style="font-size:.85rem;font-weight:500">Mode de paiement</span>
         <select name="mode" style="font-family:inherit;padding:.45rem .6rem;border:1px solid var(--gris-300);border-radius:6px">
           <option value="virement">Virement bancaire</option>
-          <option value="carte">Carte bancaire (Stripe)</option>
+          <option value="carte">Carte bancaire en ligne (HelloAsso)</option>
         </select>
       </label>
       <button type="submit" class="btn">Envoyer le lien de paiement</button>

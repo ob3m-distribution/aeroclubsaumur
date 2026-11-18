@@ -86,9 +86,10 @@ jobs:
           PROD_DB_NAME: ${{ secrets.PROD_DB_NAME }}
           PROD_DB_USER: ${{ secrets.PROD_DB_USER }}
           PROD_DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
-          PROD_STRIPE_PK: ${{ secrets.PROD_STRIPE_PK }}
-          PROD_STRIPE_SK: ${{ secrets.PROD_STRIPE_SK }}
-          PROD_STRIPE_WHSEC: ${{ secrets.PROD_STRIPE_WHSEC }}
+          PROD_HELLOASSO_CLIENT_ID: ${{ secrets.PROD_HELLOASSO_CLIENT_ID }}
+          PROD_HELLOASSO_CLIENT_SECRET: ${{ secrets.PROD_HELLOASSO_CLIENT_SECRET }}
+          PROD_HELLOASSO_ORG_SLUG: ${{ secrets.PROD_HELLOASSO_ORG_SLUG }}
+          PROD_HELLOASSO_SANDBOX: ${{ secrets.PROD_HELLOASSO_SANDBOX }}
           PROD_INSTALLER_SECRET: ${{ secrets.PROD_INSTALLER_SECRET }}
           PROD_OPS_SECRET: ${{ secrets.PROD_OPS_SECRET }}
         run: python deploy_ci.py deploy

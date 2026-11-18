@@ -17,7 +17,7 @@ return [
 "- **Réalisation** : OB3M Distribution.\n\n" .
 "## Environnements\n" .
 "- **Dev** : `dev.aeroclub-saumur.fr` (protégé par mot de passe HTTP le temps du chantier).\n" .
-"- **Prod** : à activer (domaine public, retrait du mot de passe, Stripe en clés réelles).",
+"- **Prod** : à activer (domaine public, retrait du mot de passe, HelloAsso en clés réelles).",
 ],
 [
  'cle' => 'site-public',
@@ -42,16 +42,17 @@ return [
 ],
 [
  'cle' => 'bons-cadeaux',
- 'titre' => 'Bons cadeaux & paiement Stripe',
+ 'titre' => 'Bons cadeaux & paiement HelloAsso',
  'contenu' =>
 "## Bons cadeaux\n" .
-"- Achat en ligne d'un bon (vol découverte 1/2/3 pers., initiation), **paiement carte Stripe**.\n" .
+"- Achat en ligne d'un bon (vol découverte 1/2/3 pers., initiation), **paiement carte HelloAsso**.\n" .
 "- Bon envoyé par e-mail en **PDF au visuel officiel**, numéro `WEB-AAAA-MM-JJ-NNN`.\n" .
-"- B.O. : suivi, note du vol réalisé, **renvoi e-mail**, **prolongation** (1 à 6 mois), **remboursement** total/partiel (Stripe).\n\n" .
-"## Stripe\n" .
-"- Mode **TEST** en dev. Clés et secret webhook dans `config-local.php` (hors dépôt).\n" .
-"- Webhook `webhook/stripe.php` (signature HMAC vérifiée), routé par metadata.\n" .
-"- **À la prod** : basculer en clés **live** et recréer le webhook sur l'URL publique.",
+"- B.O. : suivi, note du vol réalisé, **renvoi e-mail**, **prolongation** (1 à 6 mois), **remboursement** total/partiel (noté sur le site, effectué depuis HelloAsso).\n\n" .
+"## HelloAsso\n" .
+"- Mode **sandbox** en dev (`HELLOASSO_SANDBOX`). Clés d'API dans `config-local.php` (hors dépôt).\n" .
+"- Le client est redirigé vers la page de paiement HelloAsso ; chaque paiement est **vérifié auprès de l'API** (retour navigateur et notifications ne servent que de déclencheur).\n" .
+"- Notifications : `webhook/helloasso.php`, à déclarer dans HelloAsso.\n" .
+"- **À la prod** : clés **live** + URL de notification publique.",
 ],
 [
  'cle' => 'adhesions',
@@ -104,7 +105,7 @@ return [
  'titre' => 'Sécurité',
  'contenu' =>
 "## En-têtes HTTP (05/09/2026)\n" .
-"- CSP (liste blanche Stripe + Holfuy), HSTS, Permissions-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, `X-Powered-By` masqué.\n" .
+"- CSP (liste blanche Holfuy), HSTS, Permissions-Policy, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, `X-Powered-By` masqué.\n" .
 "- **Piège IONOS** : `.htaccess` ne pose pas les en-têtes sur les pages PHP → émis côté PHP (`inc/securite.php`).\n\n" .
 "## Application\n" .
 "- Session serveur (cookie HttpOnly + Secure + SameSite), mots de passe **bcrypt**.\n" .
@@ -144,7 +145,7 @@ return [
  'titre' => 'Chantiers en cours / à faire',
  'contenu' =>
 "## À faire\n" .
-"- **Bascule prod** : domaine public, retrait du mot de passe HTTP, Stripe clés live + webhook, purge données de démo, changement des secrets.\n" .
+"- **Bascule prod** : domaine public, retrait du mot de passe HTTP, HelloAsso clés live + notifications (webhook), purge données de démo, changement des secrets.\n" .
 "- Activer le **filet de surveillance externe** (UptimeRobot) une fois la prod en ligne.\n" .
 "- Moyens de paiement additionnels éventuels.\n\n" .
 "## Idées\n" .

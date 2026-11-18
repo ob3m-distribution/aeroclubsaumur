@@ -148,7 +148,7 @@ function trop_de_demandes(string $ip): bool
 
 /**
  * Enregistre la demande. Retourne la ligne creee.
- * Le statut reste « en_attente_paiement » : le paiement Stripe viendra ensuite.
+ * Le statut reste « en_attente_paiement » : le paiement en ligne viendra ensuite.
  */
 function creer_demande(array $d, string $ip): array
 {
@@ -205,8 +205,13 @@ const MODES_PAIEMENT = [
     'cheque'   => ['Chèque',                                'Payé en chèque',      null],
     'cb_club'  => ['Carte bancaire au club (TPE)',          'Payé en CB au club',  null],
     'virement' => ['Virement bancaire (RIB envoyé par e-mail)', 'Payé par virement', 'En attente virement'],
-    'stripe'   => ['Carte bancaire en ligne (lien Stripe envoyé par e-mail)', 'Payé par Stripe', 'En attente Stripe'],
+    'helloasso' => ['Carte bancaire en ligne (lien de paiement envoyé par e-mail)', 'Payé par carte en ligne', 'En attente de paiement en ligne'],
+    // Ancien prestataire (jusqu'en 2026) : conservé pour lire les bons déjà payés ainsi.
+    'stripe'   => ['Carte bancaire en ligne (ancien : Stripe)', 'Payé par Stripe', 'En attente Stripe'],
 ];
+
+/** Modes de paiement en ligne (le client règle lui-même, par carte). */
+const MODES_EN_LIGNE = ['helloasso', 'stripe'];
 
 /** Modes réglés sur place : bon payé et numéroté immédiatement. */
 const MODES_AU_CLUB = ['especes', 'cheque', 'cb_club'];
@@ -234,9 +239,9 @@ function statut_bon(array $b): array
 const FILTRES_STATUT_BON = [
     'en_attente'        => ['En attente (formulaire du site)', "statut = 'en_attente_paiement' AND mode_paiement IS NULL"],
     'attente_virement'  => ['En attente virement',             "statut = 'en_attente_paiement' AND mode_paiement = 'virement'"],
-    'attente_stripe'    => ['En attente Stripe',               "statut = 'en_attente_paiement' AND mode_paiement = 'stripe'"],
+    'attente_stripe'    => ['En attente de paiement en ligne', "statut = 'en_attente_paiement' AND mode_paiement IN ('helloasso','stripe')"],
     'paye'              => ['Payé (tous modes)',               "statut = 'paye'"],
-    'paye_stripe'       => ['Payé par Stripe',                 "statut = 'paye' AND (mode_paiement = 'stripe' OR mode_paiement IS NULL)"],
+    'paye_stripe'       => ['Payé par carte en ligne',         "statut = 'paye' AND (mode_paiement IN ('helloasso','stripe') OR mode_paiement IS NULL)"],
     'paye_especes'      => ['Payé en espèces',                 "statut = 'paye' AND mode_paiement = 'especes'"],
     'paye_cheque'       => ['Payé en chèque',                  "statut = 'paye' AND mode_paiement = 'cheque'"],
     'paye_cb_club'      => ['Payé en CB au club',              "statut = 'paye' AND mode_paiement = 'cb_club'"],
@@ -345,21 +350,6 @@ function bon_par_id(int $id): ?array
     return $stmt->fetch() ?: null;
 }
 
-/** Recupere un bon par son intention de paiement Stripe. */
-function bon_par_intention(string $pi): ?array
-{
-    $stmt = db()->prepare('SELECT * FROM bons_cadeaux WHERE stripe_payment_intent_id = ? LIMIT 1');
-    $stmt->execute([$pi]);
-    return $stmt->fetch() ?: null;
-}
-
-/** Rattache une intention de paiement a un bon. */
-function bon_associer_intention(int $id, string $pi): void
-{
-    $stmt = db()->prepare('UPDATE bons_cadeaux SET stripe_payment_intent_id = ? WHERE id = ?');
-    $stmt->execute([$pi, $id]);
-}
-
 /** Code de bon cadeau unique, genere seulement une fois le paiement confirme. */
 function code_unique(): string
 {
@@ -410,13 +400,13 @@ function maj_bon_bo(int $id, ?string $dateRea, ?string $pilote, ?string $offertA
 /**
  * Marque un bon comme paye. IDEMPOTENT : appele deux fois (retour navigateur
  * ET webhook), il ne genere qu'un seul code et ne renvoie qu'un seul email.
- * $mode : mode de paiement (MODES_PAIEMENT) ; Stripe par défaut (paiement
- * en ligne, seul appelant historique).
+ * $mode : mode de paiement (MODES_PAIEMENT) ; « helloasso » par défaut
+ * (paiement en ligne, seul appelant historique).
  * Validité : un an à compter du paiement.
  *
  * Retourne [le bon a jour, true si c'est ce passage qui l'a valide].
  */
-function bon_marquer_paye(int $id, string $mode = 'stripe'): array
+function bon_marquer_paye(int $id, string $mode = 'helloasso'): array
 {
     $pdo = db();
     $pdo->beginTransaction();
@@ -437,9 +427,9 @@ function bon_marquer_paye(int $id, string $mode = 'stripe'): array
             return [$bon, false];
         }
 
-        $mode   = isset(MODES_PAIEMENT[$mode]) ? $mode : 'stripe';
+        $mode   = isset(MODES_PAIEMENT[$mode]) ? $mode : 'helloasso';
         $code   = code_unique();
-        $numero = numero_bon_unique($mode === 'stripe' ? 'WEB' : 'CLUB');
+        $numero = numero_bon_unique(in_array($mode, MODES_EN_LIGNE, true) ? 'WEB' : 'CLUB');
         $maj = $pdo->prepare(
             'UPDATE bons_cadeaux
                 SET statut = ?, code = ?, numero_bon = ?, mode_paiement = ?, paye_le = NOW(),
@@ -474,7 +464,7 @@ function bon_marquer_envoye(int $id): void
  * Bon saisi au back-office (bouton « Ajouter un vol »).
  * - espèces / chèque / CB au club : payé et numéroté tout de suite ;
  * - virement : en attente, sans numéro (RIB envoyé au client) ;
- * - stripe : en attente, avec un lien de paiement personnel (jeton).
+ * - helloasso : en attente, avec un lien de paiement personnel (jeton).
  * Retourne le bon tel qu'enregistré.
  */
 function creer_bon_manuel(array $d, string $mode, int $parMembre): array
@@ -482,7 +472,7 @@ function creer_bon_manuel(array $d, string $mode, int $parMembre): array
     if (!isset(MODES_PAIEMENT[$mode])) {
         throw new InvalidArgumentException('Mode de paiement inconnu.');
     }
-    $jeton = $mode === 'stripe' ? bin2hex(random_bytes(24)) : null;
+    $jeton = $mode === 'helloasso' ? bin2hex(random_bytes(24)) : null;
 
     $stmt = db()->prepare(
         'INSERT INTO bons_cadeaux
@@ -518,7 +508,7 @@ function creer_bon_manuel(array $d, string $mode, int $parMembre): array
     return bon_par_id($id);
 }
 
-/** Lien de paiement en ligne personnel d'un bon (mode stripe). */
+/** Lien de paiement en ligne personnel d'un bon (mode helloasso). */
 function lien_paiement_bon(array $bon): string
 {
     $hote = $_SERVER['HTTP_HOST'] ?? 'aeroclub-saumur.fr';

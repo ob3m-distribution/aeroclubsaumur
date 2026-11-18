@@ -203,7 +203,7 @@ require __DIR__ . '/inc/entete.php';
 
       <h3 class="g-tache"><span class="g-em">🎁</span> Suivre les bons cadeaux</h3>
       <div class="g-bloc"><div class="g-etapes">
-        <div class="g-etape"><div><h4>Ouvrez « Bons cadeaux »</h4><p>Vous voyez la liste de tous les bons, avec leur <b>numéro</b> (<span class="g-ch">WEB-…</span> payé en ligne, <span class="g-ch">CLUB-…</span> réglé au club) et leur <b>statut</b> : <span class="g-ch">Payé en espèces</span>, <span class="g-ch">Payé par Stripe</span>, <span class="g-ch">En attente virement</span>…</p></div></div>
+        <div class="g-etape"><div><h4>Ouvrez « Bons cadeaux »</h4><p>Vous voyez la liste de tous les bons, avec leur <b>numéro</b> (<span class="g-ch">WEB-…</span> payé en ligne, <span class="g-ch">CLUB-…</span> réglé au club) et leur <b>statut</b> : <span class="g-ch">Payé en espèces</span>, <span class="g-ch">Payé par carte en ligne</span>, <span class="g-ch">En attente virement</span>…</p></div></div>
         <div class="g-etape"><div><h4>Trier ou filtrer</h4><p>Cliquez sur le <b>titre d’une colonne</b> pour trier, ou sur la petite flèche <b>▾</b> pour filtrer. Le menu <b>Statut</b> en haut filtre aussi par mode de paiement.</p></div></div>
         <div class="g-etape"><div><h4>Noter un vol réalisé</h4><p>Sur la ligne du bon, choisissez la <b>date de réalisation</b> et le <b>pilote</b>, puis <span class="g-btn">Enregistrer</span>.</p></div></div>
         <div class="g-etape"><div><h4>Ouvrir un bon</h4><p>Cliquez sur le nom ou le numéro : la fiche affiche le <b>code du bon</b>, le vol, le paiement et la fin de validité (<b>un an</b> après le paiement). Actions possibles : <b>imprimer le PDF</b>, <b>renvoyer par e-mail</b>, <b>prolonger</b> (1 à 6 mois), <b>rembourser</b>, <b>annuler</b>.</p></div></div>
@@ -218,7 +218,7 @@ require __DIR__ . '/inc/entete.php';
           <b>« Le client paiera plus tard, à distance »</b> : Virement (le client reçoit le <b>RIB du club</b> par e-mail) ou Carte bancaire en ligne (le client reçoit un <b>lien de paiement</b>) → le bon reste <b>« en attente »</b>, sans numéro.</p></div></div>
         <div class="g-etape"><div><h4>Créez le bon</h4><p>L’encadré <b>« Ce qui va se passer »</b> résume la suite avant de cliquer sur <span class="g-btn">Créer le bon</span>.</p></div></div>
       </div>
-      <div class="g-astuce"><span class="g-em">🏦</span><div><b>Le virement est arrivé ?</b> Ouvrez le bon → choisissez le mode reçu → <span class="g-btn">Valider le paiement</span> : il est numéroté et envoyé au client. Le client paie par carte en ligne ? Rien à faire : le bon passe <b>« Payé par Stripe »</b> et part tout seul. Besoin de relancer : <b>« Renvoyer le lien de paiement »</b> ou <b>« Renvoyer le RIB »</b> sur la fiche du bon.</div></div>
+      <div class="g-astuce"><span class="g-em">🏦</span><div><b>Le virement est arrivé ?</b> Ouvrez le bon → choisissez le mode reçu → <span class="g-btn">Valider le paiement</span> : il est numéroté et envoyé au client. Le client paie par carte en ligne ? Rien à faire : le bon passe <b>« Payé par carte en ligne »</b> et part tout seul. Besoin de relancer : <b>« Renvoyer le lien de paiement »</b> ou <b>« Renvoyer le RIB »</b> sur la fiche du bon.</div></div>
       </div>
 
       <h3 class="g-tache"><span class="g-em">💶</span> Modifier les tarifs et prix</h3>

@@ -116,16 +116,14 @@ require __DIR__ . '/inc/hero.php';
             fonctionnement ;</li>
           <li><strong><?= e(HEBERGEUR['nom']) ?></strong>, qui héberge le site et les
             e-mails du club ;</li>
-          <li><strong>Stripe</strong>, notre prestataire de paiement, pour le seul règlement
-            par carte bancaire. <strong>Vos coordonnées bancaires ne transitent jamais par
-            nos serveurs</strong> : elles sont saisies directement sur les pages sécurisées
-            de Stripe.</li>
+          <li><strong>HelloAsso</strong>, notre prestataire de paiement en ligne, pour le seul
+            règlement par carte bancaire. <strong>Vos coordonnées bancaires ne transitent
+            jamais par nos serveurs</strong> : elles sont saisies directement sur les pages
+            sécurisées de HelloAsso.</li>
         </ul>
         <p style="margin-top:.75rem">
-          Stripe peut traiter certaines données aux États-Unis. Ces transferts sont encadrés
-          par le cadre de protection des données UE–États-Unis (Data Privacy Framework),
-          complété à titre de garantie supplémentaire par les clauses contractuelles types
-          de la Commission européenne.
+          Les conditions dans lesquelles HelloAsso traite vos données de paiement sont décrites
+          dans sa propre politique de confidentialité, consultable sur son site.
         </p>
       </div>
     </div>
@@ -177,8 +175,8 @@ require __DIR__ . '/inc/hero.php';
           consentement et ne sert à aucun suivi publicitaire ou statistique.
         </p>
         <p>
-          Sur la page de paiement, le prestataire Stripe dépose ses propres cookies de
-          lutte contre la fraude, indispensables au traitement sécurisé de votre paiement.
+          Sur la page de paiement, le prestataire HelloAsso peut déposer ses propres cookies,
+          indispensables au traitement sécurisé de votre paiement.
           Le site n’utilise par ailleurs ni Google Analytics, ni réseau social intégré, ni
           police ou script chargés depuis un serveur tiers.
         </p>
