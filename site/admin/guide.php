@@ -218,7 +218,7 @@ require __DIR__ . '/inc/entete.php';
           <b>« Le client paiera plus tard, à distance »</b> : Virement (le client reçoit le <b>RIB du club</b> par e-mail) ou Carte bancaire en ligne (le client reçoit un <b>lien de paiement</b>) → le bon reste <b>« en attente »</b>, sans numéro.</p></div></div>
         <div class="g-etape"><div><h4>Créez le bon</h4><p>L’encadré <b>« Ce qui va se passer »</b> résume la suite avant de cliquer sur <span class="g-btn">Créer le bon</span>.</p></div></div>
       </div>
-      <div class="g-astuce"><span class="g-em">🏦</span><div><b>Le virement est arrivé ?</b> Ouvrez le bon → choisissez le mode reçu → <span class="g-btn">Valider le paiement</span> : il est numéroté et envoyé au client. Le client paie par carte en ligne ? Rien à faire : le bon passe <b>« Payé par Stripe »</b> et part tout seul. Besoin de relancer : <b>« Renvoyer le lien de paiement »</b> ou <b>« Renvoyer le RIB »</b> sur la fiche du bon.</div></div>
+      <div class="g-astuce"><span class="g-em">🏦</span><div><b>Le virement est arrivé ?</b> Ouvrez le bon → choisissez le mode reçu → <span class="g-btn">Valider le paiement</span> : il est numéroté et envoyé au client. Le client paie par carte en ligne ? Rien à faire : le bon passe <b>« Payé par carte en ligne »</b> et part tout seul. Besoin de relancer : <b>« Renvoyer le lien de paiement »</b> ou <b>« Renvoyer le RIB »</b> sur la fiche du bon.</div></div>
       </div>
 
       <h3 class="g-tache"><span class="g-em">💶</span> Modifier les tarifs et prix</h3>
