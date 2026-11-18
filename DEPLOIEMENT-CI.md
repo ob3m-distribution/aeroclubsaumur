@@ -2,24 +2,23 @@
 
 ## Ce qui a changé
 
-Chaque push sur `main` déclenche désormais un déploiement automatique vers
-**deux environnements distincts**, en parallèle, via GitHub Actions
-(`.github/workflows/deploy.yml`) :
+Chaque push sur `main` déclenche un déploiement automatique vers la
+**production** (`aeroclub-saumur.fr`, dossier `Aeroclub Saumur -
+Production`), via GitHub Actions (`.github/workflows/deploy.yml`).
 
-- **dev** (`dev.aeroclub-saumur.fr`) — dossier `Aeroclub Saumur - Espace
-  developpement`, conservé pour tester les développements avant la prod.
-- **prod** (`aeroclub-saumur.fr`) — dossier séparé, dédié à la production
-  (ses propres secrets : vraies clés HelloAsso, pas de protection par mot de
-  passe, pas de fausses données de test).
-
-Ce sont deux dossiers différents sur le même compte SFTP, chacun avec ses
-propres fichiers persistants (secrets, données membres) et son propre
-historique de sauvegarde. Un échec de déploiement sur l'un ne bloque pas
-l'autre (jobs et `concurrency` séparés).
-
-**Le déploiement manuel avec `deploy.py` reste possible** et n'a pas changé
-— c'est un filet de sécurité si la CI est indisponible, mais il ne cible
-que le dossier dev historique.
+**L'espace de développement (`dev.aeroclub-saumur.fr`) a été abandonné**
+(novembre 2026) : quasi inutilisé, il doublait la place occupée sur
+l'espace IONOS. Il n'est plus déployé, et ses dossiers se retirent du
+serveur avec le workflow manuel *Supprimer l'espace de développement*
+(`.github/workflows/supprimer-espace-dev.yml`, script
+`supprimer_dev_ci.py`) : mode `mesurer` pour voir la place occupée sans
+rien effacer, mode `supprimer` (confirmation `OUI`) pour effacer. Les
+passages ci-dessous qui parlent du dev décrivent l'ancien fonctionnement.
+Le script de déploiement manuel `deploy.py`, qui ne ciblait que le dossier
+dev, a été retiré avec lui. Restent à faire à la main dans le panneau
+IONOS : supprimer le sous-domaine `dev.` et, le cas échéant, la base de
+données de test ; puis les secrets GitHub `DEPLOY_PATH` et
+`DEV_BASICAUTH_*`, devenus inutiles une fois le dossier effacé.
 
 ## Pourquoi ce n'est pas du SSH classique
 
@@ -42,11 +41,8 @@ runner GitHub Actions.
 3. Bascule par renommage : le dossier actuellement en ligne devient
    `<dossier live>_old`, le nouveau prend sa place. C'est quasi instantané
    côté visiteurs.
-4. Healthcheck : le workflow vérifie que `http://dev.aeroclub-saumur.fr/`
-   répond bien (200 ou 302). En HTTP simple, pas HTTPS : le certificat SSL
-   de ce sous-domaine a été réaffecté au domaine principal lors de la mise
-   en production (23/09/2026), sur décision du club — pas besoin de SSL
-   pour un espace de test protégé par mot de passe.
+4. Healthcheck : le workflow vérifie que `https://aeroclub-saumur.fr/`
+   répond bien (200 ou 302).
 5. **Si le healthcheck échoue**, rollback automatique : la version
    précédente (`_old`) est remise en place, et la version défaillante est
    conservée dans `<dossier live>_failed` pour investigation.
@@ -87,10 +83,8 @@ Dans **Settings → Secrets and variables → Actions** du dépôt :
 | `DEPLOY_HOST` | `home168617917.1and1-data.host` |
 | `DEPLOY_USER` | `acc2123289695` |
 | `DEPLOY_PASSWORD` | le mot de passe SFTP du compte de déploiement |
-| `DEPLOY_PATH` | `Aeroclub Saumur - Espace developpement` (dossier **dev**) |
+| `DEPLOY_PATH` | `Aeroclub Saumur - Espace developpement` (ancien dossier **dev** — ne sert plus qu'au workflow de suppression) |
 | `DEPLOY_PATH_PROD` | `Aeroclub Saumur - Production` |
-| `DEV_BASICAUTH_USER` | `sac` (protection de l'espace dev) |
-| `DEV_BASICAUTH_PASSWORD` | le mot de passe Basic Auth de l'espace dev |
 | `PROD_DB_HOST` | hôte MySQL/MariaDB de la base de production |
 | `PROD_DB_PORT` | port (3306) |
 | `PROD_DB_NAME` | nom de la base de production |
@@ -110,11 +104,6 @@ Les secrets `PROD_DB_*`/`PROD_HELLOASSO_*` alimentent la génération
 automatique de `inc/config-local.php` sur la prod (voir section
 suivante) — ils ne servent pas pour le dev, qui garde son
 `config-local.php` géré à la main sur le serveur.
-
-⚠️ **Les deux secrets `DEV_BASICAUTH_*` sont indispensables au healthcheck
-dev.** S'ils sont absents ou faux, le healthcheck reçoit un 401 et
-déclenche un rollback à chaque déploiement — même si le déploiement
-lui-même s'est bien passé.
 
 ## `inc/config-local.php` en prod : généré, pas déposé à la main
 
@@ -146,7 +135,7 @@ premier push après ajout de `DEPLOY_PATH_PROD` :
    IONOS) pour que le healthcheck puisse le joindre.
 
 Une fois ces deux points faits, le pipeline gère tout le reste
-automatiquement, dev et prod en parallèle, à chaque push.
+automatiquement à chaque push.
 
 ## Récupération quotidienne des logs du serveur
 

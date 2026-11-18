@@ -31,7 +31,6 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_PATH_PROD: ${{ secrets.DEPLOY_PATH_PROD }}
           LOGS_SFTP_HOST: ${{ secrets.LOGS_SFTP_HOST }}
           LOGS_SFTP_USER: ${{ secrets.LOGS_SFTP_USER }}

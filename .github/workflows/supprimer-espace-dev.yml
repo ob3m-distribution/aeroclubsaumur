@@ -1,0 +1,56 @@
+name: Supprimer l'espace de développement
+
+# L'espace dev (dev.aeroclub-saumur.fr) n'est plus déployé. Ce workflow,
+# à la demande uniquement, mesure la place qu'il occupe sur l'espace SFTP
+# IONOS puis, en mode « supprimer », efface ses dossiers. La production
+# n'est jamais visée (garde-fous dans supprimer_dev_ci.py).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "mesurer = n'efface rien, affiche les tailles ; supprimer = efface l'espace dev"
+        type: choice
+        options: [mesurer, supprimer]
+        default: mesurer
+        required: true
+      confirm:
+        description: "Pour le mode supprimer : tapez exactement OUI (suppression définitive)"
+        required: false
+
+concurrency:
+  group: supprimer-espace-dev
+  cancel-in-progress: false
+
+jobs:
+  espace-dev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MODE: ${{ github.event.inputs.mode }}
+      CONFIRM: ${{ github.event.inputs.confirm }}
+    steps:
+      - name: Vérifier la confirmation
+        run: |
+          if [ "$MODE" = "supprimer" ] && [ "$CONFIRM" != "OUI" ]; then
+            echo "Suppression non confirmée : saisir exactement OUI."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        run: pip install paramiko
+
+      - name: Mesurer ou supprimer l'espace dev
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PATH_PROD: ${{ secrets.DEPLOY_PATH_PROD }}
+        run: python supprimer_dev_ci.py "$MODE"
