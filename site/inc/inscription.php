@@ -222,22 +222,6 @@ function inscription_trace(array $ins, string $cle, array $noms): string
          . (isset($noms[$par]) ? ' · ' . $noms[$par] : '');
 }
 
-/* ---- Paiement Stripe d'une cotisation --------------------------------- */
-
-/** Associe une intention de paiement Stripe à une inscription. */
-function inscription_associer_intention(int $id, string $pi): void
-{
-    db()->prepare('UPDATE inscriptions SET stripe_payment_intent_id = ? WHERE id = ?')->execute([$pi, $id]);
-}
-
-/** Inscription rattachée à une intention de paiement, ou null. */
-function inscription_par_intention(string $pi): ?array
-{
-    $s = db()->prepare('SELECT * FROM inscriptions WHERE stripe_payment_intent_id = ? LIMIT 1');
-    $s->execute([$pi]);
-    return $s->fetch() ?: null;
-}
-
 /**
  * Marque la cotisation d'une inscription comme réglée. Idempotent.
  * Enregistre le mode + la date, et coche « cotisation reçue ».

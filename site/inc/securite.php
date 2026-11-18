@@ -20,18 +20,19 @@ if (PHP_SAPI !== 'cli' && !headers_sent()) {
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()');
 
-    // Liste blanche stricte : seuls Stripe (paiement) et Holfuy (widget météo
-    // en iframe sur /aerodrome) sont chargés depuis l'extérieur. 'unsafe-inline'
+    // Liste blanche stricte : seul Holfuy (widget météo
+    // en iframe sur /aerodrome) est chargé depuis l'extérieur. Le paiement se fait
+    // sur la page HelloAsso, par simple redirection : rien à autoriser ici. 'unsafe-inline'
     // reste nécessaire tant que le site PHP utilise styles/scripts en ligne.
     header(
         "Content-Security-Policy: "
         . "default-src 'self'; "
-        . "script-src 'self' 'unsafe-inline' https://js.stripe.com; "
+        . "script-src 'self' 'unsafe-inline'; "
         . "style-src 'self' 'unsafe-inline'; "
         . "img-src 'self' data:; "
         . "font-src 'self'; "
-        . "connect-src 'self' https://api.stripe.com; "
-        . "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://widget.holfuy.com; "
+        . "connect-src 'self'; "
+        . "frame-src 'self' https://widget.holfuy.com; "
         . "frame-ancestors 'self'; "
         . "base-uri 'self'; "
         . "form-action 'self'; "

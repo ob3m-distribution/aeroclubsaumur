@@ -100,18 +100,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 if ($cents <= 0 || $cents > $max) {
                     throw new RuntimeException('Montant de remboursement invalide (max ' . prix($max) . ').');
                 }
-                if (!empty($bon['stripe_payment_intent_id'])) {
-                    require_once __DIR__ . '/../inc/stripe.php';
-                    if (stripe_actif()) {
-                        $params = ['payment_intent' => $bon['stripe_payment_intent_id']];
-                        if ($cents < $max) $params['amount'] = $cents;   // partiel
-                        try {
-                            stripe_appel('POST', 'refunds', $params, 'refund-' . $id . '-' . $cents);
-                        } catch (Throwable $e) {
-                            throw new RuntimeException('Remboursement Stripe refusé : ' . $e->getMessage());
-                        }
-                    }
-                }
+                $enLigneRemb = in_array($bon['mode_paiement'] ?? '', MODES_EN_LIGNE, true) || !empty($bon['stripe_payment_intent_id']);
+                // Le remboursement d'un paiement en ligne se fait depuis l'espace HelloAsso
+                // (ou Stripe pour les anciens bons) : le site le note seulement.
                 $total = $cents >= $max;
                 if ($total) {
                     db()->prepare("UPDATE bons_cadeaux SET statut='rembourse' WHERE id=?")->execute([$id]);
@@ -120,7 +111,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 $_SESSION['message_succes'] = ($total
                     ? 'Bon remboursé intégralement (' . prix($cents) . ')'
                     : 'Remboursement partiel de ' . prix($cents) . ' effectué')
-                    . (!empty($bon['stripe_payment_intent_id']) ? ' via Stripe.' : ' (noté ; à rembourser au club).');
+                    . ($enLigneRemb ? ' (noté ; à rembourser depuis l’espace HelloAsso).' : ' (noté ; à rembourser au club).');
                 break;
 
             case 'encaisser':
@@ -130,7 +121,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     throw new RuntimeException('Ce bon n’est pas en attente de paiement.');
                 }
                 $mode = (string) ($_POST['mode'] ?? '');
-                if (!isset(MODES_PAIEMENT[$mode]) || $mode === 'stripe') {
+                if (!isset(MODES_PAIEMENT[$mode]) || in_array($mode, MODES_EN_LIGNE, true)) {
                     throw new RuntimeException('Choisissez le mode de paiement reçu.');
                 }
                 [$bon] = bon_marquer_paye($id, $mode);
@@ -148,7 +139,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 break;
 
             case 'relancer_lien':
-                if ($bon['statut'] !== 'en_attente_paiement' || ($bon['mode_paiement'] ?? '') !== 'stripe') {
+                if ($bon['statut'] !== 'en_attente_paiement' || !in_array($bon['mode_paiement'] ?? '', MODES_EN_LIGNE, true)) {
                     throw new RuntimeException('Ce bon n’attend pas de paiement en ligne.');
                 }
                 if (!email_lien_paiement_bon($bon, lien_paiement_bon($bon))) {
@@ -193,7 +184,11 @@ $actif = 'bons';
 require __DIR__ . '/inc/entete.php';
 
 [$lib, $cls] = statut_bon($bon);
-$viaStripe = !empty($bon['stripe_payment_intent_id']);
+$paiementHA = db()->prepare("SELECT * FROM paiements_helloasso WHERE type = 'bon' AND cible_id = ? AND statut = 'paye' ORDER BY id DESC LIMIT 1");
+$paiementHA->execute([(int) $bon['id']]);
+$paiementHA = $paiementHA->fetch() ?: null;
+$viaStripe = !empty($bon['stripe_payment_intent_id']);   // ancien prestataire
+$enLigne = $paiementHA !== null || $viaStripe || in_array($bon['mode_paiement'] ?? '', MODES_EN_LIGNE, true);
 $gere = peut('bons.gerer');
 ?>
 
@@ -215,7 +210,7 @@ $gere = peut('bons.gerer');
           <?php else: ?><span class="muet" style="font-size:.875rem">attribué au paiement</span><?php endif; ?>
         </dd>
         <dt>Vol</dt><dd><?= e(libelle_vol_bon($bon)) ?><?= !empty($bon['offert_a']) ? ' · offert à ' . e((string) $bon['offert_a']) : '' ?></dd>
-        <dt>Paiement</dt><dd><?= e(MODES_PAIEMENT[$bon['mode_paiement'] ?? ''][0] ?? ($viaStripe ? MODES_PAIEMENT['stripe'][0] : 'Carte bancaire en ligne (site)')) ?></dd>
+        <dt>Paiement</dt><dd><?= e(MODES_PAIEMENT[$bon['mode_paiement'] ?? ''][0] ?? ($enLigne ? MODES_PAIEMENT['helloasso'][0] : 'Carte bancaire en ligne (site)')) ?></dd>
         <dt>Montant</dt><dd><?= e(prix((int) $bon['montant_cents'])) ?></dd>
         <dt>Créé le</dt><dd><?= e(date('d/m/Y à H:i', strtotime((string) $bon['cree_le']))) ?></dd>
         <?php if ($bon['paye_le']): ?>
@@ -241,8 +236,12 @@ $gere = peut('bons.gerer');
         <?php if ($bon['pdf_envoye_le']): ?>
           <dt>Bon envoyé le</dt><dd><?= e(date('d/m/Y à H:i', strtotime((string) $bon['pdf_envoye_le']))) ?></dd>
         <?php endif; ?>
+        <?php if ($paiementHA): ?>
+          <dt>Paiement HelloAsso</dt>
+          <dd><span class="champ-lecture">commande <?= e((string) $paiementHA['order_id']) ?> · paiement n° <?= e((string) $paiementHA['checkout_id']) ?></span></dd>
+        <?php endif; ?>
         <?php if ($bon['stripe_payment_intent_id']): ?>
-          <dt>Paiement Stripe</dt>
+          <dt>Paiement Stripe (ancien)</dt>
           <dd><span class="champ-lecture"><?= e($bon['stripe_payment_intent_id']) ?></span></dd>
         <?php endif; ?>
         <?php if (empty($bon['cree_par'])): ?>
@@ -354,7 +353,7 @@ $gere = peut('bons.gerer');
                 <input type="hidden" name="action" value="rembourser">
                 <h3 style="margin:0 0 .35rem">Rembourser le vol</h3>
                 <p class="muet" style="margin:0 0 1rem;font-size:.85rem">Montant réglé :
-                  <strong><?= e(prix((int) $bon['montant_cents'])) ?></strong> · <?= $viaStripe ? 'remboursé sur la carte via Stripe.' : 'réglé au club : le remboursement se fait au club, le site le note seulement.' ?></p>
+                  <strong><?= e(prix((int) $bon['montant_cents'])) ?></strong> · <?= $enLigne ? 'réglé en ligne : le remboursement se fait depuis l’espace HelloAsso, le site le note seulement.' : 'réglé au club : le remboursement se fait au club, le site le note seulement.' ?></p>
 
                 <label class="remb-opt"><input type="radio" name="type_remb" value="total" checked>
                   <span><strong>Remboursement total</strong> — <?= e(prix((int) $bon['montant_cents'])) ?></span></label>
@@ -370,7 +369,7 @@ $gere = peut('bons.gerer');
 
                 <div class="actions" style="margin-top:1.25rem;justify-content:flex-end">
                   <button type="button" class="btn btn--contour" onclick="document.getElementById('modal-remb').close()">Annuler</button>
-                  <button type="submit" class="btn btn--danger"><?= $viaStripe ? 'Procéder au remboursement via Stripe' : 'Noter le remboursement' ?></button>
+                  <button type="submit" class="btn btn--danger">Noter le remboursement</button>
                 </div>
               </form>
             </dialog>
@@ -392,7 +391,7 @@ $gere = peut('bons.gerer');
               <input type="hidden" name="action" value="encaisser">
               <label for="mode-encaisse" style="font-size:.8125rem;font-weight:600">Paiement reçu</label>
               <select id="mode-encaisse" name="mode" style="width:100%;padding:.5rem;border:1px solid var(--gris-300);border-radius:6px;margin:.3rem 0 .4rem">
-                <?php foreach (MODES_PAIEMENT as $k => [$libMode]): if ($k === 'stripe') continue; ?>
+                <?php foreach (MODES_PAIEMENT as $k => [$libMode]): if (in_array($k, MODES_EN_LIGNE, true)) continue; ?>
                   <option value="<?= e($k) ?>"<?= ($bon['mode_paiement'] ?? '') === $k ? ' selected' : '' ?>><?= e($libMode) ?></option>
                 <?php endforeach; ?>
               </select>
@@ -406,7 +405,7 @@ $gere = peut('bons.gerer');
               </button>
             </form>
 
-            <?php if (($bon['mode_paiement'] ?? '') === 'stripe'): ?>
+            <?php if (in_array($bon['mode_paiement'] ?? '', MODES_EN_LIGNE, true)): ?>
               <form method="post" data-unique>
                 <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
                 <input type="hidden" name="action" value="relancer_lien">
@@ -426,7 +425,7 @@ $gere = peut('bons.gerer');
               <input type="hidden" name="csrf" value="<?= e(jeton_csrf()) ?>">
               <input type="hidden" name="action" value="annuler">
               <button type="submit" class="btn btn--danger" style="width:100%;justify-content:center"
-                      data-confirmer="Annuler ce bon ? Si le paiement a été encaissé, pensez au remboursement depuis Stripe.">
+                      data-confirmer="Annuler ce bon ? Si le paiement a été encaissé, pensez au remboursement depuis l’espace HelloAsso.">
                 Annuler le bon
               </button>
             </form>

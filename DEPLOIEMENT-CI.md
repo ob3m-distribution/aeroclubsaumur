@@ -9,7 +9,7 @@ Chaque push sur `main` déclenche désormais un déploiement automatique vers
 - **dev** (`dev.aeroclub-saumur.fr`) — dossier `Aeroclub Saumur - Espace
   developpement`, conservé pour tester les développements avant la prod.
 - **prod** (`aeroclub-saumur.fr`) — dossier séparé, dédié à la production
-  (ses propres secrets : vraies clés Stripe, pas de protection par mot de
+  (ses propres secrets : vraies clés HelloAsso, pas de protection par mot de
   passe, pas de fausses données de test).
 
 Ce sont deux dossiers différents sur le même compte SFTP, chacun avec ses
@@ -35,7 +35,7 @@ runner GitHub Actions.
    (`<dossier live>_new`), sans toucher au site en ligne.
 2. **Report des fichiers/dossiers persistants** depuis le site actuellement
    en ligne vers ce dossier temporaire : `.htpasswd`, `inc/config-local.php`
-   (secrets DB/Stripe/mail), `docs-inscriptions/`, `docs-adherents/`,
+   (secrets DB/HelloAsso/mail), `docs-inscriptions/`, `docs-adherents/`,
    `uploads/`. Ce sont des éléments qui ne sont **jamais dans git**
    (`.gitignore`) — secrets ou données réelles d'adhérents — mais qui
    existent sur le serveur et doivent survivre à chaque déploiement.
@@ -96,16 +96,17 @@ Dans **Settings → Secrets and variables → Actions** du dépôt :
 | `PROD_DB_NAME` | nom de la base de production |
 | `PROD_DB_USER` | utilisateur de la base de production |
 | `PROD_DB_PASSWORD` | mot de passe de la base de production |
-| `PROD_STRIPE_PK` | clé publique Stripe live (`pk_live_...`) |
-| `PROD_STRIPE_SK` | clé secrète Stripe live (`sk_live_...`) |
-| `PROD_STRIPE_WHSEC` | secret de signature du webhook Stripe live (`whsec_...`) |
+| `PROD_HELLOASSO_CLIENT_ID` | identifiant client de l'API HelloAsso (Mon compte > Intégrations et API) |
+| `PROD_HELLOASSO_CLIENT_SECRET` | secret client de l'API HelloAsso |
+| `PROD_HELLOASSO_ORG_SLUG` | identifiant (« slug ») de l'association sur HelloAsso |
+| `PROD_HELLOASSO_SANDBOX` | facultatif : `1` pour l'environnement de test HelloAsso (clés sandbox) ; vide en production |
 
 `DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_PASSWORD` sont partagés (même compte
 SFTP) — seul le chemin de destination change entre dev et prod. Le
 healthcheck prod ne prend pas de Basic Auth : `aeroclub-saumur.fr` doit
 être librement accessible.
 
-Les 8 secrets `PROD_DB_*`/`PROD_STRIPE_*` alimentent la génération
+Les secrets `PROD_DB_*`/`PROD_HELLOASSO_*` alimentent la génération
 automatique de `inc/config-local.php` sur la prod (voir section
 suivante) — ils ne servent pas pour le dev, qui garde son
 `config-local.php` géré à la main sur le serveur.
@@ -120,9 +121,9 @@ lui-même s'est bien passé.
 Sur le job prod, `deploy_ci.py` reçoit `GENERER_CONFIG_LOCAL=1` : au lieu
 de reporter un fichier existant (comme pour `.htpasswd` ou comme le fait
 le dev), il **régénère `inc/config-local.php` à chaque déploiement** à
-partir des 8 secrets `PROD_DB_*`/`PROD_STRIPE_*`. Avantages :
+partir des secrets `PROD_DB_*`/`PROD_HELLOASSO_*`. Avantages :
 - jamais besoin de déposer ce fichier à la main sur le serveur ;
-- changer une clé Stripe ou un mot de passe de base = mettre à jour le
+- changer une clé HelloAsso ou un mot de passe de base = mettre à jour le
   secret GitHub, le déploiement suivant s'en charge ;
 - pas de risque de fichier resté périmé après une rotation de secret.
 
@@ -135,8 +136,8 @@ défini sur son job.
 Le dossier prod n'existe pas tant que personne ne l'a créé. Avant le tout
 premier push après ajout de `DEPLOY_PATH_PROD` :
 
-1. Les 8 secrets `PROD_DB_*`/`PROD_STRIPE_*` doivent être renseignés —
-   tant que `PROD_STRIPE_SK` (ou un autre) est absent, `config-local.php`
+1. Les secrets `PROD_DB_*`/`PROD_HELLOASSO_*` doivent être renseignés —
+   tant que `PROD_HELLOASSO_CLIENT_SECRET` (ou un autre) est absent, `config-local.php`
    sera généré avec une valeur vide pour ce champ : le dossier sera bien
    créé, mais les fonctionnalités concernées (paiement, base de données)
    ne marcheront pas tant que le secret manquant n'est pas ajouté — sans

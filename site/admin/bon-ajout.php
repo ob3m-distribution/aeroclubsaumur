@@ -23,7 +23,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                      'benef_prenom' => (array) ($_POST['benef_prenom'] ?? []),
                      'benef_nom' => (array) ($_POST['benef_nom'] ?? [])];
 
-    if (!isset(MODES_PAIEMENT[$mode])) {
+    if (!isset(MODES_PAIEMENT[$mode]) || $mode === 'stripe') {   // « stripe » : ancien prestataire, plus proposé
         $erreurs['mode'] = 'Choisissez le mode de paiement.';
     }
     // Réglé au club sans envoi par e-mail : e-mail et téléphone facultatifs.
@@ -56,8 +56,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     : 'Demande enregistrée (en attente virement), mais l’e-mail avec le RIB n’a pas pu partir.';
             } else {
                 $msg = email_lien_paiement_bon($bon, lien_paiement_bon($bon))
-                    ? 'Demande enregistrée (en attente Stripe). Le lien de paiement a été envoyé à ' . $bon['acheteur_email'] . '.'
-                    : 'Demande enregistrée (en attente Stripe), mais l’e-mail n’a pas pu partir : utilisez « Renvoyer le lien de paiement ».';
+                    ? 'Demande enregistrée (en attente de paiement en ligne). Le lien de paiement a été envoyé à ' . $bon['acheteur_email'] . '.'
+                    : 'Demande enregistrée (en attente de paiement en ligne), mais l’e-mail n’a pas pu partir : utilisez « Renvoyer le lien de paiement ».';
             }
             $_SESSION['message_succes'] = $msg;
             header('Location: /admin/bon.php?id=' . $id, true, 303);
@@ -150,11 +150,11 @@ require __DIR__ . '/inc/entete.php';
       'cheque'   => ['🧾', 'Chèque',               'Réglé sur place'],
       'cb_club'  => ['💳', 'Carte bancaire (TPE)', 'Réglé sur place'],
       'virement' => ['🏦', 'Virement bancaire',    'Le RIB du club part par e-mail'],
-      'stripe'   => ['🔗', 'Carte bancaire en ligne', 'Un lien de paiement part par e-mail'],
+      'helloasso' => ['🔗', 'Carte bancaire en ligne', 'Un lien de paiement part par e-mail'],
     ];
     $famillesPaiement = [
       ['Le client paie maintenant, au club', 'Le bon est payé et numéroté tout de suite.', MODES_AU_CLUB],
-      ['Le client paiera plus tard, à distance', 'Le bon reste « en attente » jusqu’au paiement, sans numéro.', ['virement', 'stripe']],
+      ['Le client paiera plus tard, à distance', 'Le bon reste « en attente » jusqu’au paiement, sans numéro.', ['virement', 'helloasso']],
     ];
   ?>
   <div class="paiement-familles">
@@ -204,9 +204,9 @@ require __DIR__ . '/inc/entete.php';
     virement: ['Le bon est créé au statut « En attente virement », sans numéro.',
                'Le client reçoit par e-mail le RIB du club et le libellé à indiquer.',
                'À réception du virement : ouvrez la fiche du bon → « Valider le paiement ». Il est alors numéroté et envoyé au client.'],
-    stripe:   ['Le bon est créé au statut « En attente Stripe », sans numéro.',
+    helloasso: ['Le bon est créé au statut « En attente de paiement en ligne », sans numéro.',
                'Le client reçoit par e-mail un lien pour payer par carte.',
-               'Dès qu’il a payé, le bon passe « Payé par Stripe » et lui est envoyé automatiquement.']
+               'Dès qu’il a payé, le bon passe « Payé par carte en ligne » et lui est envoyé automatiquement.']
   };
   function euros(c){ return (c % 100 ? (c/100).toFixed(2).replace('.', ',') : (c/100)) + ' €'; }
   function val(n){ var r = f.querySelector('input[name="' + n + '"]:checked'); return r ? r.value : ''; }

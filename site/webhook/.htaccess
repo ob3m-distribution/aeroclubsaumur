@@ -1,9 +1,9 @@
 # ------------------------------------------------------------------
-# Webhook Stripe — accessible SANS mot de passe.
+# Notifications HelloAsso (webhook) — accessibles SANS mot de passe.
 #
-# Stripe ne peut pas s'authentifier en HTTP Basic. La securite de ce
-# point d'entree repose sur la verification de la signature HMAC dans
-# stripe.php, pas sur l'authentification.
+# HelloAsso ne peut pas s'authentifier en HTTP Basic. La securite de ce
+# point d'entree repose sur la verification de chaque paiement aupres de
+# l'API HelloAsso (helloasso.php), pas sur l'authentification.
 #
 # Ce fichier annule la protection heritee du dossier parent, qui ne
 # concerne que l'espace de developpement.
@@ -12,7 +12,7 @@
 AuthType None
 Require all granted
 
-# Pas de reecriture ici : Stripe appelle l'URL exacte.
+# Pas de reecriture ici : HelloAsso appelle l'URL exacte.
 <IfModule mod_rewrite.c>
     RewriteEngine Off
 </IfModule>

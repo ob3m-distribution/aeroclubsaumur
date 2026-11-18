@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/inc/bon-cadeau.php';
-require_once __DIR__ . '/inc/stripe.php';
+require_once __DIR__ . '/inc/helloasso.php';
 
 session_demarrer();
 
@@ -43,19 +43,34 @@ if ($bon['statut'] !== 'en_attente_paiement') {
     exit;
 }
 
-$erreurStripe = null;
-$clientSecret = null;
+$erreurPaiement = null;
+if (isset($_GET['erreur'])) {
+    $erreurPaiement = 'Le paiement n’a pas abouti. Vous pouvez réessayer.';
+}
 
-if (stripe_actif()) {
-    try {
-        $intention = stripe_creer_intention($bon);
-        $clientSecret = $intention['client_secret'] ?? null;
-        if (empty($bon['stripe_payment_intent_id']) && !empty($intention['id'])) {
-            bon_associer_intention($bonId, $intention['id']);
+/* Le clic sur « Payer » crée le paiement chez HelloAsso puis y envoie le client.
+   Le montant vient de notre base, jamais du navigateur ; le jeton lié à la
+   session empêche qu'un robot ou un lien piégé déclenche la création. */
+if (isset($_GET['payer'])) {
+    if (!jeton_csrf_valide($_GET['t'] ?? null)) {
+        $erreurPaiement = 'Votre session a expiré. Merci de réessayer.';
+    } elseif (!ha_actif()) {
+        $erreurPaiement = 'Le paiement en ligne n’est pas encore actif.';
+    } else {
+        try {
+            $url = ha_creer_paiement(
+                'bon', $bonId, (int) $bon['montant_cents'],
+                'Bon cadeau — ' . libelle_vol_bon($bon) . ' (' . $bon['reference'] . ')',
+                ['prenom' => $bon['acheteur_prenom'], 'nom' => $bon['acheteur_nom'], 'email' => $bon['acheteur_email']],
+                ha_url_site('/merci'),
+                ha_url_site('/paiement')
+            );
+            header('Location: ' . $url, true, 303);
+            exit;
+        } catch (Throwable $e) {
+            error_log('HelloAsso bon — création du paiement : ' . $e->getMessage());
+            $erreurPaiement = 'Le service de paiement est momentanément indisponible.';
         }
-    } catch (Throwable $e) {
-        error_log('Stripe — création intention : ' . $e->getMessage());
-        $erreurStripe = 'Le service de paiement est momentanément indisponible.';
     }
 }
 
@@ -100,120 +115,49 @@ require __DIR__ . '/inc/header.php';
         </p>
       </div>
 
-      <?php if ($clientSecret !== null): ?>
+      <?php if ($erreurPaiement !== null): ?>
+        <div class="alerte alerte--erreur" role="alert">
+          <strong><?= e($erreurPaiement) ?></strong>
+          <p style="margin:.5rem 0 0">
+            Votre demande est enregistrée sous la référence
+            <strong><?= e($bon['reference']) ?></strong>. En cas de difficulté, contactez le club au
+            <a href="tel:<?= e(tel_lien(CLUB['tel_mobile'])) ?>"><?= e(CLUB['tel_mobile']) ?></a>.
+          </p>
+        </div>
+      <?php endif; ?>
 
-        <?php if (stripe_mode_test()): ?>
+      <?php if (ha_actif()): ?>
+
+        <?php if (ha_mode_test()): ?>
           <div class="alerte alerte--erreur" style="border-left-color:#B8860B">
             <strong>Mode test.</strong> Aucun paiement réel n’est encaissé.
-            Carte d’essai : <code>4242 4242 4242 4242</code>, une date future, n’importe quel CVC.
           </div>
         <?php endif; ?>
 
-        <form class="formulaire" id="form-paiement">
+        <div class="formulaire">
           <h2 style="font-size:1.125rem;margin-bottom:1rem">Paiement par carte</h2>
-
-          <!-- Stripe injecte ici son champ carte. Les données bancaires vont
-               directement chez Stripe : elles ne touchent jamais notre serveur. -->
-          <div id="element-paiement"></div>
-
-          <div id="erreur-paiement" class="alerte alerte--erreur"
-               role="alert" style="display:none;margin:1.25rem 0 0"></div>
-
+          <p class="texte-petit" style="margin:0 0 1.25rem">
+            Paiement sécurisé par HelloAsso : vous allez être redirigé vers leur page de paiement,
+            puis ramené ici. Vos coordonnées bancaires ne transitent jamais par notre site.
+            HelloAsso propose une <strong>contribution volontaire</strong> pour son fonctionnement :
+            elle est facultative, vous pouvez la ramener à 0 €.
+          </p>
           <div class="formulaire__pied">
             <p class="formulaire__total">
               Total<br><strong><?= e(prix((int) $bon['montant_cents'])) ?></strong>
             </p>
-            <button type="submit" class="bouton" id="bouton-payer">
+            <a class="bouton" href="/paiement?payer=1&amp;t=<?= e(jeton_csrf()) ?>">
               Payer <?= e(prix((int) $bon['montant_cents'])) ?>
-            </button>
+            </a>
           </div>
-
-          <p class="aide" style="margin-top:1rem">
-            Paiement sécurisé par Stripe. Vos coordonnées bancaires ne transitent
-            jamais par notre site.
-          </p>
-        </form>
-
-        <script src="https://js.stripe.com/v3/"></script>
-        <script>
-          (function () {
-            var stripe = Stripe(<?= json_encode(STRIPE_CLE_PUBLIQUE, JSON_THROW_ON_ERROR) ?>);
-            var elements = stripe.elements({
-              clientSecret: <?= json_encode($clientSecret, JSON_THROW_ON_ERROR) ?>,
-              locale: 'fr',
-              appearance: {
-                theme: 'stripe',
-                variables: {
-                  colorPrimary: '#BA0202',
-                  colorText: '#0E1112',
-                  colorDanger: '#BA0202',
-                  fontFamily: <?= json_encode(POLICES[police_active()]['famille'], JSON_THROW_ON_ERROR) ?>,
-                  borderRadius: '3px'
-                }
-              }
-            });
-            elements.create('payment', { layout: 'tabs' }).mount('#element-paiement');
-
-            var form = document.getElementById('form-paiement');
-            var bouton = document.getElementById('bouton-payer');
-            var zoneErreur = document.getElementById('erreur-paiement');
-
-            function afficherErreur(message) {
-              zoneErreur.textContent = message;
-              zoneErreur.style.display = 'block';
-              bouton.removeAttribute('aria-disabled');
-              bouton.textContent = <?= json_encode('Payer ' . prix((int) $bon['montant_cents']), JSON_THROW_ON_ERROR) ?>;
-              zoneErreur.scrollIntoView({ block: 'center' });
-            }
-
-            form.addEventListener('submit', async function (ev) {
-              ev.preventDefault();
-              if (bouton.getAttribute('aria-disabled') === 'true') return;
-
-              bouton.setAttribute('aria-disabled', 'true');
-              bouton.textContent = 'Paiement en cours…';
-              zoneErreur.style.display = 'none';
-
-              var res = await stripe.confirmPayment({
-                elements: elements,
-                confirmParams: {
-                  return_url: window.location.origin + '/merci'
-                }
-              });
-
-              // On n'arrive ici QUE si le paiement a échoué : sinon Stripe
-              // a déjà redirigé le navigateur vers return_url.
-              if (res.error) {
-                afficherErreur(res.error.message ||
-                  'Le paiement n’a pas abouti. Merci de vérifier vos informations.');
-              }
-            });
-          })();
-        </script>
-
-      <?php elseif ($erreurStripe !== null): ?>
-
-        <div class="alerte alerte--erreur">
-          <strong><?= e($erreurStripe) ?></strong>
-          <p style="margin:.5rem 0 0">
-            Votre demande est enregistrée sous la référence
-            <strong><?= e($bon['reference']) ?></strong>. Contactez le club au
-            <a href="tel:<?= e(tel_lien(CLUB['tel_mobile'])) ?>"><?= e(CLUB['tel_mobile']) ?></a>
-            pour finaliser le règlement.
-          </p>
         </div>
 
-      <?php else: ?>
+      <?php elseif ($erreurPaiement === null): ?>
 
         <div class="a-completer">
           <p>
             <strong>Le paiement en ligne n’est pas encore activé.</strong>
-            Le compte Stripe du club reste à ouvrir. Dès que les clés seront
-            renseignées dans <code>inc/config-local.php</code>, le champ de
-            paiement s’affichera ici automatiquement — sans autre modification.
-          </p>
-          <p style="margin-bottom:0">
-            En attendant, votre demande est bien enregistrée sous la référence
+            Votre demande est bien enregistrée sous la référence
             <strong><?= e($bon['reference']) ?></strong> et le club vous
             recontacte pour le règlement.
           </p>

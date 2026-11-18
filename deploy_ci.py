@@ -57,9 +57,11 @@ const EMAIL_CLUB = 'voler@saumurairclub.fr';
 const EMAIL_EXPEDITEUR = 'noreply@aeroclub-saumur.fr';
 const EMAIL_EXPEDITEUR_NOM = 'Saumur Air Club';
 
-const STRIPE_CLE_PUBLIQUE   = '{stripe_pk}';
-const STRIPE_CLE_SECRETE    = '{stripe_sk}';
-const STRIPE_WEBHOOK_SECRET = '{stripe_whsec}';
+/* Paiement en ligne HelloAsso (API v5). */
+const HELLOASSO_CLIENT_ID     = '{ha_id}';
+const HELLOASSO_CLIENT_SECRET = '{ha_secret}';
+const HELLOASSO_ORG_SLUG      = '{ha_slug}';
+const HELLOASSO_SANDBOX       = {ha_sandbox};
 
 /* Secret pour les scripts ponctuels proteges par jeton (taches/) —
    jamais code en dur dans un fichier versionne, voir PROD_INSTALLER_SECRET. */
@@ -83,9 +85,10 @@ def generer_config_local():
         db_name=echapper_php(os.environ["PROD_DB_NAME"]),
         db_user=echapper_php(os.environ["PROD_DB_USER"]),
         db_password=echapper_php(os.environ["PROD_DB_PASSWORD"]),
-        stripe_pk=echapper_php(os.environ["PROD_STRIPE_PK"]),
-        stripe_sk=echapper_php(os.environ["PROD_STRIPE_SK"]),
-        stripe_whsec=echapper_php(os.environ["PROD_STRIPE_WHSEC"]),
+        ha_id=echapper_php(os.environ.get("PROD_HELLOASSO_CLIENT_ID", "")),
+        ha_secret=echapper_php(os.environ.get("PROD_HELLOASSO_CLIENT_SECRET", "")),
+        ha_slug=echapper_php(os.environ.get("PROD_HELLOASSO_ORG_SLUG", "")),
+        ha_sandbox="true" if os.environ.get("PROD_HELLOASSO_SANDBOX", "").strip().lower() in ("1", "true", "oui") else "false",
         installer_secret=echapper_php(os.environ.get("PROD_INSTALLER_SECRET", "")),
         ops_secret=echapper_php(os.environ.get("PROD_OPS_SECRET", "")),
     )

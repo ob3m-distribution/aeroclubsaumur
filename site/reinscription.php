@@ -172,7 +172,7 @@ require __DIR__ . '/inc/header.php';
     <div class="paiement-choix">
       <div class="paiement-option">
         <h3>Carte bancaire</h3>
-        <p class="aide">Paiement en ligne sécurisé (Stripe).</p>
+        <p class="aide">Paiement en ligne sécurisé (HelloAsso).</p>
         <a class="bouton" href="/paiement-inscription">Payer <?= e(prix($total)) ?></a>
       </div>
       <div class="paiement-option">

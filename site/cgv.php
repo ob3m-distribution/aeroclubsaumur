@@ -76,8 +76,8 @@ require __DIR__ . '/inc/hero.php';
           de réception du bon.
         </p>
         <p>
-          Le règlement s’effectue par carte bancaire, via le prestataire de paiement Stripe.
-          Les coordonnées bancaires sont saisies directement chez Stripe, chiffrées, et ne
+          Le règlement s’effectue par carte bancaire, via le prestataire de paiement HelloAsso.
+          Les coordonnées bancaires sont saisies directement chez HelloAsso, chiffrées, et ne
           transitent jamais par les serveurs du club. La commande n’est validée qu’après
           confirmation du paiement ; en l’absence de paiement, elle est annulée.
         </p>

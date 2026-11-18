@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/inc/bon-cadeau.php';
 require_once __DIR__ . '/inc/mail.php';
-require_once __DIR__ . '/inc/stripe.php';
+require_once __DIR__ . '/inc/helloasso.php';
 
 /* La session DOIT demarrer avant la moindre sortie : sinon PHP ne peut plus
    envoyer le cookie, le navigateur n'a pas de session, et le jeton CSRF
@@ -45,12 +45,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             unset($_SESSION['csrf']);           // jeton à usage unique
 
             // Redirection après POST : évite le renvoi du formulaire au rechargement.
-            if (stripe_actif()) {
+            if (ha_actif()) {
                 header('Location: /paiement', true, 303);
                 exit;
             }
 
-            // Stripe pas encore configuré : on prévient le club, qui rappellera.
+            // Paiement en ligne pas encore configuré : on prévient le club, qui rappellera.
             // Un échec d'email ne doit pas perdre la demande : elle est déjà en base.
             @email_notification_club($bon);
             @email_accuse_acheteur($bon);

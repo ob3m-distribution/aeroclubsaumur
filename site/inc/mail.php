@@ -551,7 +551,7 @@ function email_encart_bon(array $bon, array $lignes = []): string
     return $html . '</table>';
 }
 
-/** Bon saisi au club, réglé en ligne : lien de paiement Stripe personnel. */
+/** Bon saisi au club, réglé en ligne : lien de paiement en ligne personnel. */
 function email_lien_paiement_bon(array $bon, string $lien): bool
 {
     $prenom  = (string) $bon['acheteur_prenom'];
@@ -560,13 +560,13 @@ function email_lien_paiement_bon(array $bon, string $lien): bool
     $sujet   = 'Réglez votre bon cadeau en ligne — ' . CLUB['nom'];
     $texte   = "Bonjour {$prenom},\n\nVoici le lien pour régler en ligne, par carte bancaire, votre bon cadeau "
         . "({$vol}) d'un montant de {$montant} :\n\n{$lien}\n\n"
-        . "Le paiement est sécurisé par Stripe. Dès qu'il est validé, vous recevez votre bon cadeau par e-mail, "
+        . "Le paiement est sécurisé par HelloAsso. Dès qu'il est validé, vous recevez votre bon cadeau par e-mail, "
         . "valable un an.\n\nÀ très bientôt,\nLe Saumur Air Club";
     $corpsHtml = '<p style="margin:0 0 20px;font-size:15px;line-height:1.6;">Bonjour <strong>' . e($prenom) . '</strong>,<br><br>'
         . 'voici votre lien pour régler en ligne, par carte bancaire, votre bon cadeau.</p>'
         . email_encart_bon($bon)
         . '<p style="margin:0 0 22px;">' . email_bouton($lien, 'Payer ' . $montant) . '</p>'
-        . '<p style="margin:0;font-size:13px;line-height:1.6;color:#78859A;">Paiement sécurisé par Stripe. Dès qu\'il est validé, '
+        . '<p style="margin:0;font-size:13px;line-height:1.6;color:#78859A;">Paiement sécurisé par HelloAsso. Dès qu\'il est validé, '
         . 'vous recevez votre bon cadeau par e-mail, valable un an.</p>';
     return envoyer_email_html_pj((string) $bon['acheteur_email'], $sujet,
         email_gabarit('Réglez votre bon cadeau', $corpsHtml), $texte, [], CLUB['email_vols']);

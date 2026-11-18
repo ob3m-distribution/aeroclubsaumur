@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/inc/bon-cadeau.php';
-require_once __DIR__ . '/inc/stripe.php';
+require_once __DIR__ . '/inc/helloasso.php';
 require_once __DIR__ . '/inc/mail.php';
 
 session_demarrer();
@@ -11,47 +11,34 @@ $bon      = null;
 $paye     = false;
 $enAttente = false;
 
-/* --- Retour de Stripe -------------------------------------------------
-   Stripe renvoie ici avec ?payment_intent=pi_xxx&redirect_status=...
-   On interroge l'API plutot que de croire le parametre d'URL : n'importe
-   qui peut ecrire redirect_status=succeeded dans la barre d'adresse.
-   Le webhook reste la source de verite ; ce passage sert a afficher le
-   code tout de suite, sans attendre. bon_marquer_paye() est idempotent,
-   les deux chemins peuvent donc l'appeler sans risque de doublon. */
-$pi = (string) ($_GET['payment_intent'] ?? '');
+/* --- Retour de HelloAsso ----------------------------------------------
+   HelloAsso renvoie ici avec ?checkoutIntentId=…&code=succeeded&orderId=…
+   Ces paramètres ne prouvent rien (n'importe qui peut les écrire dans la
+   barre d'adresse) : on s'en sert pour retrouver le bon, puis on interroge
+   l'API HelloAsso. La notification (webhook) reste la source de vérité ;
+   ce passage sert à afficher le code tout de suite, sans attendre.
+   ha_rapprocher() est idempotent : les deux chemins peuvent l'appeler. */
+$checkoutId = (int) ($_GET['checkoutIntentId'] ?? 0);
 
-if ($pi !== '' && stripe_actif()) {
+if ($checkoutId > 0 && ha_actif()) {
     try {
-        $intention = stripe_lire_intention($pi);
-        $statut = (string) ($intention['status'] ?? '');
-        $bon = bon_par_intention($pi);
-
-        if (!$bon && !empty($intention['metadata']['bon_cadeau_id'])) {
-            $bon = bon_par_id((int) $intention['metadata']['bon_cadeau_id']);
-        }
-
-        if ($bon && $statut === 'succeeded'
-            && (int) ($intention['amount_received'] ?? 0) === (int) $bon['montant_cents']) {
-
-            [$bon, $premierPassage] = bon_marquer_paye((int) $bon['id']);
-            $paye = true;
-
-            if ($premierPassage) {
-                if (@email_bon_cadeau($bon)) {
-                    bon_marquer_envoye((int) $bon['id']);
-                }
-                @email_paiement_recu_club($bon);
+        $cible = ha_cible_du_checkout($checkoutId);
+        if ($cible && $cible[0] === 'bon') {
+            ha_rapprocher('bon', $cible[1]);
+            $bon = bon_par_id($cible[1]);
+            if ($bon && $bon['statut'] !== 'en_attente_paiement') {
+                $paye = true;
+                unset($_SESSION['bon_en_cours']);
+            } elseif ($bon && (string) ($_GET['code'] ?? '') === 'succeeded') {
+                $enAttente = true;   // payé chez HelloAsso, confirmation en route
             }
-            unset($_SESSION['bon_en_cours']);
-        } elseif ($bon && in_array($statut, ['processing', 'requires_action'], true)) {
-            $enAttente = true;
         }
     } catch (Throwable $e) {
-        error_log('Retour Stripe : ' . $e->getMessage());
+        error_log('Retour HelloAsso : ' . $e->getMessage());
     }
 }
 
-/* --- Sans retour Stripe : demande enregistree, paiement pas encore actif */
+/* --- Sans retour de paiement : demande enregistree, paiement pas encore actif */
 $reference  = $bon['reference'] ?? ($_SESSION['derniere_reference'] ?? null);
 $emailEnvoi = $bon['acheteur_email'] ?? ($_SESSION['dernier_email'] ?? null);
 unset($_SESSION['derniere_reference'], $_SESSION['dernier_email']);
