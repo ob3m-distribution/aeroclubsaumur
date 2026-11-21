@@ -49,6 +49,15 @@ MAX_LIGNES_EMAIL = 30         # lignes d'erreur PHP reprises dans l'email
 MOIS_APACHE = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 # Format Apache "combined" : ... [24/Sep/2026:10:00:00 +0200] "GET /x HTTP/1.1" 500 ...
+# Heure (et fuseau) d'une ligne de log d'acces, pour dater les 5xx.
+RE_HEURE = re.compile(r'\[\d{2}/\w{3}/\d{4}:(\d{2}:\d{2}:\d{2}) ?([^\]]*)\]')
+# Heures des reponses 5xx du jour, par (code, URL) : alimente le resume.
+HEURES_5XX = {}
+# Nb de 5xx ecartees car adressees a une IP qui scanne le site (liste a 1 element).
+SCANNERS_5XX = [0]
+# Requetes sur des chemins inexistants a partir desquelles une IP est un scanner.
+SEUIL_SCAN = 5
+
 RE_ACCES = re.compile(r'\[(\d{2}/\w{3}/\d{4}):[^\]]*\] "(?:\S+) (\S+)[^"]*" (\d{3}) ')
 
 
@@ -116,17 +125,44 @@ def recuperer_logs_acces(sftp):
 
 
 def erreurs_5xx(fichiers, jour):
-    """Reponses 5xx du jour donne, regroupees par (code, URL)."""
+    """Reponses 5xx du jour donne, regroupees par (code, URL).
+
+    Les 5xx adressees a une IP qui scanne le site (au moins SEUIL_SCAN
+    requetes sur des chemins qui n'existent pas, ex. 200 .php de type
+    webshell en 30 s) sont ecartees : IONOS coupe ces rafales par des 503,
+    y compris sur « / », et ce n'est pas une panne vue par un visiteur.
+    Elles sont comptees a part dans SCANNERS_5XX."""
     cle_jour = f"{jour.day:02d}/{MOIS_APACHE[jour.month - 1]}/{jour.year}"
-    compte = {}
+    lignes_5xx = []          # (ip, cle, heure)
+    sondages = {}            # ip -> nb de requetes sur des chemins inexistants
     for f in fichiers:
         for ligne in lire_texte(f).splitlines():
             m = RE_ACCES.search(ligne)
-            if m and m.group(1) == cle_jour and m.group(3).startswith("5"):
-                cle = (m.group(3), m.group(2)[:150])
-                compte[cle] = compte.get(cle, 0) + 1
+            if not m or m.group(1) != cle_jour:
+                continue
+            ip = ligne.split(" ", 1)[0]
+            if not page_du_site(m.group(2)):
+                sondages[ip] = sondages.get(ip, 0) + 1
+            if m.group(3).startswith("5"):
+                h = RE_HEURE.search(ligne)
+                lignes_5xx.append((ip, (m.group(3), m.group(2)[:150]),
+                                   f"{h.group(1)} {h.group(2)}".strip() if h else ""))
+    HEURES_5XX.clear()
+    SCANNERS_5XX[0] = 0
+    compte = {}
+    for ip, cle, heure in lignes_5xx:
+        if sondages.get(ip, 0) >= SEUIL_SCAN:
+            SCANNERS_5XX[0] += 1
+            continue
+        compte[cle] = compte.get(cle, 0) + 1
+        if heure:
+            HEURES_5XX.setdefault(cle, []).append(heure)
     return compte
 
+
+# Nombre de reponses 5xx sur des pages du site (par jour) a partir duquel
+# on envoie l'email d'alerte.
+SEUIL_ALERTE_5XX = 3
 
 # Reecritures de site/.htaccess qui ne correspondent pas a un fichier
 # du meme nom.
@@ -167,7 +203,7 @@ def construire_resume(php, fichiers_acces, e5xx_tout, hier):
     else:
         c.append(f"<tr><td>Réponses 5xx sur des pages du site (veille)</td><td>{total_5xx}</td></tr>")
         c.append(f"<tr><td>Requêtes de robots en erreur, ignorées (veille)</td>"
-                 f"<td>{sum(robots.values())}</td></tr>")
+                 f"<td>{sum(robots.values()) + SCANNERS_5XX[0]}</td></tr>")
     c.append("</table>")
 
     for env, lignes in php.items():
@@ -178,9 +214,10 @@ def construire_resume(php, fichiers_acces, e5xx_tout, hier):
                      + html.escape("\n".join(extrait)) + "</pre>")
     if e5xx:
         c.append("<h3>Réponses 5xx sur des pages du site (veille)</h3><table border='1' cellpadding='4' cellspacing='0'>"
-                 "<tr><th>Code</th><th>URL</th><th>Nombre</th></tr>")
+                 "<tr><th>Code</th><th>URL</th><th>Nombre</th><th>Heure(s)</th></tr>")
         for (code, url), n in sorted(e5xx.items(), key=lambda x: -x[1])[:20]:
-            c.append(f"<tr><td>{code}</td><td>{html.escape(url)}</td><td>{n}</td></tr>")
+            c.append(f"<tr><td>{code}</td><td>{html.escape(url)}</td><td>{n}</td>"
+                     f"<td>{html.escape(', '.join(HEURES_5XX.get((code, url), [])[:10]))}</td></tr>")
         c.append("</table>")
     c.append("<p>Logs complets : artifact « logs-serveur » du workflow GitHub Actions (30 jours).</p>")
     return "\n".join(c), total_php, total_5xx
@@ -230,7 +267,10 @@ def main():
     with open(os.path.join(SORTIE, "resume.html"), "w", encoding="utf-8") as f:
         f.write(resume)
 
-    alerte = total_php > 0 or total_5xx > 0
+    # Un 503 isole est un a-coup normal de l'hebergement mutualise : il reste
+    # liste dans le resume, mais ne declenche l'email qu'a partir de
+    # SEUIL_ALERTE_5XX reponses 5xx (ou a la moindre erreur PHP).
+    alerte = total_php > 0 or total_5xx >= SEUIL_ALERTE_5XX
     print(f"Erreurs PHP : {total_php} — reponses 5xx hier : {total_5xx} — alerte : {alerte}")
     ecrire_sortie_github("alerte", "true" if alerte else "false")
 
