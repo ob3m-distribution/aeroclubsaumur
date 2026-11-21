@@ -4,8 +4,7 @@ dossier et rollback en cas d'echec du healthcheck.
 
 Le serveur n'a pas de shell : tout se fait par operations SFTP (upload,
 mkdir, rename, remove), jamais de commande executee a distance. C'est le
-script appele par .github/workflows/deploy.yml — pour un deploiement
-manuel depuis un poste local, utiliser deploy.py.
+script appele par .github/workflows/deploy.yml.
 
 Usage :
     python deploy_ci.py deploy
@@ -13,7 +12,7 @@ Usage :
 
 Variables d'environnement requises : DEPLOY_HOST, DEPLOY_USER,
 DEPLOY_PASSWORD, DEPLOY_PATH (chemin du dossier actuellement en ligne,
-ex. "Aeroclub Saumur - Espace developpement").
+ex. "Aeroclub Saumur - Production").
 """
 import os
 import socket
@@ -34,8 +33,7 @@ IGNORER_DOSSIERS = {".git", "__pycache__", "node_modules", "_originaux"}
 # reelles. A tenir synchronise avec .gitignore si la liste change la-bas.
 # inc/config-local.php n'y figure pas : sur l'environnement qui met
 # GENERER_CONFIG_LOCAL=1 (la prod), il est regenere a chaque deploiement
-# depuis les secrets GitHub plutot que reporte tel quel (voir plus bas) ;
-# sur les autres (le dev), il reste gere a la main comme avant.
+# depuis les secrets GitHub plutot que reporte tel quel (voir plus bas).
 PERSISTANTS_FICHIERS = [".htpasswd"]
 PERSISTANTS_DOSSIERS = ["docs-inscriptions", "docs-adherents", "uploads"]
 

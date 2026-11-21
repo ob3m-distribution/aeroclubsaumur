@@ -1,8 +1,7 @@
 """
 Recuperation quotidienne des logs du serveur IONOS par SFTP.
 
-Appele par .github/workflows/logs.yml. Pour chaque environnement (prod,
-dev) :
+Appele par .github/workflows/logs.yml. Pour la production :
   - log d'erreurs PHP : logs-php/<dossier du site>.log, ecrit par
     site/inc/journal-erreurs.php a cote du dossier du site. Il est
     renomme avant telechargement (PHP en recree un neuf aussitot, rien
@@ -20,7 +19,7 @@ Usage :
     python logs_ci.py
 
 Variables d'environnement : DEPLOY_HOST, DEPLOY_USER, DEPLOY_PASSWORD,
-DEPLOY_PATH (dev), DEPLOY_PATH_PROD (prod). Un chemin vide est ignore.
+DEPLOY_PATH_PROD (dossier du site).
 Optionnel : LOGS_SFTP_USER, LOGS_SFTP_PASSWORD (et LOGS_SFTP_HOST si
 different de DEPLOY_HOST) — compte SFTP dedie aux logs d'acces, avec la
 racine de l'espace web.
@@ -226,11 +225,10 @@ def construire_resume(php, fichiers_acces, e5xx_tout, hier):
 def main():
     environnements = {
         "prod": os.environ.get("DEPLOY_PATH_PROD", ""),
-        "dev": os.environ.get("DEPLOY_PATH", ""),
     }
     environnements = {k: v for k, v in environnements.items() if v}
     if not environnements:
-        sys.exit("DEPLOY_PATH et DEPLOY_PATH_PROD vides — secrets GitHub manquants.")
+        sys.exit("DEPLOY_PATH_PROD vide — secret GitHub manquant.")
 
     for d in list(environnements) + ["acces"]:
         os.makedirs(os.path.join(SORTIE, d), exist_ok=True)
@@ -252,7 +250,7 @@ def main():
     # pas logs/ d'IONOS : un compte SFTP dedie, avec la racine de l'espace
     # web, sert uniquement a lire les logs d'acces. On ne change pas la
     # racine du compte de deploiement, ce qui decalerait tous ses chemins
-    # (DEPLOY_PATH, sauvegardes/, logs-php/).
+    # (DEPLOY_PATH_PROD, sauvegardes/, logs-php/).
     if os.environ.get("LOGS_SFTP_USER"):
         t, sftp = connecter(os.environ.get("LOGS_SFTP_HOST") or None,
                             os.environ["LOGS_SFTP_USER"],
